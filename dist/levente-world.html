@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LEVENTE — THE CREATOR</title>
-<meta name="description" content="Önálló, folyamatosan élő, magától fejlődő digitális civilizáció. Build: 2026-09-13 20:27.">
+<meta name="description" content="Önálló, folyamatosan élő, magától fejlődő digitális civilizáció. Build: 2026-09-13 20:38.">
 <style>
 :root {
   --bg: #07080c; --panel: rgba(12, 14, 20, 0.86); --panel2: rgba(20, 23, 32, 0.9); --line: rgba(255, 255, 255, 0.08);
@@ -1108,6 +1108,8 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
     step() {
       const w = this.world, tick = w.tick;
       if (this.override && tick >= this.override.untilTick) { this.override = null; }
+      // az elmúlt nap csapadékos tickjeinek aránya (a hó napi léptékben, egyenletesen gyűlik — nem csíkokban)
+      this.precipTicks = (this.precipTicks || 0) * (1 - 1 / LW.TIME.TICKS_PER_DAY) + (this.isPrecipitating() ? 1 : 0);
       if (tick % (LW.TIME.TICKS_PER_HOUR * 3) === 0) this._hourly();
       // lightning during storms
       const eff = this.effectiveState();
@@ -1163,6 +1165,8 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       return { state: this.state, intensity: this.intensity };
     }
     isPrecipitating() { const s = this.effectiveState().state; return s === 'rain' || s === 'storm'; }
+    /** Az elmúlt nap mekkora részében esett (0–1). */
+    precipFraction() { return Math.min(1, (this.precipTicks || 0) / LW.TIME.TICKS_PER_DAY); }
 
     /** Local rain intensity 0..1 at a tile. */
     rainAt(i) {
@@ -1221,13 +1225,13 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       const season = LW.Time.season(world.tick);
       const seasonVeg = [1.0, 1.1, 0.8, 0.35][season];
       const rng = world.rng; const dirty = world.dirtyTiles;
-      const precip = world.weather.isPrecipitating();
+      const precip = world.weather.isPrecipitating(); const pf = world.weather.precipFraction();
       for (let i = s; i < n; i += TPD) {
         const b = t.biome[i];
         const temp = world.tileTemp(i);
         // snow
         const snow0 = t.snow[i];
-        if (temp < 0 && precip) t.snow[i] = Math.min(255, t.snow[i] + 25 + Math.round(world.rainAt(i) * 60));
+        if (temp < 0 && (precip || pf > 0.05)) t.snow[i] = Math.min(255, t.snow[i] + Math.round((25 + world.rainAt(i) * 60) * Math.max(pf, precip ? 0.3 : 0)));
         else if (temp > 1.5) t.snow[i] = Math.max(0, t.snow[i] - Math.round(10 + temp * 6));
         if ((snow0 >> 5) !== (t.snow[i] >> 5)) dirty.add(i);
         if (LW.isWaterBiome(b)) {
@@ -4012,7 +4016,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
 
     summary() {
       const w = this.world; const known = LW.Tech.worldKnowledge(w); const largest = LW.Settlements.largest(w);
-      return { name: w.name, year: w.year, tick: w.tick, population: w.population, deceased: w.deceased.size, techLevel: LW.Tech.techLevel(known), techs: known.size, settlements: [...w.settlements.values()].filter((s) => !s.abandonedTick).length, largest: largest ? `${largest.name} (${largest.tier}, ${largest.population})` : '—', buildings: w.buildings.size, births: w.stats.births, deaths: w.stats.deaths, discoveries: w.stats.discoveries, interventions: w.stats.interventions };
+      return { name: w.name, year: w.year, tick: w.tick, population: w.population, deceased: w.deceased.size, techLevel: LW.Tech.techLevel(known), techs: known.size, settlements: [...w.settlements.values()].filter((s) => !s.abandonedTick).length, largest: largest ? `${largest.name} (${LW.HU.tier(largest.tier)}, ${largest.population} lakó)` : '—', buildings: w.buildings.size, births: w.stats.births, deaths: w.stats.deaths, discoveries: w.stats.discoveries, interventions: w.stats.interventions };
     }
   }
   const now = typeof performance !== 'undefined' && performance.now ? () => performance.now() : () => Date.now();
@@ -4724,6 +4728,17 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
         case 'avatar': s('rgba(255,240,200,0.4)', 3, 1, 10, 14); s('#fff7d0', 6, 1, 4, 4); s('#ffe8a0', 5, 5, 6, 7); s('#ffd070', 6, 12, 4, 3); break;
       }
     },
+    /** Vad a mezőn: szarvas, vaddisznó, nyúl, farkas — 16 képpontos mezőkoordinátákban, jobbra néző alap. */
+    animal(ctx, kind, px, py, frame, facing, night) {
+      const f = (col, x, y, w, h) => { ctx.fillStyle = typeof col === 'string' ? col : rgb(col); ctx.fillRect(px + (facing ? x : 15 - x - w + 1), py + y, w, h); };
+      const leg = frame ? 1 : 0;
+      switch (kind) {
+        case 'deer': f('rgba(0,0,0,0.22)', 2, 13, 10, 2); f([120, 82, 50], 3, 7, 7, 4); f([146, 104, 64], 4, 7, 5, 2); f([132, 92, 56], 9, 4, 3, 4); f([146, 104, 64], 11, 4, 2, 2); f([60, 40, 24], 12, 5, 1, 1); f([90, 62, 36], 10, 2, 1, 2); f([90, 62, 36], 12, 2, 1, 2); f([90, 62, 36], 9, 1, 1, 1); f([245, 240, 230], 3, 8, 1, 1); f([90, 62, 36], 4 - leg, 11, 1, 3); f([90, 62, 36], 6 + leg, 11, 1, 3); f([90, 62, 36], 8 - leg, 11, 1, 3); f([90, 62, 36], 9 + leg, 11, 1, 3); break;
+        case 'boar': f('rgba(0,0,0,0.22)', 2, 13, 10, 2); f([78, 62, 48], 3, 8, 8, 4); f([96, 78, 60], 4, 8, 6, 1); f([70, 56, 44], 10, 8, 3, 3); f([40, 30, 24], 12, 10, 1, 1); f([230, 220, 200], 12, 9, 1, 1); f([50, 40, 32], 4 - leg, 12, 1, 2); f([50, 40, 32], 6 + leg, 12, 1, 2); f([50, 40, 32], 8 - leg, 12, 1, 2); f([50, 40, 32], 10 + leg, 12, 1, 2); break;
+        case 'hare': f('rgba(0,0,0,0.2)', 5, 13, 6, 1); f([158, 140, 116], 6, 9, 5, 3); f([176, 160, 136], 7, 9, 3, 1); f([158, 140, 116], 9, 6, 1, 3); f([158, 140, 116], 10, 6, 1, 3); f([40, 30, 24], 10, 9, 1, 1); f([245, 240, 230], 5, 10, 1, 1); f([120, 104, 84], 7 - leg, 12, 1, 1); f([120, 104, 84], 10 + leg, 12, 1, 1); break;
+        case 'wolf': f('rgba(0,0,0,0.25)', 2, 13, 11, 2); f([92, 92, 98], 3, 8, 8, 3); f([112, 112, 118], 4, 8, 6, 1); f([92, 92, 98], 10, 6, 3, 3); f([92, 92, 98], 10, 5, 1, 1); f([92, 92, 98], 12, 5, 1, 1); f([92, 92, 98], 1, 7, 2, 2); f(night ? [255, 220, 80] : [30, 30, 34], 12, 7, 1, 1); f([60, 60, 66], 4 - leg, 11, 1, 3); f([60, 60, 66], 6 + leg, 11, 1, 3); f([60, 60, 66], 8 - leg, 11, 1, 3); f([60, 60, 66], 10 + leg, 11, 1, 3); break;
+      }
+    },
     flame(ctx, px, py, tick, size = 1) {
       const f = tick & 3; const cols = ['#ffd24a', '#ff8a2a', '#ff4a1a'];
       ctx.fillStyle = 'rgba(255,200,120,0.22)'; ctx.fillRect(px + 3, py + 1, 10, 9);
@@ -4843,6 +4858,14 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       const lod = this.lodLevel();
       // ground items
       if (lod !== 'region' && w.ground) for (const [i, g] of w.ground) { const gx = w.xOf(i), gy = w.yOf(i); if (gx < tx0 || gx > tx1 || gy < ty0 || gy > ty1) continue; const s = this.worldToScreen(gx, gy); c.save(); c.translate(s.x, s.y); c.scale(S, S); LW.Sprites.itemPile(c, 0, 0, g); c.restore(); }
+      // vadak: a mezők állatállománya látható (legelő csapatok; éjjel ragadozók a veszélyes helyeken)
+      if (lod !== 'region') { const B = LW.BIOME; const t = w.tiles; const night = LW.Time.isNight(w.tick); const step = w.tick >> 3;
+        for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) { const i = w.idx(tx, ty); const an = t.animals[i]; const hi = hashi(i);
+          const pred = night && t.danger[i] > 110 && hashi(i * 13 + (w.tick >> 5)) % 29 === 0;
+          if (!pred && (an < 70 || hi % 9 !== 0)) continue; if (w.isWater(i) || w.buildingAt(i) || t.fire[i]) continue;
+          const n = pred ? 1 : an > 150 ? 3 : an > 110 ? 2 : 1; const b = t.biome[i];
+          for (let k = 0; k < n; k++) { const hh = hashi(i * 31 + step * 7 + k * 101); const hs = hashi(i * 17 + k * 53); const ox = ((hs & 7) + (hh & 3)) & 15, oy = (((hs >> 3) & 7) + ((hh >> 2) & 3)) & 15; const kind = pred ? 'wolf' : (b === B.FOREST || b === B.DENSE_FOREST) ? ((hs >> 6) & 1 ? 'boar' : 'deer') : (b === B.GRASSLAND || b === B.SAVANNA) ? ((hs >> 6) % 3 === 0 ? 'hare' : 'deer') : 'deer'; const moving = ((hh >> 5) & 3) === 0; const s2 = this.worldToScreen(tx + ox / 16, ty + oy / 16); c.save(); c.translate(s2.x, s2.y); c.scale(S, S); LW.Sprites.animal(c, kind, -8, -8, moving ? ((this.frame >> 3) & 1) : 0, (hs >> 8) & 1, night); c.restore(); }
+        } }
       // wildfire flames
       for (const i of w.burning) { const fx = w.xOf(i), fy = w.yOf(i); if (fx < tx0 || fx > tx1 || fy < ty0 || fy > ty1) continue; const s = this.worldToScreen(fx, fy); c.save(); c.translate(s.x, s.y); c.scale(S, S); LW.Sprites.wildfire(c, 0, 0, w.tick + this.frame, w.tiles.fire[i] / 255); c.restore(); }
       // campfire flames & manifestations glow
@@ -4933,6 +4956,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       env.fire = fire;
     }
   }
+  function hashi(i) { let h = (i * 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519); h ^= h >>> 13; return h >>> 0; }
   function hashf(i) { let h = (i * 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519); h ^= h >>> 13; return (h >>> 0) / 4294967296; }
   LW.Renderer = Renderer; LW.ZOOMS = ZOOMS;
 })(globalThis.LW || (globalThis.LW = {}));

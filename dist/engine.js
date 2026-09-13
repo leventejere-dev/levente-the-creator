@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 20:27 */
+/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 20:39 */
 
 /* ===== core/rng.js ===== */
 /* LEVENTE — THE CREATOR · core/rng.js
@@ -871,6 +871,8 @@
     step() {
       const w = this.world, tick = w.tick;
       if (this.override && tick >= this.override.untilTick) { this.override = null; }
+      // az elmúlt nap csapadékos tickjeinek aránya (a hó napi léptékben, egyenletesen gyűlik — nem csíkokban)
+      this.precipTicks = (this.precipTicks || 0) * (1 - 1 / LW.TIME.TICKS_PER_DAY) + (this.isPrecipitating() ? 1 : 0);
       if (tick % (LW.TIME.TICKS_PER_HOUR * 3) === 0) this._hourly();
       // lightning during storms
       const eff = this.effectiveState();
@@ -926,6 +928,8 @@
       return { state: this.state, intensity: this.intensity };
     }
     isPrecipitating() { const s = this.effectiveState().state; return s === 'rain' || s === 'storm'; }
+    /** Az elmúlt nap mekkora részében esett (0–1). */
+    precipFraction() { return Math.min(1, (this.precipTicks || 0) / LW.TIME.TICKS_PER_DAY); }
 
     /** Local rain intensity 0..1 at a tile. */
     rainAt(i) {
@@ -984,13 +988,13 @@
       const season = LW.Time.season(world.tick);
       const seasonVeg = [1.0, 1.1, 0.8, 0.35][season];
       const rng = world.rng; const dirty = world.dirtyTiles;
-      const precip = world.weather.isPrecipitating();
+      const precip = world.weather.isPrecipitating(); const pf = world.weather.precipFraction();
       for (let i = s; i < n; i += TPD) {
         const b = t.biome[i];
         const temp = world.tileTemp(i);
         // snow
         const snow0 = t.snow[i];
-        if (temp < 0 && precip) t.snow[i] = Math.min(255, t.snow[i] + 25 + Math.round(world.rainAt(i) * 60));
+        if (temp < 0 && (precip || pf > 0.05)) t.snow[i] = Math.min(255, t.snow[i] + Math.round((25 + world.rainAt(i) * 60) * Math.max(pf, precip ? 0.3 : 0)));
         else if (temp > 1.5) t.snow[i] = Math.max(0, t.snow[i] - Math.round(10 + temp * 6));
         if ((snow0 >> 5) !== (t.snow[i] >> 5)) dirty.add(i);
         if (LW.isWaterBiome(b)) {
@@ -3775,7 +3779,7 @@
 
     summary() {
       const w = this.world; const known = LW.Tech.worldKnowledge(w); const largest = LW.Settlements.largest(w);
-      return { name: w.name, year: w.year, tick: w.tick, population: w.population, deceased: w.deceased.size, techLevel: LW.Tech.techLevel(known), techs: known.size, settlements: [...w.settlements.values()].filter((s) => !s.abandonedTick).length, largest: largest ? `${largest.name} (${largest.tier}, ${largest.population})` : '—', buildings: w.buildings.size, births: w.stats.births, deaths: w.stats.deaths, discoveries: w.stats.discoveries, interventions: w.stats.interventions };
+      return { name: w.name, year: w.year, tick: w.tick, population: w.population, deceased: w.deceased.size, techLevel: LW.Tech.techLevel(known), techs: known.size, settlements: [...w.settlements.values()].filter((s) => !s.abandonedTick).length, largest: largest ? `${largest.name} (${LW.HU.tier(largest.tier)}, ${largest.population} lakó)` : '—', buildings: w.buildings.size, births: w.stats.births, deaths: w.stats.deaths, discoveries: w.stats.discoveries, interventions: w.stats.interventions };
     }
   }
   const now = typeof performance !== 'undefined' && performance.now ? () => performance.now() : () => Date.now();

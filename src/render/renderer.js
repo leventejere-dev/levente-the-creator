@@ -66,6 +66,14 @@
       const lod = this.lodLevel();
       // ground items
       if (lod !== 'region' && w.ground) for (const [i, g] of w.ground) { const gx = w.xOf(i), gy = w.yOf(i); if (gx < tx0 || gx > tx1 || gy < ty0 || gy > ty1) continue; const s = this.worldToScreen(gx, gy); c.save(); c.translate(s.x, s.y); c.scale(S, S); LW.Sprites.itemPile(c, 0, 0, g); c.restore(); }
+      // vadak: a mezők állatállománya látható (legelő csapatok; éjjel ragadozók a veszélyes helyeken)
+      if (lod !== 'region') { const B = LW.BIOME; const t = w.tiles; const night = LW.Time.isNight(w.tick); const step = w.tick >> 3;
+        for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) { const i = w.idx(tx, ty); const an = t.animals[i]; const hi = hashi(i);
+          const pred = night && t.danger[i] > 110 && hashi(i * 13 + (w.tick >> 5)) % 29 === 0;
+          if (!pred && (an < 70 || hi % 9 !== 0)) continue; if (w.isWater(i) || w.buildingAt(i) || t.fire[i]) continue;
+          const n = pred ? 1 : an > 150 ? 3 : an > 110 ? 2 : 1; const b = t.biome[i];
+          for (let k = 0; k < n; k++) { const hh = hashi(i * 31 + step * 7 + k * 101); const hs = hashi(i * 17 + k * 53); const ox = ((hs & 7) + (hh & 3)) & 15, oy = (((hs >> 3) & 7) + ((hh >> 2) & 3)) & 15; const kind = pred ? 'wolf' : (b === B.FOREST || b === B.DENSE_FOREST) ? ((hs >> 6) & 1 ? 'boar' : 'deer') : (b === B.GRASSLAND || b === B.SAVANNA) ? ((hs >> 6) % 3 === 0 ? 'hare' : 'deer') : 'deer'; const moving = ((hh >> 5) & 3) === 0; const s2 = this.worldToScreen(tx + ox / 16, ty + oy / 16); c.save(); c.translate(s2.x, s2.y); c.scale(S, S); LW.Sprites.animal(c, kind, -8, -8, moving ? ((this.frame >> 3) & 1) : 0, (hs >> 8) & 1, night); c.restore(); }
+        } }
       // wildfire flames
       for (const i of w.burning) { const fx = w.xOf(i), fy = w.yOf(i); if (fx < tx0 || fx > tx1 || fy < ty0 || fy > ty1) continue; const s = this.worldToScreen(fx, fy); c.save(); c.translate(s.x, s.y); c.scale(S, S); LW.Sprites.wildfire(c, 0, 0, w.tick + this.frame, w.tiles.fire[i] / 255); c.restore(); }
       // campfire flames & manifestations glow
@@ -156,6 +164,7 @@
       env.fire = fire;
     }
   }
+  function hashi(i) { let h = (i * 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519); h ^= h >>> 13; return h >>> 0; }
   function hashf(i) { let h = (i * 2654435761) >>> 0; h ^= h >>> 15; h = Math.imul(h, 2246822519); h ^= h >>> 13; return (h >>> 0) / 4294967296; }
   LW.Renderer = Renderer; LW.ZOOMS = ZOOMS;
 })(globalThis.LW || (globalThis.LW = {}));

@@ -19,13 +19,13 @@
       const season = LW.Time.season(world.tick);
       const seasonVeg = [1.0, 1.1, 0.8, 0.35][season];
       const rng = world.rng; const dirty = world.dirtyTiles;
-      const precip = world.weather.isPrecipitating();
+      const precip = world.weather.isPrecipitating(); const pf = world.weather.precipFraction();
       for (let i = s; i < n; i += TPD) {
         const b = t.biome[i];
         const temp = world.tileTemp(i);
         // snow
         const snow0 = t.snow[i];
-        if (temp < 0 && precip) t.snow[i] = Math.min(255, t.snow[i] + 25 + Math.round(world.rainAt(i) * 60));
+        if (temp < 0 && (precip || pf > 0.05)) t.snow[i] = Math.min(255, t.snow[i] + Math.round((25 + world.rainAt(i) * 60) * Math.max(pf, precip ? 0.3 : 0)));
         else if (temp > 1.5) t.snow[i] = Math.max(0, t.snow[i] - Math.round(10 + temp * 6));
         if ((snow0 >> 5) !== (t.snow[i] >> 5)) dirty.add(i);
         if (LW.isWaterBiome(b)) {

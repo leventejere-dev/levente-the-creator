@@ -34,6 +34,8 @@
     step() {
       const w = this.world, tick = w.tick;
       if (this.override && tick >= this.override.untilTick) { this.override = null; }
+      // az elmúlt nap csapadékos tickjeinek aránya (a hó napi léptékben, egyenletesen gyűlik — nem csíkokban)
+      this.precipTicks = (this.precipTicks || 0) * (1 - 1 / LW.TIME.TICKS_PER_DAY) + (this.isPrecipitating() ? 1 : 0);
       if (tick % (LW.TIME.TICKS_PER_HOUR * 3) === 0) this._hourly();
       // lightning during storms
       const eff = this.effectiveState();
@@ -89,6 +91,8 @@
       return { state: this.state, intensity: this.intensity };
     }
     isPrecipitating() { const s = this.effectiveState().state; return s === 'rain' || s === 'storm'; }
+    /** Az elmúlt nap mekkora részében esett (0–1). */
+    precipFraction() { return Math.min(1, (this.precipTicks || 0) / LW.TIME.TICKS_PER_DAY); }
 
     /** Local rain intensity 0..1 at a tile. */
     rainAt(i) {

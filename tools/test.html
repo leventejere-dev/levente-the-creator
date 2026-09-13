@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><title>LW engine test</title><style>body{background:#111;color:#ddd;font:13px/1.4 monospace;padding:16px}pre{white-space:pre-wrap}</style></head><body>
+<pre id="out">running…</pre>
+<script>document.write('<script src="engine.js?v='+Date.now()+'"><\/script>')</script>
+<script>
+const out=document.getElementById('out'); const lines=[]; const log=(s)=>{lines.push(s); out.textContent=lines.join('\n'); console.log(s);};
+const q=new URLSearchParams(location.search);
+setTimeout(()=>{
+  try{
+    if(q.get('mode')==='headless'){
+      const years=+q.get('years')||5; const seed=+q.get('seed')||12345; const mode=q.get('sim')||'detail';
+      const t0=performance.now();
+      const {metrics}=LW.runHeadless({seed,years,mode,log,checkInvariants:true});
+      log(`--- ${((performance.now()-t0)/1000).toFixed(1)}s, errors ${metrics.errors}, simErrors ${metrics.simErrors.length}`);
+      for(const e of metrics.simErrors.slice(0,5)) log('ERR '+e.msg.slice(0,400));
+      for(const f of metrics.invariantFailures.slice(0,3)) log('INV '+JSON.stringify(f.res.slice(0,5)));
+      log('--- FIRSTS'); for(const k in metrics.firsts) log(`${k}: Y${metrics.firsts[k].year} ${metrics.firsts[k].title}`);
+      log('--- CHRONICLE'); for(const c of metrics.chronicle.slice(-60)) log(c);
+      log('--- EVENTS'); log(JSON.stringify(metrics.eventsByClass));
+      window.__metrics=metrics;
+    } else if(q.get('mode')==='balance'){
+      const rows=LW.balanceReport({years:+q.get('years')||30, mode:q.get('sim')||'mixed', seeds:[1,2,3,4,5,6,7,8]});
+      for(const r of rows) log(JSON.stringify(r));
+    } else {
+      const r=LW.Invariants.suite(log); log(`--- passed ${r.passed} failed ${r.failed}`);
+    }
+  }catch(e){ log('CRASH '+(e.stack||e)); }
+},10);
+</script></body></html>

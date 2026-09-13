@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LEVENTE — THE CREATOR</title>
+<meta name="description" content="An autonomous, persistent, emergent digital civilization. Built BUILD_STAMP.">
+<style>
+/* INLINE_CSS */
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="world"></canvas>
+  <header id="topbar">
+    <div class="brand" title="LEVENTE — THE CREATOR"><span class="b1">LEVENTE</span><span class="b2">THE CREATOR</span></div>
+    <div class="stats">
+      <div class="stat"><label>World age</label><b id="st-age">—</b><small id="st-date"></small></div>
+      <div class="stat"><label>Population</label><b id="st-pop">—</b><small id="st-popsub"></small></div>
+      <div class="stat"><label>Technology</label><b id="st-tech">—</b><small id="st-techsub"></small></div>
+      <div class="stat"><label>Settlements</label><b id="st-settle">—</b><small id="st-largest"></small></div>
+      <div class="stat"><label>Sky</label><b id="st-weather">—</b><small id="st-temp"></small></div>
+    </div>
+    <div class="controls">
+      <div class="speeds">
+        <button data-speed="pause" title="Pause (space)">❚❚</button>
+        <button data-speed="slow" title="1 tick / s — 15 world minutes per second">1×</button>
+        <button data-speed="normal" title="1 world hour per second">4×</button>
+        <button data-speed="fast" title="4 world hours per second">16×</button>
+        <button data-speed="ultra" title="1 world day per second">96×</button>
+        <button data-speed="hyper" title="5 world days per second (as fast as your machine allows)">480×</button>
+      </div>
+      <button id="btn-sound" title="Sound on/off">♪</button>
+      <button id="btn-help" title="Help">?</button>
+      <button id="btn-menu" title="Menu">☰</button>
+    </div>
+  </header>
+
+  <aside id="left" class="panel">
+    <nav class="tabs">
+      <button data-tab="feed" class="active">Feed</button>
+      <button data-tab="god">Creator</button>
+      <button data-tab="chronicle">Chronicle</button>
+      <button data-tab="firsts">Firsts</button>
+      <button data-tab="people">People</button>
+    </nav>
+    <div class="tabbody" id="tab-feed"></div>
+    <div class="tabbody hidden" id="tab-god"></div>
+    <div class="tabbody hidden" id="tab-chronicle"></div>
+    <div class="tabbody hidden" id="tab-firsts"></div>
+    <div class="tabbody hidden" id="tab-people"></div>
+  </aside>
+
+  <aside id="right" class="panel hidden">
+    <div id="inspector"></div>
+  </aside>
+
+  <div id="godbar">
+    <div class="godrow" id="god-interventions"></div>
+    <div class="godrow hidden" id="god-commands"></div>
+  </div>
+
+  <div id="mmwrap"><canvas id="minimap" width="160" height="160"></canvas><div id="camhint">drag · wheel · click</div></div>
+  <div id="toasts"></div>
+  <div id="debug" class="hidden"></div>
+  <div id="overlay" class="hidden"><div id="modal"></div></div>
+  <pre id="headless" class="hidden"></pre>
+</div>
+<script>
+/* INLINE_JS */
+</script>
+</body>
+</html>

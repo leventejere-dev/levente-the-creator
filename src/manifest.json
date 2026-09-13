@@ -1,0 +1,39 @@
+{
+  "engine": [
+    "core/rng.js",
+    "core/config.js",
+    "core/util.js",
+    "language/names.js",
+    "world/generate.js",
+    "world/world.js",
+    "world/weather.js",
+    "world/ecology.js",
+    "tech/discoveries.js",
+    "buildings/buildings.js",
+    "agents/genetics.js",
+    "agents/memory.js",
+    "agents/relationships.js",
+    "agents/agent.js",
+    "agents/perception.js",
+    "agents/brain.js",
+    "agents/actions.js",
+    "agents/social.js",
+    "settlements/settlements.js",
+    "history/history.js",
+    "god/god.js",
+    "sim/macro.js",
+    "sim/simulation.js",
+    "persistence/persistence.js",
+    "headless.js"
+  ],
+  "client": [
+    "audio/audio.js",
+    "render/sprites.js",
+    "render/renderer.js",
+    "ui/ui.js",
+    "main.js"
+  ],
+  "tests": [
+    "../tests/invariants.js"
+  ]
+}

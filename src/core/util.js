@@ -37,7 +37,7 @@
     day: (tick) => Math.floor(tick / T.TICKS_PER_DAY),
     year: (tick) => Math.floor(tick / T.TICKS_PER_YEAR),
     season: (tick) => Math.floor(Time.dayOfYear(tick) / T.SEASON_DAYS), // 0 spring 1 summer 2 autumn 3 winter
-    seasonName: (tick) => ['Spring', 'Summer', 'Autumn', 'Winter'][Time.season(tick)],
+    seasonName: (tick) => ['Tavasz', 'Nyár', 'Ősz', 'Tél'][Time.season(tick)],
     month: (tick) => Math.floor(Time.dayOfYear(tick) / T.DAYS_PER_MONTH),
     dayOfMonth: (tick) => (Time.dayOfYear(tick) % T.DAYS_PER_MONTH) + 1,
     /** 0..1 fraction through the year */
@@ -58,22 +58,22 @@
       if (h > b - 0.75) return 1 - smoothstep(b - 0.75, b + 1, h);
       return 1;
     },
-    stamp: (tick) => { const y = Time.year(tick), d = Time.dayOfYear(tick) + 1, h = Time.hour(tick), m = Time.minute(tick); return `Y${y} D${d} ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; },
+    stamp: (tick) => { const y = Time.year(tick), d = Time.dayOfYear(tick) + 1, h = Time.hour(tick), m = Time.minute(tick); return `${y}. év ${d}. nap ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; },
     clock: (tick) => `${String(Time.hour(tick)).padStart(2, '0')}:${String(Time.minute(tick)).padStart(2, '0')}`,
     /** human friendly duration of ticks */
     span: (ticks) => {
       const days = ticks / T.TICKS_PER_DAY;
-      if (days < 1) return `${Math.round(ticks / T.TICKS_PER_HOUR)} hours`;
-      if (days < 60) return `${Math.round(days)} days`;
+      if (days < 1) return `${Math.round(ticks / T.TICKS_PER_HOUR)} óra`;
+      if (days < 60) return `${Math.round(days)} nap`;
       const years = days / T.DAYS_PER_YEAR;
-      if (years < 2) return `${Math.round(days / 30)} months`;
-      return `${years.toFixed(years < 10 ? 1 : 0)} years`;
+      if (years < 2) return `${Math.round(days / 30)} hónap`;
+      return `${years.toFixed(years < 10 ? 1 : 0)} év`;
     },
     realSpan: (ms) => {
-      const s = Math.floor(ms / 1000); if (s < 60) return `${s} s`;
-      const m = Math.floor(s / 60); if (m < 60) return `${m} min`;
-      const h = Math.floor(m / 60); if (h < 48) return `${h} h ${m % 60} min`;
-      const d = Math.floor(h / 24); return `${d} days ${h % 24} h`;
+      const s = Math.floor(ms / 1000); if (s < 60) return `${s} mp`;
+      const m = Math.floor(s / 60); if (m < 60) return `${m} perc`;
+      const h = Math.floor(m / 60); if (h < 48) return `${h} óra ${m % 60} perc`;
+      const d = Math.floor(h / 24); return `${d} nap ${h % 24} óra`;
     },
   };
 

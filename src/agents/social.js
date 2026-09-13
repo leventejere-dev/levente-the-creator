@@ -58,31 +58,31 @@
         ra.attraction = b01(ra.attraction + 0.04); rt.attraction = b01(rt.attraction + 0.05);
         for (const x of [a, t]) { x.emotions.love = b01(x.emotions.love + 0.15); x.emotions.joy = b01(x.emotions.joy + 0.15); x.emotions.excitement = b01(x.emotions.excitement + 0.2); x.needs.affection = b01(x.needs.affection + 0.2); x.needs.social = b01(x.needs.social + 0.15); }
         if (firstTime) world.events.emit('Courtship', { tick: world.tick, agentId: a.id, otherId: t.id, importance: 0.2 });
-        M().add(world, a, { type: 'romance', text: `flirted with ${t.name}`, importance: 0.35, emotion: 'love', intensity: 0.4, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `${a.name} flirted with me`, importance: 0.35, emotion: 'love', intensity: 0.4, subjects: [a.id] });
+        M().add(world, a, { type: 'romance', text: `flörtöltem: ${t.name}`, importance: 0.35, emotion: 'love', intensity: 0.4, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `${a.name} flörtölt velem`, importance: 0.35, emotion: 'love', intensity: 0.4, subjects: [a.id] });
         if (ra.romance >= cfg.datingThreshold && rt.romance >= cfg.datingThreshold && ra.status !== 'dating' && ra.status !== 'partner') this.startDating(world, a, t, ra, rt);
         else if (ra.status === 'dating' && ra.romance >= cfg.partnerThreshold && rt.romance >= cfg.partnerThreshold && world.tick - ra.datingSince > LW.TIME.TICKS_PER_DAY * 8) { const leaves = (x, other, rx) => { if (x.partner == null || x.partner === other.id) return true; const cur = x.relationships.get(x.partner); return !cur || (rx.attraction > cur.attraction + 0.2 && cur.friendship < 0.5 && x.personality.loyalty < 0.6); }; if (leaves(a, t, ra) && leaves(t, a, rt)) this.becomePartners(world, a, t, ra, rt); }
       } else {
         ra.romance = Math.max(0, ra.romance - 0.1); ra.resentment = b01(ra.resentment + 0.05 * (1 - a.personality.patience)); rt.attraction = Math.max(0, rt.attraction - 0.03);
         a.emotions.shame = b01(a.emotions.shame + 0.3); a.emotions.sadness = b01(a.emotions.sadness + 0.15);
-        M().add(world, a, { type: 'rejection', text: `was turned down by ${t.name}`, importance: 0.45, emotion: 'shame', intensity: 0.5, subjects: [t.id] });
+        M().add(world, a, { type: 'rejection', text: `elutasított: ${t.name}`, importance: 0.45, emotion: 'shame', intensity: 0.5, subjects: [t.id] });
         world.events.emit('Rejection', { tick: world.tick, agentId: a.id, otherId: t.id, importance: 0.12 });
       }
     },
     startDating(world, a, t, ra, rt) {
       ra.status = 'dating'; rt.status = 'dating'; ra.datingSince = world.tick; rt.datingSince = world.tick;
       for (const x of [a, t]) { x.emotions.love = b01(x.emotions.love + 0.4); x.emotions.joy = b01(x.emotions.joy + 0.3); }
-      M().add(world, a, { type: 'romance', text: `began seeing ${t.name}`, importance: 0.75, emotion: 'love', intensity: 0.7, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `began seeing ${a.name}`, importance: 0.75, emotion: 'love', intensity: 0.7, subjects: [a.id] });
+      M().add(world, a, { type: 'romance', text: `járni kezdtünk: ${t.name}`, importance: 0.75, emotion: 'love', intensity: 0.7, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `járni kezdtünk: ${a.name}`, importance: 0.75, emotion: 'love', intensity: 0.7, subjects: [a.id] });
       world.events.emit('CoupleFormed', { tick: world.tick, agentId: a.id, otherId: t.id, stage: 'dating', first: !world.firsts || !world.firsts['love'] });
     },
     becomePartners(world, a, t, ra, rt) {
-      if (a.partner != null && a.partner !== t.id) this.breakup(world, a, world.agents.get(a.partner), 'left for another');
-      if (t.partner != null && t.partner !== a.id) this.breakup(world, t, world.agents.get(t.partner), 'left for another');
+      if (a.partner != null && a.partner !== t.id) this.breakup(world, a, world.agents.get(a.partner), 'másért ment el');
+      if (t.partner != null && t.partner !== a.id) this.breakup(world, t, world.agents.get(t.partner), 'másért ment el');
       a.partner = t.id; t.partner = a.id; ra.status = 'partner'; rt.status = 'partner'; ra.loyalty = b01(ra.loyalty + 0.3); rt.loyalty = b01(rt.loyalty + 0.3);
       // share a home
       const ha = a.home != null ? world.buildings.get(a.home) : null, ht = t.home != null ? world.buildings.get(t.home) : null;
       if (ha && !ht) LW.Buildings.moveIn(world, ha, t); else if (ht && !ha) LW.Buildings.moveIn(world, ht, a); else if (ha && ht && ha.id !== ht.id) { const better = (LW.Buildings.def(ha).capacity || 0) >= (LW.Buildings.def(ht).capacity || 0) ? ha : ht; LW.Buildings.moveIn(world, better, better === ha ? t : a); }
       for (const x of [a, t]) { x.emotions.love = 1; x.emotions.joy = b01(x.emotions.joy + 0.4); x.needs.affection = 1; }
-      M().add(world, a, { type: 'romance', text: `became partners with ${t.name}`, importance: 0.85, emotion: 'love', intensity: 0.85, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `became partners with ${a.name}`, importance: 0.85, emotion: 'love', intensity: 0.85, subjects: [a.id] });
+      M().add(world, a, { type: 'romance', text: `párom lett: ${t.name}`, importance: 0.85, emotion: 'love', intensity: 0.85, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `párom lett: ${a.name}`, importance: 0.85, emotion: 'love', intensity: 0.85, subjects: [a.id] });
       world.events.emit('CoupleFormed', { tick: world.tick, agentId: a.id, otherId: t.id, stage: 'partners', first: !world.firsts || !world.firsts['partners'] });
     },
     breakup(world, a, t, reason) {
@@ -94,7 +94,7 @@
       t.emotions.sadness = b01(t.emotions.sadness + 0.6); t.emotions.grief = b01(t.emotions.grief + 0.3); a.emotions.sadness = b01(a.emotions.sadness + 0.3);
       // the non-owner leaves the shared home
       if (a.home != null && a.home === t.home) { const h = world.buildings.get(a.home); if (h) LW.Buildings.moveOut(world, h.ownerId === a.id ? t : a); }
-      M().add(world, a, { type: 'romance', text: `broke up with ${t.name} (${reason})`, importance: 0.7, emotion: 'sadness', intensity: 0.6, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `${a.name} left me (${reason})`, importance: 0.8, emotion: 'grief', intensity: 0.75, subjects: [a.id] });
+      M().add(world, a, { type: 'romance', text: `szakítottam vele: ${t.name} (${reason})`, importance: 0.7, emotion: 'sadness', intensity: 0.6, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `${a.name} elhagyott (${reason})`, importance: 0.8, emotion: 'grief', intensity: 0.75, subjects: [a.id] });
       world.events.emit('CoupleBroke', { tick: world.tick, agentId: a.id, otherId: t.id, reason, first: !world.firsts || !world.firsts['breakup'] });
     },
     mate(world, a, t, ra, rt) {
@@ -111,13 +111,13 @@
       const rw = winner === a ? ra : rt, rl = winner === a ? rt : ra;
       const dmg = 0.12 + rng.f() * 0.3 * (winner.inv.spear ? 1.4 : 1);
       world.events.emit('ConflictOccurred', { tick: world.tick, agentId: a.id, otherId: t.id, winnerId: winner.id, first: !world.firsts || !world.firsts['conflict'] });
-      A().damage(world, loser, dmg, `a fight with ${winner.name}`); A().damage(world, winner, dmg * 0.25, `a fight with ${loser.name}`);
+      A().damage(world, loser, dmg, `verekedés (${winner.name})`); A().damage(world, winner, dmg * 0.25, `verekedés (${loser.name})`);
       if (!world.agents.has(loser.id)) { winner.counters.kills++; winner.emotions.shame = b01(winner.emotions.shame + 0.5 * winner.personality.empathy); world.events.emit('Killing', { tick: world.tick, agentId: winner.id, otherId: loser.id, first: !world.firsts || !world.firsts['murder'] }); for (const o of world.agents.values()) { if (o.id === winner.id) continue; const rr = o.relationships.get(loser.id); const close = o.parents.includes(loser.id) || loser.parents.includes(o.id) ? 1 : rr ? Math.max(rr.friendship, rr.romance) : 0; if (close > 0.3) { const ro = R().ensure(world, o, winner); ro.resentment = b01(ro.resentment + close * 0.6); ro.fear = b01(ro.fear + 0.3); } } }
       else { rl.fear = b01(rl.fear + 0.4); rl.resentment = b01(rl.resentment + 0.2); loser.emotions.anger = b01(loser.emotions.anger + 0.2); }
       winner.emotions.anger = Math.max(0, winner.emotions.anger - 0.5); winner.emotions.pride = b01(winner.emotions.pride + 0.2); rw.resentment = Math.max(0, rw.resentment - 0.3); rw.respect = Math.max(0, rw.respect - 0.1);
-      for (const o of world.agentsNear(a.x, a.y, 6)) { if (o === a || o === t) continue; o.emotions.fear = b01(o.emotions.fear + 0.2); M().add(world, o, { type: 'witness', text: `saw ${a.name} and ${t.name} fight`, importance: 0.4, emotion: 'fear', intensity: 0.4, subjects: [a.id, t.id] }); }
-      M().add(world, winner, { type: 'fight', text: `fought ${loser.name} and won`, importance: 0.5, emotion: 'pride', intensity: 0.5, subjects: [loser.id] });
-      if (world.agents.has(loser.id)) M().add(world, loser, { type: 'fight', text: `fought ${winner.name} and lost`, importance: 0.6, emotion: 'anger', intensity: 0.6, subjects: [winner.id] });
+      for (const o of world.agentsNear(a.x, a.y, 6)) { if (o === a || o === t) continue; o.emotions.fear = b01(o.emotions.fear + 0.2); M().add(world, o, { type: 'witness', text: `láttam, ahogy ${a.name} és ${t.name} összeverekedett`, importance: 0.4, emotion: 'fear', intensity: 0.4, subjects: [a.id, t.id] }); }
+      M().add(world, winner, { type: 'fight', text: `megverekedtem vele és győztem: ${loser.name}`, importance: 0.5, emotion: 'pride', intensity: 0.5, subjects: [loser.id] });
+      if (world.agents.has(loser.id)) M().add(world, loser, { type: 'fight', text: `megverekedtem vele és vesztettem: ${winner.name}`, importance: 0.6, emotion: 'anger', intensity: 0.6, subjects: [winner.id] });
     },
     teach(world, a, t, tech, ra, rt) {
       const d = LW.Tech.D[tech]; if (!d || t.knowledge.techs.has(tech)) return;
@@ -131,7 +131,7 @@
       rt.gratitude = b01(rt.gratitude + 0.3); rt.trust = b01(rt.trust + 0.05); rt.friendship = b01(rt.friendship + 0.05); ra.friendship = b01(ra.friendship + 0.02);
       a.emotions.joy = b01(a.emotions.joy + 0.1); a.emotions.pride = b01(a.emotions.pride + 0.1); t.emotions.joy = b01(t.emotions.joy + 0.15);
       const label = LW.ITEMS[item] ? LW.ITEMS[item].label.toLowerCase() : item;
-      M().add(world, t, { type: 'gift', text: `${a.name} gave me ${label}`, importance: 0.4, emotion: 'joy', intensity: 0.4, subjects: [a.id] });
+      M().add(world, t, { type: 'gift', text: `${a.name} adott nekem: ${label}`, importance: 0.4, emotion: 'joy', intensity: 0.4, subjects: [a.id] });
       world.events.emit('Gift', { tick: world.tick, agentId: a.id, otherId: t.id, item, n, importance: 0.1 });
       if (LW.ITEMS[item] && LW.ITEMS[item].food && A().stage(world, t) !== 'infant' && t.needs.food < 0.6) A().eat(world, t, item);
     },
@@ -141,7 +141,7 @@
         const t = world.agents.get(a.partner); if (!t) { a.partner = null; return; }
         const r = R().ensure(world, a, t); const cfg = world.cfg.social;
         let p = 0; if (r.resentment > r.friendship + cfg.breakupResentment) p += 0.25 * (1 - a.personality.patience); if (r.attraction < 0.15 && r.friendship < 0.3) p += 0.03; if (r.jealousy > 0.7) p += 0.2 * (1 - a.personality.patience);
-        if (p > 0 && world.rng.chance(p)) this.breakup(world, a, t, r.jealousy > 0.6 ? 'jealousy' : 'resentment');
+        if (p > 0 && world.rng.chance(p)) this.breakup(world, a, t, r.jealousy > 0.6 ? 'féltékenység' : 'neheztelés');
       }
       for (const [id, r] of a.relationships) if (r.status === 'dating' && world.tick - r.last > LW.TIME.TICKS_PER_DAY * 60) { r.status = 'acquaintance'; r.romance = 0; const t = world.agents.get(id); if (t) { const rt = t.relationships.get(a.id); if (rt && rt.status === 'dating') { rt.status = 'acquaintance'; rt.romance = 0; } } }
     },

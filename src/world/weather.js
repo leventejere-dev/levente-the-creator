@@ -112,8 +112,8 @@
 
     describe(tempC) {
       const eff = this.effectiveState();
-      if ((eff.state === 'rain' || eff.state === 'storm') && tempC < 0.5) return eff.state === 'storm' ? 'Blizzard' : 'Snow';
-      return { clear: 'Clear', cloudy: 'Cloudy', overcast: 'Overcast', rain: 'Rain', storm: 'Storm', fog: 'Fog' }[eff.state];
+      if ((eff.state === 'rain' || eff.state === 'storm') && tempC < 0.5) return eff.state === 'storm' ? 'Hóvihar' : 'Havazás';
+      return { clear: 'Derült', cloudy: 'Felhős', overcast: 'Borult', rain: 'Eső', storm: 'Vihar', fog: 'Köd' }[eff.state];
     }
 
     toJSON() { return { state: this.state, prevState: this.prevState, intensity: this.intensity, cloud: this.cloud, humidity: this.humidity, wind: this.wind, tempOffset: this.tempOffset, override: this.override, sinceChange: this.sinceChange }; }

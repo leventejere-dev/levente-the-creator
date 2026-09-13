@@ -27,7 +27,7 @@
           const founder = this.founder(world, list);
           const s = { id: world.nextIds.settlement++, name: world.language.place(), foundedTick: world.tick, founderId: founder ? founder.id : null, tier, peakTier: tier, x: cx, y: cy, buildingIds: [...ids], population: pop, dwellings, peakPopulation: pop, history: [], emptySince: -1, abandonedTick: null };
           world.settlements.set(s.id, s); match = s;
-          if (founder) { founder.achievements.push(`Founder of ${s.name}`); founder.importance += 1; LW.Agents.memory(world, founder, { type: 'settlement', text: `our camp became known as ${s.name}`, importance: 0.8, emotion: 'pride', intensity: 0.7 }); }
+          if (founder) { founder.achievements.push(`${s.name} alapítója`); founder.importance += 1; LW.Agents.memory(world, founder, { type: 'settlement', text: `a táborunk neve lett: ${s.name}`, importance: 0.8, emotion: 'pride', intensity: 0.7 }); }
           world.events.emit('SettlementFounded', { tick: world.tick, settlementId: s.id, name: s.name, tier, agentId: founder ? founder.id : undefined, tile: world.idx(cx | 0, cy | 0), first: !world.firsts || !world.firsts['settlement'] });
         } else {
           if (match.abandonedTick) { match.abandonedTick = null; world.events.emit('SettlementResettled', { tick: world.tick, settlementId: match.id, name: match.name, tile: world.idx(cx | 0, cy | 0) }); }

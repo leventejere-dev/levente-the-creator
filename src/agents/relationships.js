@@ -66,11 +66,11 @@
       }
     },
     label(r) {
-      if (!r) return 'stranger';
-      if (r.status === 'partner') return 'partner'; if (r.status === 'dating') return 'dating'; if (r.status === 'ex') return 'former partner'; if (r.status === 'family') return 'family';
-      if (r.resentment > 0.5 && r.resentment > r.friendship) return 'enemy'; if (r.resentment > 0.3 && r.resentment > r.friendship) return 'rival';
-      if (r.friendship > 0.6) return 'close friend'; if (r.friendship > 0.3) return 'friend'; if (r.familiarity > 0.15) return 'acquaintance';
-      return 'stranger';
+      if (!r) return 'idegen';
+      if (r.status === 'partner') return 'pár'; if (r.status === 'dating') return 'jár vele'; if (r.status === 'ex') return 'volt pár'; if (r.status === 'family') return 'rokon';
+      if (r.resentment > 0.5 && r.resentment > r.friendship) return 'ellenség'; if (r.resentment > 0.3 && r.resentment > r.friendship) return 'rivális';
+      if (r.friendship > 0.6) return 'jó barát'; if (r.friendship > 0.3) return 'barát'; if (r.familiarity > 0.15) return 'ismerős';
+      return 'idegen';
     },
   };
   LW.Relationships = Relationships;

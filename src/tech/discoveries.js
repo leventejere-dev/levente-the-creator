@@ -7,31 +7,31 @@
   'use strict';
 
   const D = {
-    fire_awareness: { name: 'Knowledge of Fire', era: 'primitive', hidden: true, desc: 'Has seen fire and understood it is a thing that can be had.' },
-    clay_awareness: { name: 'Knowledge of Clay', era: 'primitive', hidden: true, desc: 'Knows the soft earth by the water can be shaped.' },
-    foraging_lore: { name: 'Plant Lore', era: 'primitive', prereq: [], items: { berries: 3, roots: 2 }, difficulty: 0.35, need: 'food', skill: 'foraging', minSkill: 0.12, wow: 'First Plant Lore', desc: 'Which plants feed, which harm. Better foraging.' },
-    stone_knapping: { name: 'Stone Tools', era: 'primitive', prereq: [], items: { stone: 2, flint: 1 }, difficulty: 0.5, need: 'food', skill: 'crafting', minSkill: 0.1, accidents: [{ during: 'gather:stone', chance: 0.01 }], recipes: ['handaxe'], wow: 'First Stone Tool', desc: 'Striking stone against stone makes an edge.' },
-    fire_making: { name: 'Fire Making', era: 'primitive', prereq: [], items: { wood: 3 }, difficulty: 0.72, boosts: { fire_awareness: 0.25, stone_knapping: 0.1 }, need: 'warmth', skill: 'crafting', accidents: [{ during: 'craft:handaxe', chance: 0.03 }, { during: 'gather:stone', chance: 0.004 }], buildings: ['campfire'], wow: 'First Fire', desc: 'Fire can be made, not only found.' },
-    cooking: { name: 'Cooking', era: 'primitive', prereq: ['fire_making'], itemsAny: [{ meat_raw: 1 }, { fish_raw: 1 }], nearby: 'fire', difficulty: 0.4, need: 'food', skill: 'crafting', accidents: [{ during: 'rest:fire', chance: 0.04, itemsAny: [{ meat_raw: 1 }, { fish_raw: 1 }] }], recipes: ['meat_cooked', 'fish_cooked'], wow: 'First Cooked Meal', desc: 'Meat over fire is safer, richer, keeps longer.' },
-    shelter_building: { name: 'Shelter Building', era: 'primitive', prereq: [], items: { wood: 4, fiber: 2 }, difficulty: 0.45, need: 'warmth', skill: 'building', buildings: ['lean_to'], wow: 'First Shelter', desc: 'Branches leaned together keep out rain and wind.' },
-    fiber_twisting: { name: 'Cordage', era: 'primitive', prereq: [], items: { fiber: 3 }, difficulty: 0.4, skill: 'crafting', minSkill: 0.1, desc: 'Twisted plant fibers make rope.' },
-    basket_weaving: { name: 'Basket Weaving', era: 'primitive', prereq: ['fiber_twisting'], items: { fiber: 6 }, difficulty: 0.55, need: 'food', skill: 'crafting', minSkill: 0.2, recipes: ['basket'], wow: 'First Basket', desc: 'Carry more, gather more.' },
-    spear_making: { name: 'Spear Making', era: 'primitive', prereq: ['stone_knapping'], items: { wood: 1, flint: 1, fiber: 1 }, difficulty: 0.5, need: 'food', skill: 'crafting', minSkill: 0.2, recipes: ['spear'], wow: 'First Spear', desc: 'A sharp stone on a shaft. Hunting becomes possible.' },
-    fishing: { name: 'Fishing', era: 'primitive', prereq: [], items: { wood: 1, fiber: 1 }, nearby: 'water', difficulty: 0.5, need: 'food', skill: 'hunting', minSkill: 0.05, wow: 'First Catch', desc: 'The water is full of food for those who learn to take it.' },
-    woodworking: { name: 'Woodworking', era: 'primitive', prereq: ['stone_knapping'], items: { wood: 4 }, difficulty: 0.55, skill: 'crafting', minSkill: 0.3, desc: 'Shaping wood with stone tools.' },
-    hut_construction: { name: 'Hut Building', era: 'primitive', prereq: ['shelter_building', 'woodworking', 'fiber_twisting'], items: { wood: 6, fiber: 2 }, difficulty: 0.75, need: 'warmth', skill: 'building', minSkill: 0.35, buildings: ['hut'], wow: 'First Hut', desc: 'A real home: walls, roof, a place to keep things.' },
-    digging: { name: 'Digging', era: 'primitive', prereq: ['stone_knapping'], items: { stone: 1, wood: 1 }, difficulty: 0.5, skill: 'gathering', minSkill: 0.35, desc: 'What lies under the ground can be reached.' },
-    pottery: { name: 'Pottery', era: 'primitive', prereq: ['fire_making', 'clay_awareness'], items: { clay: 4 }, nearby: 'fire', difficulty: 0.8, skill: 'crafting', minSkill: 0.4, accidents: [{ during: 'rest:fire', chance: 0.01, items: { clay: 1 } }], recipes: ['pot'], wow: 'First Pottery', desc: 'Clay hardened in fire holds water and grain.' },
-    food_drying: { name: 'Food Preservation', era: 'primitive', prereq: ['fire_making'], itemsAny: [{ meat_raw: 2 }, { fish_raw: 2 }, { berries: 4 }], difficulty: 0.6, need: 'food', skill: 'crafting', minSkill: 0.3, recipes: ['dried_food'], buildings: ['storage_pit'], wow: 'First Food Store', desc: 'Dried food survives the winter.' },
-    hide_working: { name: 'Hide Working', era: 'primitive', prereq: ['stone_knapping'], items: { hide: 2 }, difficulty: 0.55, need: 'warmth', skill: 'crafting', minSkill: 0.3, recipes: ['clothes'], wow: 'First Clothing', desc: 'Animal skins become warm clothing.' },
-    seed_planting: { name: 'Agriculture', era: 'neolithic', prereq: ['foraging_lore', 'digging'], items: { roots: 2, berries: 2 }, difficulty: 0.92, need: 'food', skill: 'foraging', minSkill: 0.55, buildings: ['farm_plot'], wow: 'First Farm', desc: 'Seeds put in the ground come back as food.' },
-    herbal_medicine: { name: 'Herbal Medicine', era: 'primitive', prereq: ['foraging_lore'], items: { fiber: 2, berries: 2 }, difficulty: 0.7, skill: 'foraging', minSkill: 0.35, wow: 'First Healer', desc: 'Some plants close wounds and calm fevers.' },
-    stone_masonry: { name: 'Stone Masonry', era: 'neolithic', prereq: ['hut_construction', 'digging'], items: { stone: 8, clay: 2 }, difficulty: 0.92, skill: 'building', minSkill: 0.6, buildings: ['stone_house'], wow: 'First Stone House', desc: 'Stones fitted and bound with clay stand for generations.' },
-    ore_lore_copper: { name: 'Knowledge of Green Stone', era: 'neolithic', hidden: true, desc: 'A strange green-veined stone has been found. Nobody knows its use yet.' },
-    ore_lore_tin: { name: 'Knowledge of Grey Stone', era: 'neolithic', hidden: true, desc: 'A heavy grey stone. Its use is unknown.' },
-    ore_lore_iron: { name: 'Knowledge of Red Stone', era: 'neolithic', hidden: true, desc: 'Rust-red rock, heavy and useless so far.' },
-    ore_lore_coal: { name: 'Knowledge of Burning Stone', era: 'neolithic', hidden: true, desc: 'A black stone that burns.' },
-    ore_lore_gold: { name: 'Knowledge of Shining Stone', era: 'neolithic', hidden: true, desc: 'A soft yellow stone that never dulls. Beautiful.' },
+    fire_awareness: { name: 'A tűz ismerete', era: 'primitive', hidden: true, desc: 'Látott már tüzet, és megértette, hogy az birtokolható.' },
+    clay_awareness: { name: 'Az agyag ismerete', era: 'primitive', hidden: true, desc: 'Tudja, hogy a víz menti puha föld formázható.' },
+    foraging_lore: { name: 'Növényismeret', era: 'primitive', prereq: [], items: { berries: 3, roots: 2 }, difficulty: 0.35, need: 'food', skill: 'foraging', minSkill: 0.12, wow: 'Első növényismeret', desc: 'Melyik növény táplál, melyik árt. Jobb gyűjtögetés.' },
+    stone_knapping: { name: 'Kőszerszám', era: 'primitive', prereq: [], items: { stone: 2, flint: 1 }, difficulty: 0.5, need: 'food', skill: 'crafting', minSkill: 0.1, accidents: [{ during: 'gather:stone', chance: 0.01 }], recipes: ['handaxe'], wow: 'Első kőszerszám', desc: 'Kő a kőhöz ütve élt ad.' },
+    fire_making: { name: 'Tűzgyújtás', era: 'primitive', prereq: [], items: { wood: 3 }, difficulty: 0.72, boosts: { fire_awareness: 0.25, stone_knapping: 0.1 }, need: 'warmth', skill: 'crafting', accidents: [{ during: 'craft:handaxe', chance: 0.03 }, { during: 'gather:stone', chance: 0.004 }], buildings: ['campfire'], wow: 'Első tűz', desc: 'A tüzet nemcsak találni, csinálni is lehet.' },
+    cooking: { name: 'Főzés', era: 'primitive', prereq: ['fire_making'], itemsAny: [{ meat_raw: 1 }, { fish_raw: 1 }], nearby: 'fire', difficulty: 0.4, need: 'food', skill: 'crafting', accidents: [{ during: 'rest:fire', chance: 0.04, itemsAny: [{ meat_raw: 1 }, { fish_raw: 1 }] }], recipes: ['meat_cooked', 'fish_cooked'], wow: 'Első főtt étel', desc: 'A tűz fölött a hús biztonságosabb, táplálóbb, tovább eláll.' },
+    shelter_building: { name: 'Fedezéképítés', era: 'primitive', prereq: [], items: { wood: 4, fiber: 2 }, difficulty: 0.45, need: 'warmth', skill: 'building', buildings: ['lean_to'], wow: 'Első fedezék', desc: 'Egymásnak támasztott ágak kizárják az esőt és a szelet.' },
+    fiber_twisting: { name: 'Kötélfonás', era: 'primitive', prereq: [], items: { fiber: 3 }, difficulty: 0.4, skill: 'crafting', minSkill: 0.1, desc: 'A sodort növényi rost kötelet ad.' },
+    basket_weaving: { name: 'Kosárfonás', era: 'primitive', prereq: ['fiber_twisting'], items: { fiber: 6 }, difficulty: 0.55, need: 'food', skill: 'crafting', minSkill: 0.2, recipes: ['basket'], wow: 'Első kosár', desc: 'Többet vihetsz, többet gyűjthetsz.' },
+    spear_making: { name: 'Lándzsakészítés', era: 'primitive', prereq: ['stone_knapping'], items: { wood: 1, flint: 1, fiber: 1 }, difficulty: 0.5, need: 'food', skill: 'crafting', minSkill: 0.2, recipes: ['spear'], wow: 'Első lándzsa', desc: 'Éles kő egy nyélen. Megkezdődhet a vadászat.' },
+    fishing: { name: 'Halászat', era: 'primitive', prereq: [], items: { wood: 1, fiber: 1 }, nearby: 'water', difficulty: 0.5, need: 'food', skill: 'hunting', minSkill: 0.05, wow: 'Első fogás', desc: 'A víz tele van étellel annak, aki megtanulja kivenni.' },
+    woodworking: { name: 'Famegmunkálás', era: 'primitive', prereq: ['stone_knapping'], items: { wood: 4 }, difficulty: 0.55, skill: 'crafting', minSkill: 0.3, desc: 'Fa formázása kőszerszámmal.' },
+    hut_construction: { name: 'Kunyhóépítés', era: 'primitive', prereq: ['shelter_building', 'woodworking', 'fiber_twisting'], items: { wood: 6, fiber: 2 }, difficulty: 0.75, need: 'warmth', skill: 'building', minSkill: 0.35, buildings: ['hut'], wow: 'Első kunyhó', desc: 'Igazi otthon: falak, tető, hely a holminak.' },
+    digging: { name: 'Ásás', era: 'primitive', prereq: ['stone_knapping'], items: { stone: 1, wood: 1 }, difficulty: 0.5, skill: 'gathering', minSkill: 0.35, desc: 'Ami a föld alatt van, elérhető.' },
+    pottery: { name: 'Fazekasság', era: 'primitive', prereq: ['fire_making', 'clay_awareness'], items: { clay: 4 }, nearby: 'fire', difficulty: 0.8, skill: 'crafting', minSkill: 0.4, accidents: [{ during: 'rest:fire', chance: 0.01, items: { clay: 1 } }], recipes: ['pot'], wow: 'Első agyagedény', desc: 'A tűzben keményedett agyag vizet és gabonát tart.' },
+    food_drying: { name: 'Tartósítás', era: 'primitive', prereq: ['fire_making'], itemsAny: [{ meat_raw: 2 }, { fish_raw: 2 }, { berries: 4 }], difficulty: 0.6, need: 'food', skill: 'crafting', minSkill: 0.3, recipes: ['dried_food'], buildings: ['storage_pit'], wow: 'Első éléskamra', desc: 'A szárított étel kibírja a telet.' },
+    hide_working: { name: 'Bőrmegmunkálás', era: 'primitive', prereq: ['stone_knapping'], items: { hide: 2 }, difficulty: 0.55, need: 'warmth', skill: 'crafting', minSkill: 0.3, recipes: ['clothes'], wow: 'Első ruha', desc: 'Az állatbőrből meleg ruha lesz.' },
+    seed_planting: { name: 'Földművelés', era: 'neolithic', prereq: ['foraging_lore', 'digging'], items: { roots: 2, berries: 2 }, difficulty: 0.92, need: 'food', skill: 'foraging', minSkill: 0.55, buildings: ['farm_plot'], wow: 'Első szántó', desc: 'A földbe tett mag ételként tér vissza.' },
+    herbal_medicine: { name: 'Gyógynövények', era: 'primitive', prereq: ['foraging_lore'], items: { fiber: 2, berries: 2 }, difficulty: 0.7, skill: 'foraging', minSkill: 0.35, wow: 'Első gyógyító', desc: 'Néhány növény sebet zár és lázat csillapít.' },
+    stone_masonry: { name: 'Kőművesség', era: 'neolithic', prereq: ['hut_construction', 'digging'], items: { stone: 8, clay: 2 }, difficulty: 0.92, skill: 'building', minSkill: 0.6, buildings: ['stone_house'], wow: 'Első kőház', desc: 'Az agyaggal kötött, illesztett kő nemzedékeken át áll.' },
+    ore_lore_copper: { name: 'A zöld kő ismerete', era: 'neolithic', hidden: true, desc: 'Furcsa, zölderes követ találtak. Még senki sem tudja, mire jó.' },
+    ore_lore_tin: { name: 'A szürke kő ismerete', era: 'neolithic', hidden: true, desc: 'Nehéz szürke kő. Használata ismeretlen.' },
+    ore_lore_iron: { name: 'A vörös kő ismerete', era: 'neolithic', hidden: true, desc: 'Rozsdavörös, nehéz, egyelőre haszontalan kő.' },
+    ore_lore_coal: { name: 'Az égő kő ismerete', era: 'neolithic', hidden: true, desc: 'Fekete kő, amely ég.' },
+    ore_lore_gold: { name: 'A fénylő kő ismerete', era: 'neolithic', hidden: true, desc: 'Puha sárga kő, amely sosem homályosul. Gyönyörű.' },
   };
   for (const id in D) D[id].id = id;
 
@@ -45,7 +45,7 @@
     dried_food: { out: { dried_food: 2 }, inpAny: [{ meat_raw: 2 }, { fish_raw: 2 }, { berries: 4 }], ticks: 24, tech: 'food_drying', nearby: 'fire', skill: 'crafting', tag: 'craft:dry' },
     clothes: { out: { clothes: 1 }, inp: { hide: 2, fiber: 1 }, ticks: 20, tech: 'hide_working', skill: 'crafting', tag: 'craft:clothes' },
   };
-  LW.ITEMS.clothes = { weight: 1.0, label: 'Hide clothing', tool: true, warmth: 8 };
+  LW.ITEMS.clothes = { weight: 1.0, label: 'Bőrruha', tool: true, warmth: 8 };
 
   /** Where an item can be obtained from the world (POI kind) — null = only via crafting/inventory. */
   const SOURCE = { berries: 'food', roots: 'food', wood: 'wood', stone: 'stone', flint: 'flint', fiber: 'fiber', clay: 'clay', meat_raw: 'animals', fish_raw: 'fish' };
@@ -123,17 +123,17 @@
       const ev = { tick: world.tick, agentId: a.id, tech: id, source, teacherId: teacher ? teacher.id : undefined, first, tile: world.idx(a.x | 0, a.y | 0) };
       if (source === 'taught' || source === 'observed_practice' || source === 'inherited') world.events.emit('KnowledgeTransferred', ev);
       else { world.stats.discoveries++; world.events.emit('DiscoveryMade', ev); }
-      if (!d.hidden && source !== 'taught') { LW.Agents.memory(world, a, { type: 'discovery', text: `discovered ${d.name}`, importance: first ? 0.95 : 0.7, emotion: 'pride', intensity: first ? 0.9 : 0.6, tech: id }); a.emotions.pride = Math.min(1, a.emotions.pride + 0.6); a.emotions.joy = Math.min(1, a.emotions.joy + 0.4); a.needs.curiosity = 1; }
+      if (!d.hidden && source !== 'taught') { LW.Agents.memory(world, a, { type: 'discovery', text: `rájöttem: ${d.name.toLowerCase()}`, importance: first ? 0.95 : 0.7, emotion: 'pride', intensity: first ? 0.9 : 0.6, tech: id }); a.emotions.pride = Math.min(1, a.emotions.pride + 0.6); a.emotions.joy = Math.min(1, a.emotions.joy + 0.4); a.needs.curiosity = 1; }
     },
     /** Union of everything anyone alive knows. */
     worldKnowledge(world) { const s = new Set(); for (const a of world.agents.values()) for (const t of a.knowledge.techs) s.add(t); return s; },
     techLevel(known) {
       const has = (k) => known.has(k);
-      if (has('stone_masonry') && has('seed_planting')) return 'Neolithic';
-      if (has('seed_planting') || (has('pottery') && has('hut_construction'))) return 'Early Neolithic';
-      if (has('stone_knapping') && has('fire_making')) return 'Stone Age';
-      if (has('stone_knapping') || has('fire_making') || has('shelter_building')) return 'Early Stone Age';
-      return 'Primitive';
+      if (has('stone_masonry') && has('seed_planting')) return 'Újkőkor';
+      if (has('seed_planting') || (has('pottery') && has('hut_construction'))) return 'Korai újkőkor';
+      if (has('stone_knapping') && has('fire_making')) return 'Kőkor';
+      if (has('stone_knapping') || has('fire_making') || has('shelter_building')) return 'Korai kőkor';
+      return 'Kezdetleges';
     },
     /** Elder forgetting & knowledge loss (called yearly per agent). */
     forgetCheck(world, a) {

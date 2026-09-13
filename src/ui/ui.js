@@ -1,11 +1,11 @@
-/* LEVENTE — THE CREATOR · ui/ui.js — panels, inspector, WHY?, family tree, god panel, modals, toasts */
+/* LEVENTE — THE CREATOR · ui/ui.js — panelek, vizsgáló, MIÉRT?, családfa, Teremtő-sáv, ablakok, értesítések (magyar felület) */
 (function (LW) {
   'use strict';
   const $ = (s) => document.querySelector(s);
   const h = (tag, attrs, ...kids) => { const el = document.createElement(tag); if (attrs) for (const k in attrs) { if (k === 'class') el.className = attrs[k]; else if (k === 'html') el.innerHTML = attrs[k]; else if (k.startsWith('on')) el.addEventListener(k.slice(2), attrs[k]); else if (k === 'style') el.style.cssText = attrs[k]; else el.setAttribute(k, attrs[k]); } for (const kid of kids) { if (kid == null) continue; el.appendChild(typeof kid === 'string' ? document.createTextNode(kid) : kid); } return el; };
-  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   const pct = (v) => Math.round(v * 100) + '%';
   const cap = (s) => s ? s[0].toUpperCase() + s.slice(1) : '';
+  const HU = () => LW.HU;
 
   class UI {
     constructor(app) {
@@ -21,9 +21,9 @@
       for (const e of world.history.feed.slice(-120)) this.appendFeed(e, false);
       for (const e of world.history.godFeed.slice(-60)) this.appendFeed(e, false, $('#tab-god'));
       this.bindSounds(world);
-      this.refreshTop();
+      this.refreshTop(); this.refreshGodBar();
     }
-    // ---------------- top bar & tabs
+    // ---------------- felső sáv & fülek
     bindTop() {
       document.querySelectorAll('[data-speed]').forEach((b) => b.addEventListener('click', () => { this.setSpeed(b.dataset.speed); this.click(); }));
       $('#btn-sound').addEventListener('click', () => { this.app.toggleSound(); this.refreshSound(); });
@@ -31,31 +31,32 @@
       $('#btn-help').addEventListener('click', () => { this.click(); this.showHelp(); });
       this.refreshSpeed(); this.refreshSound();
     }
-    setSpeed(p) { if (!this.world.meta.started) { this.showGenesis(); return; } if (p === 'pause') this.sim.paused = !this.sim.paused; else { this.sim.paused = false; this.sim.setPreset(p); } this.refreshSpeed(); }
+    setSpeed(p) { if (this.app.observer) { this.toast('Megfigyelő mód', 'Itt csak nézni lehet a világot. A menüből átveheted.', true); return; } if (!this.world.meta.started) { this.showGenesis(); return; } if (p === 'pause') this.sim.paused = !this.sim.paused; else { this.sim.paused = false; this.sim.setPreset(p); } this.refreshSpeed(); }
     refreshSpeed() { document.querySelectorAll('[data-speed]').forEach((b) => b.classList.toggle('active', this.sim.paused ? b.dataset.speed === 'pause' : b.dataset.speed === this.sim.preset)); }
     refreshSound() { $('#btn-sound').classList.toggle('active', this.audio.enabled && !this.audio.muted); $('#btn-sound').textContent = this.audio.enabled && !this.audio.muted ? '♪' : '♪̸'; }
     bindTabs() { document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => { this.tab = b.dataset.tab; document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('active', x === b)); document.querySelectorAll('.tabbody').forEach((x) => x.classList.toggle('hidden', x.id !== 'tab-' + this.tab)); if (this.tab === 'chronicle') this.renderChronicle(); if (this.tab === 'firsts') this.renderFirsts(); if (this.tab === 'people') this.renderPeople(); this.click(); })); }
     click() { this.audio.play('click'); }
     refreshTop() {
       const w = this.world, s = this.sim.summary(); const T = LW.Time;
-      $('#st-age').textContent = `Year ${w.year}`; $('#st-date').textContent = `${T.seasonName(w.tick)} · day ${T.dayOfYear(w.tick) + 1} · ${T.clock(w.tick)}`;
-      $('#st-pop').textContent = s.population; $('#st-popsub').textContent = `${s.births} born · ${s.deaths} died`;
-      $('#st-tech').textContent = s.techLevel; $('#st-techsub').textContent = `${s.techs} known · ${s.discoveries} discoveries`;
+      $('#st-age').textContent = `${w.year}. év`; $('#st-date').textContent = `${T.seasonName(w.tick)} · ${T.dayOfYear(w.tick) + 1}. nap · ${T.clock(w.tick)}`;
+      $('#st-pop').textContent = s.population; $('#st-popsub').textContent = `${s.births} született · ${s.deaths} meghalt`;
+      $('#st-tech').textContent = s.techLevel; $('#st-techsub').textContent = `${s.techs} ismert · ${s.discoveries} felfedezés`;
       $('#st-settle').textContent = s.settlements; $('#st-largest').textContent = s.largest;
       const i = w.idx(LW.clamp(this.r.cam.x | 0, 0, w.w - 1), LW.clamp(this.r.cam.y | 0, 0, w.h - 1)); const temp = w.tileTemp(i);
-      $('#st-weather').textContent = w.weather.describe(temp); $('#st-temp').textContent = `${temp.toFixed(0)}°C · wind ${Math.round(w.weather.wind.speed * 40)} km/h`;
+      $('#st-weather').textContent = w.weather.describe(temp); $('#st-temp').textContent = `${temp.toFixed(0)} °C · szél ${Math.round(w.weather.wind.speed * 40)} km/h`;
     }
-    // ---------------- feed / history
+    refreshCloud() { const el = $('#cloudstate'); if (!el) return; const C = LW.Cloud; const st = this.app.observer ? 'megfigyelő' : C.status === 'ok' ? `felhő ✓ ${C.lastSaveMs ? LW.Time.realSpan(Date.now() - C.lastSaveMs) + ' óta' : ''}` : C.status === 'saving' ? 'felhő: mentés…' : C.status === 'error' ? 'felhő: hiba' : C.canWrite ? 'felhő' : 'csak helyi'; el.textContent = st; el.classList.toggle('warn', C.status === 'error' || (!C.canWrite && !this.app.observer)); }
+    // ---------------- hírek / történelem
     onHistory(e) {
       if (this.app.catchingUp) return;
       this.appendFeed(e, true); if (e.god) this.appendFeed(e, true, $('#tab-god'));
       if (e.importance >= this.world.cfg.history.chronicleThreshold && this.tab === 'chronicle') this.renderChronicle();
       if (e.first) { this.toast(e.first, e.text, false); this.audio.play('first'); if (this.tab === 'firsts') this.renderFirsts(); }
-      else if (e.importance >= 0.6 && !e.god) this.toast(e.type.replace(/([A-Z])/g, ' $1').trim(), e.text, true);
+      else if (e.importance >= 0.6 && !e.god) this.toast(HU().eventType(e.type), e.text, true);
     }
     appendFeed(e, scroll, container) {
       const box = container || $('#tab-feed'); const cls = e.god ? 'god' : e.importance >= 0.6 ? 'i3' : e.importance >= 0.3 ? 'i2' : 'i1';
-      const el = h('div', { class: 'feed-item ' + cls, onclick: () => this.jumpTo(e) }, h('time', null, `Y${e.year} D${LW.Time.dayOfYear(e.tick) + 1} ${LW.Time.clock(e.tick)}`), e.first ? h('span', { class: 'first' }, '★ ' + e.first) : null, document.createTextNode(e.text));
+      const el = h('div', { class: 'feed-item ' + cls, onclick: () => this.jumpTo(e) }, h('time', null, `${e.year}. év ${LW.Time.dayOfYear(e.tick) + 1}. nap ${LW.Time.clock(e.tick)}`), e.first ? h('span', { class: 'first' }, '★ ' + e.first) : null, document.createTextNode(e.text));
       box.appendChild(el); while (box.children.length > 220) box.removeChild(box.firstChild);
       if (scroll && box.scrollHeight - box.scrollTop - box.clientHeight < 80) box.scrollTop = box.scrollHeight;
     }
@@ -63,23 +64,23 @@
     renderChronicle() {
       const box = $('#tab-chronicle'); box.innerHTML = ''; const ch = this.world.history.chronicle; let year = -1;
       const list = ch.slice(-400);
-      if (!list.length) box.appendChild(h('p', { class: 'tiny' }, 'The chronicle is empty. History has not happened yet.'));
-      for (const e of list) { if (e.year !== year) { year = e.year; box.appendChild(h('div', { class: 'chron-year' }, `YEAR ${year}`)); } const el = h('div', { class: 'feed-item ' + (e.first ? 'i3' : e.god ? 'god' : 'i2'), onclick: () => this.jumpTo(e) }, e.first ? h('span', { class: 'first' }, '★ ' + e.first) : null, document.createTextNode(e.text)); box.appendChild(el); }
+      if (!list.length) box.appendChild(h('p', { class: 'tiny' }, 'A krónika üres. A történelem még nem kezdődött el.'));
+      for (const e of list) { if (e.year !== year) { year = e.year; box.appendChild(h('div', { class: 'chron-year' }, `${year}. ÉV`)); } const el = h('div', { class: 'feed-item ' + (e.first ? 'i3' : e.god ? 'god' : 'i2'), onclick: () => this.jumpTo(e) }, e.first ? h('span', { class: 'first' }, '★ ' + e.first) : null, document.createTextNode(e.text)); box.appendChild(el); }
       box.scrollTop = box.scrollHeight;
     }
     renderFirsts() {
       const box = $('#tab-firsts'); box.innerHTML = ''; const f = Object.values(this.world.history.firsts).sort((a, b) => a.tick - b.tick);
-      if (!f.length) box.appendChild(h('p', { class: 'tiny' }, 'No firsts yet.'));
-      for (const x of f) box.appendChild(h('div', { class: 'first-card', onclick: () => this.jumpTo(x) }, h('b', null, x.title), h('small', null, `Year ${LW.Time.year(x.tick)} — ${x.text}`)));
+      if (!f.length) box.appendChild(h('p', { class: 'tiny' }, 'Még nem történt semmi először.'));
+      for (const x of f) box.appendChild(h('div', { class: 'first-card', onclick: () => this.jumpTo(x) }, h('b', null, x.title), h('small', null, `${LW.Time.year(x.tick)}. év — ${x.text}`)));
     }
     renderPeople() {
       const box = $('#tab-people'); box.innerHTML = ''; const w = this.world; const A = LW.Agents;
       const list = [...w.agents.values()].sort((a, b) => b.importance - a.importance || a.bornTick - b.bornTick);
-      box.appendChild(h('p', { class: 'tiny' }, `${list.length} living · ${w.deceased.size} remembered`));
-      for (const a of list) box.appendChild(h('div', { class: 'person-row', onclick: () => { this.select(a); this.r.centerOn(a.x, a.y); this.r.follow = a.id; } }, h('span', { class: 'sw', style: `background:${a.palette.skin};border:2px solid ${a.palette.hair}` }), h('span', { class: 'nm' }, a.name), h('small', null, `${Math.floor(A.age(w, a))} · ${a.occupation || A.stage(w, a)}`)));
-      if (w.deceased.size) { box.appendChild(h('h3', { style: 'margin:10px 0 4px;font-size:10px;letter-spacing:.2em;color:#6f6a60' }, 'THE DEAD')); for (const d of [...w.deceased.values()].slice(-40).reverse()) box.appendChild(h('div', { class: 'person-row', onclick: () => this.showDeceased(d) }, h('span', { class: 'sw', style: `background:${d.palette ? d.palette.skin : '#666'};opacity:.5` }), h('span', { class: 'nm', style: 'color:#8a8478' }, d.name), h('small', null, `${d.cause} · Y${LW.Time.year(d.diedTick)}`))); }
+      box.appendChild(h('p', { class: 'tiny' }, `${list.length} élő · ${w.deceased.size} akire emlékeznek`));
+      for (const a of list) box.appendChild(h('div', { class: 'person-row', onclick: () => { this.select(a); this.r.centerOn(a.x, a.y); this.r.follow = a.id; } }, h('span', { class: 'sw', style: `background:${a.palette.skin};border:2px solid ${a.palette.hair}` }), h('span', { class: 'nm' }, a.name), h('small', null, `${Math.floor(A.age(w, a))} éves · ${HU().occupation(a.occupation || A.stage(w, a))}`)));
+      if (w.deceased.size) { box.appendChild(h('h3', { style: 'margin:10px 0 4px;font-size:10px;letter-spacing:.2em;color:#6f6a60' }, 'A HALOTTAK')); for (const d of [...w.deceased.values()].slice(-40).reverse()) box.appendChild(h('div', { class: 'person-row', onclick: () => this.showDeceased(d) }, h('span', { class: 'sw', style: `background:${d.palette ? d.palette.skin : '#666'};opacity:.5` }), h('span', { class: 'nm', style: 'color:#8a8478' }, d.name), h('small', null, `${d.cause} · ${LW.Time.year(d.diedTick)}. év`))); }
     }
-    // ---------------- canvas input
+    // ---------------- vászon bemenet
     bindCanvas() {
       const cv = $('#world'); let drag = null, moved = false;
       cv.addEventListener('mousedown', (e) => { drag = { x: e.clientX, y: e.clientY }; moved = false; });
@@ -95,8 +96,8 @@
     onClick(sx, sy, button) {
       const w = this.world; const p = this.r.screenToWorld(sx, sy); const pk = this.r.pick(sx, sy);
       if (button === 2) { this.godTool = null; this.pendingCmd = null; this.r.godCursor = null; $('#world').classList.remove('god'); this.refreshGodBar(); return; }
-      if (this.pendingCmd) { const cmd = this.pendingCmd; const a = w.agents.get(this.selected); this.pendingCmd = null; $('#world').classList.remove('god'); if (a) { const tile = w.inBounds(p.x | 0, p.y | 0) ? w.idx(p.x | 0, p.y | 0) : null; const targetId = pk && pk.agent && pk.agent.id !== a.id ? pk.agent.id : null; LW.God.command(w, a, cmd, { tile, targetId, force: this.cmdMode === 'force' }); this.audio.play('command'); this.app.save(); } this.refreshGodBar(); return; }
-      if (this.godTool) { const K = LW.God.KINDS[this.godTool]; const params = { x: p.x, y: p.y }; if (K.target === 'agent') { if (!(pk && pk.agent)) { this.toast('Choose a person', 'Click on someone.', true); return; } params.agentId = pk.agent.id; } const text = LW.God.intervene(w, this.godTool, params); if (text) { this.audio.play(this.godTool === 'earthquake' ? 'quake' : this.godTool === 'meteor' ? 'meteor' : this.godTool === 'lightning' || this.godTool === 'storm' ? 'thunder' : this.godTool === 'fire' ? 'fire' : this.godTool === 'rain' ? 'rain' : 'god'); this.app.save(); } if (!K.manifest && this.godTool !== 'spawn') { /* keep tool active for repeated use */ } else { this.godTool = null; this.r.godCursor = null; $('#world').classList.remove('god'); this.refreshGodBar(); } return; }
+      if (this.pendingCmd) { const cmd = this.pendingCmd; const a = w.agents.get(this.selected); this.pendingCmd = null; $('#world').classList.remove('god'); if (a) { const tile = w.inBounds(p.x | 0, p.y | 0) ? w.idx(p.x | 0, p.y | 0) : null; const targetId = pk && pk.agent && pk.agent.id !== a.id ? pk.agent.id : null; LW.God.command(w, a, cmd, { tile, targetId, force: this.cmdMode === 'force' }); this.audio.play('command'); this.app.save(true); } this.refreshGodBar(); return; }
+      if (this.godTool) { const K = LW.God.KINDS[this.godTool]; const params = { x: p.x, y: p.y }; if (K.target === 'agent') { if (!(pk && pk.agent)) { this.toast('Válassz valakit', 'Kattints egy emberre.', true); return; } params.agentId = pk.agent.id; } const text = LW.God.intervene(w, this.godTool, params); if (text) { this.audio.play(this.godTool === 'earthquake' ? 'quake' : this.godTool === 'meteor' ? 'meteor' : this.godTool === 'lightning' || this.godTool === 'storm' ? 'thunder' : this.godTool === 'fire' ? 'fire' : this.godTool === 'rain' ? 'rain' : 'god'); this.app.save(true); } if (K.manifest || this.godTool === 'spawn') { this.godTool = null; this.r.godCursor = null; $('#world').classList.remove('god'); this.refreshGodBar(); } return; }
       if (pk && pk.agent) { this.select(pk.agent); return; }
       if (pk && pk.building) { this.selectBuilding(pk.building); return; }
       if (pk && pk.tile != null) { this.selectTile(pk.tile); return; }
@@ -112,7 +113,7 @@
         else if (k === '`') $('#debug').classList.toggle('hidden'); else if (k === 't' && this.selected != null) this.showTree(this.world.agents.get(this.selected));
       });
     }
-    // ---------------- selection & inspector
+    // ---------------- kiválasztás & vizsgáló
     _openRight() { $('#right').classList.remove('hidden'); $('#mmwrap').classList.add('shift'); $('#godbar').classList.add('shift'); }
     select(a) { this.selected = a.id; this.selKind = 'agent'; this.r.selected = a.id; this._openRight(); this.renderInspector(true); this.refreshGodBar(); }
     selectBuilding(b) { this.selected = b.id; this.selKind = 'building'; this.r.selected = null; this._openRight(); this.renderInspector(true); this.refreshGodBar(); }
@@ -132,121 +133,121 @@
       const el = h('div');
       el.appendChild(h('h2', null, h('span', { class: 'sw', style: `display:inline-block;width:14px;height:14px;border-radius:3px;background:${a.palette.skin};border:3px solid ${a.palette.hair}` }), a.name, h('button', { class: 'close', onclick: () => this.closeInspector() }, '✕')));
       const home = a.home != null ? w.buildings.get(a.home) : null; const settlement = LW.Settlements.at(w, a.x, a.y);
-      el.appendChild(h('div', { class: 'sub' }, `${a.sex === 'f' ? 'Woman' : 'Man'} · ${Math.floor(age)} years · ${cap(a.occupation || stage)} · generation ${a.generation}${a.genesis ? ' · one of the First' : ''}${settlement ? ' · ' + settlement.name : ''}${a.pregnancy ? ' · expecting' : ''}`));
-      el.appendChild(h('div', { class: 'btnrow' }, h('button', { onclick: () => { this.r.follow = this.r.follow === a.id ? null : a.id; this.click(); } }, this.r.follow === a.id ? '● Following' : 'Follow'), h('button', { onclick: () => { this.showTree(a); this.click(); } }, 'Family tree'), h('button', { onclick: () => { this.showWhy(a); this.click(); } }, 'WHY?')));
-      el.appendChild(h('div', { class: 'thought' }, `“${this.thought(a)}”`));
-      el.appendChild(h('h3', null, 'Condition'));
-      el.appendChild(this.bar('Health', a.health)); el.appendChild(this.bar('Mood', LW.clamp01(0.5 + this.mood(a) / 2), this.mood(a) < -0.2 ? 'bad' : this.mood(a) < 0.1 ? 'warn' : ''));
-      el.appendChild(h('h3', null, 'Needs'));
-      for (const k of ['food', 'water', 'energy', 'warmth', 'safety', 'social', 'affection', 'curiosity']) el.appendChild(this.bar(cap(k), a.needs[k]));
-      el.appendChild(h('h3', null, 'Feeling'));
+      el.appendChild(h('div', { class: 'sub' }, `${a.sex === 'f' ? 'Nő' : 'Férfi'} · ${Math.floor(age)} éves · ${HU().occupation(a.occupation || stage)} · ${a.generation}. nemzedék${a.genesis ? ' · az Elsők egyike' : ''}${settlement ? ' · ' + settlement.name : ''}${a.pregnancy ? ' · gyermeket vár' : ''}`));
+      el.appendChild(h('div', { class: 'btnrow' }, h('button', { onclick: () => { this.r.follow = this.r.follow === a.id ? null : a.id; this.click(); } }, this.r.follow === a.id ? '● Követem' : 'Követés'), h('button', { onclick: () => { this.showTree(a); this.click(); } }, 'Családfa'), h('button', { onclick: () => { this.showWhy(a); this.click(); } }, 'MIÉRT?')));
+      el.appendChild(h('div', { class: 'thought' }, `„${this.thought(a)}”`));
+      el.appendChild(h('h3', null, 'Állapot'));
+      el.appendChild(this.bar('Egészség', a.health)); el.appendChild(this.bar('Kedv', LW.clamp01(0.5 + this.mood(a) / 2), this.mood(a) < -0.2 ? 'bad' : this.mood(a) < 0.1 ? 'warn' : ''));
+      el.appendChild(h('h3', null, 'Szükségletek'));
+      for (const k of ['food', 'water', 'energy', 'warmth', 'safety', 'social', 'affection', 'curiosity']) el.appendChild(this.bar(HU().need(k), a.needs[k]));
+      el.appendChild(h('h3', null, 'Érzések'));
       const em = Object.entries(a.emotions).filter(([, v]) => v > 0.12).sort((x, y) => y[1] - x[1]).slice(0, 5);
-      el.appendChild(h('div', { class: 'chips' }, ...(em.length ? em.map(([k, v]) => h('span', { class: 'chip' + (k === 'love' || k === 'attraction' ? ' rose' : '') }, `${k} ${pct(v)}`)) : [h('span', { class: 'chip' }, 'calm')])));
-      el.appendChild(h('h3', null, 'Character'));
+      el.appendChild(h('div', { class: 'chips' }, ...(em.length ? em.map(([k, v]) => h('span', { class: 'chip' + (k === 'love' || k === 'attraction' ? ' rose' : '') }, `${HU().emotion(k)} ${pct(v)}`)) : [h('span', { class: 'chip' }, 'nyugodt')])));
+      el.appendChild(h('h3', null, 'Jellem'));
       const tr = Object.entries(a.personality).sort((x, y) => Math.abs(y[1] - 0.5) - Math.abs(x[1] - 0.5)).slice(0, 6);
-      el.appendChild(h('div', { class: 'chips' }, ...tr.map(([k, v]) => h('span', { class: 'chip' }, `${v >= 0.5 ? '' : 'low '}${k.replace(/([A-Z])/g, ' $1').toLowerCase()} ${pct(v)}`))));
-      el.appendChild(h('h3', null, 'Family & bonds'));
+      el.appendChild(h('div', { class: 'chips' }, ...tr.map(([k, v]) => h('span', { class: 'chip' }, `${v >= 0.5 ? '' : 'kevés '}${HU().trait(k)} ${pct(v)}`))));
+      el.appendChild(h('h3', null, 'Család & kötelékek'));
       const kv = h('div', { class: 'kv' });
       const link = (id) => { const o = w.agents.get(id); const d = w.deceased.get(id); if (o) return h('span', { class: 'chip link', onclick: () => { this.select(o); this.r.centerOn(o.x, o.y); } }, o.name); if (d) return h('span', { class: 'chip', style: 'opacity:.6', onclick: () => this.showDeceased(d) }, d.name + ' †'); return h('span', { class: 'chip' }, '?'); };
-      kv.appendChild(h('span', null, 'Partner')); kv.appendChild(h('div', { class: 'chips' }, a.partner != null ? link(a.partner) : h('span', { class: 'chip' }, stage === 'adult' || stage === 'elder' ? 'single' : '—')));
-      kv.appendChild(h('span', null, 'Parents')); kv.appendChild(h('div', { class: 'chips' }, ...(a.parents.some((p) => p != null) ? a.parents.filter((p) => p != null).map(link) : [h('span', { class: 'chip' }, a.genesis ? 'none — created' : 'unknown')])));
-      kv.appendChild(h('span', null, 'Children')); kv.appendChild(h('div', { class: 'chips' }, ...(a.children.length ? a.children.map(link) : [h('span', { class: 'chip' }, 'none')])));
-      const rels = [...a.relationships.entries()].map(([id, r]) => ({ id, r, label: R.label(r) })).filter((x) => x.label !== 'stranger' && x.label !== 'family' && w.agents.has(x.id)).sort((x, y) => (y.r.friendship + y.r.romance - y.r.resentment) - (x.r.friendship + x.r.romance - x.r.resentment)).slice(0, 8);
-      kv.appendChild(h('span', null, 'Others')); kv.appendChild(h('div', { class: 'chips' }, ...(rels.length ? rels.map((x) => h('span', { class: 'chip link' + (x.label.includes('enemy') || x.label === 'rival' ? '' : x.label === 'dating' || x.label === 'partner' ? ' rose' : ''), onclick: () => { const o = w.agents.get(x.id); this.select(o); this.r.centerOn(o.x, o.y); }, title: `trust ${pct(x.r.trust)} · friendship ${pct(x.r.friendship)} · attraction ${pct(x.r.attraction)} · resentment ${pct(x.r.resentment)}` }, `${w.agents.get(x.id).name} · ${x.label}`)) : [h('span', { class: 'chip' }, 'knows no one well')])));
+      kv.appendChild(h('span', null, 'Pár')); kv.appendChild(h('div', { class: 'chips' }, a.partner != null ? link(a.partner) : h('span', { class: 'chip' }, stage === 'adult' || stage === 'elder' ? 'egyedülálló' : '—')));
+      kv.appendChild(h('span', null, 'Szülők')); kv.appendChild(h('div', { class: 'chips' }, ...(a.parents.some((p) => p != null) ? a.parents.filter((p) => p != null).map(link) : [h('span', { class: 'chip' }, a.genesis ? 'nincs — teremtetett' : 'ismeretlen')])));
+      kv.appendChild(h('span', null, 'Gyermekek')); kv.appendChild(h('div', { class: 'chips' }, ...(a.children.length ? a.children.map(link) : [h('span', { class: 'chip' }, 'nincs')])));
+      const rels = [...a.relationships.entries()].map(([id, r]) => ({ id, r, label: R.label(r) })).filter((x) => x.label !== 'idegen' && x.label !== 'rokon' && w.agents.has(x.id)).sort((x, y) => (y.r.friendship + y.r.romance - y.r.resentment) - (x.r.friendship + x.r.romance - x.r.resentment)).slice(0, 8);
+      kv.appendChild(h('span', null, 'Mások')); kv.appendChild(h('div', { class: 'chips' }, ...(rels.length ? rels.map((x) => h('span', { class: 'chip link' + (x.label === 'jár vele' || x.label === 'pár' ? ' rose' : ''), onclick: () => { const o = w.agents.get(x.id); this.select(o); this.r.centerOn(o.x, o.y); }, title: `bizalom ${pct(x.r.trust)} · barátság ${pct(x.r.friendship)} · vonzalom ${pct(x.r.attraction)} · neheztelés ${pct(x.r.resentment)}` }, `${w.agents.get(x.id).name} · ${x.label}`)) : [h('span', { class: 'chip' }, 'senkit nem ismer jól')])));
       el.appendChild(kv);
-      el.appendChild(h('h3', null, 'Knowledge & skills'));
+      el.appendChild(h('h3', null, 'Tudás & készségek'));
       const techs = [...a.knowledge.techs].map((t) => LW.Tech.D[t]).filter((d) => !d.hidden); const hidden = [...a.knowledge.techs].map((t) => LW.Tech.D[t]).filter((d) => d.hidden);
-      el.appendChild(h('div', { class: 'chips' }, ...(techs.length ? techs.map((d) => h('span', { class: 'chip gold', title: d.desc }, d.name)) : [h('span', { class: 'chip' }, 'only instinct')]), ...hidden.map((d) => h('span', { class: 'chip', title: d.desc }, d.name))));
+      el.appendChild(h('div', { class: 'chips' }, ...(techs.length ? techs.map((d) => h('span', { class: 'chip gold', title: d.desc }, d.name)) : [h('span', { class: 'chip' }, 'csak ösztön')]), ...hidden.map((d) => h('span', { class: 'chip', title: d.desc }, d.name))));
       const sk = Object.entries(a.skills).filter(([, v]) => v > 0.12).sort((x, y) => y[1] - x[1]).slice(0, 5);
-      if (sk.length) el.appendChild(h('div', { class: 'chips', style: 'margin-top:4px' }, ...sk.map(([k, v]) => h('span', { class: 'chip' }, `${k} ${pct(v)}`))));
-      el.appendChild(h('h3', null, 'Belongings'));
+      if (sk.length) el.appendChild(h('div', { class: 'chips', style: 'margin-top:4px' }, ...sk.map(([k, v]) => h('span', { class: 'chip' }, `${HU().skill(k)} ${pct(v)}`))));
+      el.appendChild(h('h3', null, 'Holmi'));
       const inv = Object.entries(a.inv).filter(([, q]) => q > 0);
-      el.appendChild(h('div', { class: 'chips' }, ...(inv.length ? inv.map(([k, q]) => h('span', { class: 'chip' }, `${LW.ITEMS[k] ? LW.ITEMS[k].label : k} ×${q}`)) : [h('span', { class: 'chip' }, 'nothing')])));
-      el.appendChild(h('div', { class: 'kv', style: 'margin-top:6px' }, h('span', null, 'Home'), h('span', null, home ? `${LW.Buildings.def(home).label}${home.storage && Object.keys(home.storage).length ? ' · stores ' + Object.entries(home.storage).map(([k, q]) => `${q} ${LW.ITEMS[k] ? LW.ITEMS[k].label.toLowerCase() : k}`).join(', ') : ''}` : 'none'), h('span', null, 'Belief'), h('span', null, a.beliefs.creator > 0.7 ? `believes in the Creator (${pct(a.beliefs.creator)})` : a.beliefs.creator > 0.3 ? `wonders about a Creator (${pct(a.beliefs.creator)})` : 'knows nothing of you')));
-      if (a.achievements.length) { el.appendChild(h('h3', null, 'Achievements')); el.appendChild(h('div', { class: 'chips' }, ...a.achievements.map((x) => h('span', { class: 'chip gold' }, x)))); }
-      el.appendChild(h('h3', null, 'Memories'));
+      el.appendChild(h('div', { class: 'chips' }, ...(inv.length ? inv.map(([k, q]) => h('span', { class: 'chip' }, `${LW.ITEMS[k] ? LW.ITEMS[k].label : k} ×${q}`)) : [h('span', { class: 'chip' }, 'semmi')])));
+      el.appendChild(h('div', { class: 'kv', style: 'margin-top:6px' }, h('span', null, 'Otthon'), h('span', null, home ? `${LW.Buildings.def(home).label}${home.storage && Object.keys(home.storage).length ? ' · raktár: ' + Object.entries(home.storage).map(([k, q]) => `${q} ${LW.ITEMS[k] ? LW.ITEMS[k].label.toLowerCase() : k}`).join(', ') : ''}` : 'nincs'), h('span', null, 'Hit'), h('span', null, a.beliefs.creator > 0.7 ? `hisz a Teremtőben (${pct(a.beliefs.creator)})` : a.beliefs.creator > 0.3 ? `tűnődik egy Teremtőn (${pct(a.beliefs.creator)})` : 'nem tud rólad semmit')));
+      if (a.achievements.length) { el.appendChild(h('h3', null, 'Tettek')); el.appendChild(h('div', { class: 'chips' }, ...a.achievements.map((x) => h('span', { class: 'chip gold' }, x)))); }
+      el.appendChild(h('h3', null, 'Emlékek'));
       const mems = a.memory.episodic.slice(-10).reverse();
-      for (const m of mems) el.appendChild(h('div', { class: 'mem' + (m.divine ? ' divine' : '') }, h('time', null, `Y${LW.Time.year(m.tick)} D${LW.Time.dayOfYear(m.tick) + 1}`), h('b', null, m.text), m.source === 'told' ? h('span', { class: 'tiny' }, ` (heard from ${this.nameOf(m.teller)})`) : null));
-      if (!mems.length) el.appendChild(h('div', { class: 'mem' }, 'No memories yet.'));
+      for (const m of mems) el.appendChild(h('div', { class: 'mem' + (m.divine ? ' divine' : '') }, h('time', null, `${LW.Time.year(m.tick)}. év ${LW.Time.dayOfYear(m.tick) + 1}. nap`), h('b', null, m.text), m.source === 'told' ? h('span', { class: 'tiny' }, ` (mesélte: ${this.nameOf(m.teller)})`) : null));
+      if (!mems.length) el.appendChild(h('div', { class: 'mem' }, 'Még nincsenek emlékei.'));
       return el;
     }
     mood(a) { const E = a.emotions; return E.joy + E.love + E.pride + 0.5 * E.excitement - E.sadness - E.fear - E.anger - E.grief - E.shame - 0.5 * E.stress; }
-    nameOf(id) { const a = this.world.agents.get(id) || this.world.deceased.get(id); return a ? a.name : 'someone'; }
+    nameOf(id) { const a = this.world.agents.get(id) || this.world.deceased.get(id); return a ? a.name : 'valaki'; }
     thought(a) {
       const w = this.world; const act = LW.Actions.describe(w, a); const E = a.emotions, N = a.needs;
-      if (a.sleeping) return E.grief > 0.3 ? 'Sleep is the only place the ache stops.' : 'Sleeping.';
-      if (a.divineRequest) return a.divineRequest.force ? 'My body moves and it is not I who moves it.' : 'A voice with no mouth. I must decide what it wants.';
-      if (a.danger > 0.4) return 'Danger. Get away.';
-      if (N.food < 0.2) return `So hungry. ${cap(act)}.`; if (N.water < 0.2) return `My throat is dust. ${cap(act)}.`; if (N.warmth < 0.3) return `The cold is in my bones. ${cap(act)}.`;
-      if (E.grief > 0.5) return 'They are gone. I keep looking for them anyway.'; if (E.love > 0.6 && a.partner != null) return `${this.nameOf(a.partner)}. Everything is lighter today.`; if (E.jealousy > 0.5) return 'I saw them together. I cannot stop seeing it.'; if (E.fear > 0.5) return 'Something is wrong. I feel it in the air.'; if (E.pride > 0.5) return 'I made something. It is mine and it is good.';
-      const p = a.plan; if (p && p.goal === 'experiment') return `What if I try it another way? (${act})`; if (p && p.goal === 'explore') return 'What lies beyond the trees?'; if (p && p.goal === 'flirt') return `${cap(act)}. I hope they notice me.`; if (p && p.goal === 'buildShelter') return 'We need walls before the cold comes.';
+      if (a.sleeping) return E.grief > 0.3 ? 'Csak álmomban nem fáj.' : 'Alszik.';
+      if (a.divineRequest) return a.divineRequest.force ? 'A testem mozdul, és nem én mozdítom.' : 'Egy hang, aminek nincs szája. El kell döntenem, mit akar.';
+      if (a.danger > 0.4) return 'Veszély. El innen.';
+      if (N.food < 0.2) return `Olyan éhes vagyok. ${cap(act)}.`; if (N.water < 0.2) return `Kiszáradt a torkom. ${cap(act)}.`; if (N.warmth < 0.3) return `A hideg a csontomig hatol. ${cap(act)}.`;
+      if (E.grief > 0.5) return 'Elment. Mégis keresem.'; if (E.love > 0.6 && a.partner != null) return `${this.nameOf(a.partner)}. Ma minden könnyebb.`; if (E.jealousy > 0.5) return 'Láttam őket együtt. Nem tudom nem látni.'; if (E.fear > 0.5) return 'Valami nincs rendben. Érzem a levegőben.'; if (E.pride > 0.5) return 'Csináltam valamit. Az enyém, és jó.';
+      const p = a.plan; if (p && p.goal === 'experiment') return `Mi lenne, ha másképp próbálnám? (${act})`; if (p && p.goal === 'explore') return 'Mi lehet a fákon túl?'; if (p && p.goal === 'flirt') return `${cap(act)}. Remélem, észrevesz.`; if (p && p.goal === 'buildShelter') return 'Falak kellenek, mielőtt jön a hideg.';
       return cap(act) + '.';
     }
     showWhy(a) {
       const why = a.why; const el = h('div');
-      el.appendChild(h('h1', null, 'WHY?', h('small', null, `${a.name} · ${LW.Time.stamp(why ? why.tick : this.world.tick)}`)));
-      if (!why) { el.appendChild(h('p', null, 'No decision recorded yet.')); }
+      el.appendChild(h('h1', null, 'MIÉRT?', h('small', null, `${a.name} · ${LW.Time.stamp(why ? why.tick : this.world.tick)}`)));
+      if (!why) { el.appendChild(h('p', null, 'Még nincs rögzített döntés.')); }
       else {
-        const lines = [`CHOSEN  ${why.chosen.goal.padEnd(14)} score ${why.chosen.score.toFixed(2)}`, `        ${why.chosen.factors.join(' · ') || '—'}`, '', 'CONTEXT ' + Object.entries(why.context).map(([k, v]) => `${k} ${typeof v === 'number' ? (v > 1 ? v : Math.round(v * 100) + '%') : v}`).join(' · '), '', 'REJECTED'];
-        for (const alt of why.alternatives) lines.push(`  ${alt.goal.padEnd(14)} ${alt.score.toFixed(2)}   ${alt.factors.join(' · ')}`);
-        lines.push('', `PLAN    ${a.plan ? a.plan.steps.map((s, i) => (i === a.plan.i ? '▶' : ' ') + s.op + (s.item ? ':' + s.item : s.recipe ? ':' + s.recipe : s.tech ? ':' + s.tech : '')).join('  ') : '—'}`);
+        const g = (id) => HU().goal(id);
+        const lines = [`VÁLASZTOTT  ${g(why.chosen.goal).padEnd(22)} pont ${why.chosen.score.toFixed(2)}`, `            ${why.chosen.factors.join(' · ') || '—'}`, '', 'HELYZET     ' + Object.entries(why.context).map(([k, v]) => `${HU().ctx(k)} ${typeof v === 'number' ? (v > 1 ? v : Math.round(v * 100) + '%') : (v === true ? 'igen' : v === false ? 'nem' : v)}`).join(' · '), '', 'ELVETETT'];
+        for (const alt of why.alternatives) lines.push(`  ${g(alt.goal).padEnd(22)} ${alt.score.toFixed(2)}   ${alt.factors.join(' · ')}`);
+        lines.push('', `TERV        ${a.plan ? a.plan.steps.map((s, i) => (i === a.plan.i ? '▶' : ' ') + HU().op(s.op) + (s.item ? ':' + (LW.ITEMS[s.item] ? LW.ITEMS[s.item].label.toLowerCase() : s.item) : s.recipe ? ':' + s.recipe : s.tech ? ':' + (LW.Tech.D[s.tech] ? LW.Tech.D[s.tech].name : s.tech) : '')).join('  ') : '—'}`);
         el.appendChild(h('div', { class: 'why' }, lines.join('\n')));
-        el.appendChild(h('p', { class: 'tiny' }, 'Scores = need urgency × personality × emotion × context + small noise. The plan is the state machine currently executing the chosen goal.'));
+        el.appendChild(h('p', { class: 'tiny' }, 'Pont = szükséglet sürgőssége × jellem × érzelem × helyzet + kis zaj. A terv az az állapotgép, amely a választott célt éppen végrehajtja.'));
       }
-      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => this.closeModal() }, 'Close')));
+      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => this.closeModal() }, 'Bezár')));
       this.modal(el);
     }
     buildingView(b) {
       const w = this.world; const def = LW.Buildings.def(b); const el = h('div');
       el.appendChild(h('h2', null, def.label, h('button', { class: 'close', onclick: () => this.closeInspector() }, '✕')));
       const owner = b.ownerId != null ? (w.agents.get(b.ownerId) || w.deceased.get(b.ownerId)) : null; const s = b.settlementId ? w.settlements.get(b.settlementId) : null;
-      el.appendChild(h('div', { class: 'sub' }, `${b.progress >= 1 ? 'Built' : 'Under construction'} ${b.builtTick > 0 ? 'year ' + LW.Time.year(b.builtTick) : ''}${s ? ' · ' + s.name : ''}`));
-      if (b.progress < 1) { el.appendChild(this.bar('Progress', b.progress, '')); const m = LW.Buildings.missing(b); const ms = Object.entries(m); if (ms.length) el.appendChild(h('div', { class: 'chips' }, ...ms.map(([k, q]) => h('span', { class: 'chip' }, `needs ${q} ${LW.ITEMS[k].label.toLowerCase()}`)))); }
-      el.appendChild(this.bar('Condition', b.hp, b.hp < 0.3 ? 'bad' : ''));
-      if (b.kind === 'campfire') el.appendChild(this.bar('Fuel', Math.min(1, b.fuel / def.fuelTicks), b.lit ? '' : 'bad'));
-      if (def.farm) el.appendChild(this.bar('Crop', b.planted ? b.crop : 0, ''));
+      el.appendChild(h('div', { class: 'sub' }, `${b.progress >= 1 ? 'Kész' : 'Épül'} ${b.builtTick > 0 ? '· ' + LW.Time.year(b.builtTick) + '. év' : ''}${s ? ' · ' + s.name : ''}`));
+      if (b.progress < 1) { el.appendChild(this.bar('Készültség', b.progress, '')); const m = LW.Buildings.missing(b); const ms = Object.entries(m); if (ms.length) el.appendChild(h('div', { class: 'chips' }, ...ms.map(([k, q]) => h('span', { class: 'chip' }, `hiányzik: ${q} ${LW.ITEMS[k].label.toLowerCase()}`)))); }
+      el.appendChild(this.bar('Állapot', b.hp, b.hp < 0.3 ? 'bad' : ''));
+      if (b.kind === 'campfire') el.appendChild(this.bar('Tüzelő', Math.min(1, b.fuel / def.fuelTicks), b.lit ? '' : 'bad'));
+      if (def.farm) el.appendChild(this.bar('Termés', b.planted ? b.crop : 0, ''));
       const kv = h('div', { class: 'kv', style: 'margin-top:8px' });
-      kv.appendChild(h('span', null, 'Owner')); kv.appendChild(h('span', null, owner ? owner.name : 'no one'));
-      if (def.dwelling) { kv.appendChild(h('span', null, 'Residents')); kv.appendChild(h('div', { class: 'chips' }, ...(b.residents.length ? b.residents.map((id) => { const o = w.agents.get(id); return o ? h('span', { class: 'chip link', onclick: () => { this.select(o); } }, o.name) : null; }) : [h('span', { class: 'chip' }, 'empty')]))); }
-      if (def.storage) { kv.appendChild(h('span', null, 'Storage')); kv.appendChild(h('div', { class: 'chips' }, ...(Object.keys(b.storage).length ? Object.entries(b.storage).map(([k, q]) => h('span', { class: 'chip' }, `${LW.ITEMS[k] ? LW.ITEMS[k].label : k} ×${q}`)) : [h('span', { class: 'chip' }, 'empty')]))); }
-      kv.appendChild(h('span', null, 'Provides')); kv.appendChild(h('span', null, [def.insulation ? `+${def.insulation}° warmth` : null, def.warmth ? `+${def.warmth}° warmth nearby` : null, def.light ? 'light' : null, def.safety ? `safety ${pct(def.safety)}` : null, def.sleep ? `sleep ${pct(def.sleep)}` : null, def.divine ? 'a sign from beyond' : null].filter(Boolean).join(' · ') || '—'));
+      kv.appendChild(h('span', null, 'Tulajdonos')); kv.appendChild(h('span', null, owner ? owner.name : 'senki'));
+      if (def.dwelling) { kv.appendChild(h('span', null, 'Lakók')); kv.appendChild(h('div', { class: 'chips' }, ...(b.residents.length ? b.residents.map((id) => { const o = w.agents.get(id); return o ? h('span', { class: 'chip link', onclick: () => { this.select(o); } }, o.name) : null; }) : [h('span', { class: 'chip' }, 'üres')]))); }
+      if (def.storage) { kv.appendChild(h('span', null, 'Raktár')); kv.appendChild(h('div', { class: 'chips' }, ...(Object.keys(b.storage).length ? Object.entries(b.storage).map(([k, q]) => h('span', { class: 'chip' }, `${LW.ITEMS[k] ? LW.ITEMS[k].label : k} ×${q}`)) : [h('span', { class: 'chip' }, 'üres')]))); }
+      kv.appendChild(h('span', null, 'Ad')); kv.appendChild(h('span', null, [def.insulation ? `+${def.insulation}° meleg` : null, def.warmth ? `+${def.warmth}° meleg a közelben` : null, def.light ? 'fény' : null, def.safety ? `biztonság ${pct(def.safety)}` : null, def.sleep ? `alvás ${pct(def.sleep)}` : null, def.divine ? 'jel a túlvilágról' : null].filter(Boolean).join(' · ') || '—'));
       el.appendChild(kv);
-      if (def.divine) el.appendChild(h('div', { class: 'btnrow' }, h('button', { onclick: () => { LW.Buildings.destroy(w, b, 'the will of the Creator'); this.closeInspector(); } }, 'Withdraw')));
+      if (def.divine) el.appendChild(h('div', { class: 'btnrow' }, h('button', { onclick: () => { LW.Buildings.destroy(w, b, 'a Teremtő akarata'); this.closeInspector(); } }, 'Visszavonom')));
       return el;
     }
     tileView(i) {
       const w = this.world, t = w.tiles; const el = h('div'); const x = w.xOf(i), y = w.yOf(i); const B = LW.BIOME_NAME[t.biome[i]];
       el.appendChild(h('h2', null, B, h('button', { class: 'close', onclick: () => this.closeInspector() }, '✕')));
       const s = LW.Settlements.at(w, x, y);
-      el.appendChild(h('div', { class: 'sub' }, `${x}, ${y}${s ? ' · near ' + s.name : ''}`));
+      el.appendChild(h('div', { class: 'sub' }, `${x}, ${y}${s ? ' · ' + s.name + ' közelében' : ''}`));
       const kv = h('div', { class: 'kv' });
       const row = (k, v) => { kv.appendChild(h('span', null, k)); kv.appendChild(h('span', null, v)); };
-      row('Temperature', `${w.tileTemp(i).toFixed(1)}°C`); row('Elevation', `${Math.round((t.elev[i] - w.cfg.world.seaLevel) * 2500)} m`); row('Moisture', pct(t.moist[i] / 255)); row('Fertility', pct(t.fert[i] / 255));
-      row('Food plants', `${t.veg[i]} / ${t.vegCap[i]}`); row('Trees', `${t.trees[i]} / ${t.treeCap[i]}`); row('Animals', `${t.animals[i]} / ${t.animalCap[i]}`); if (t.fishCap[i]) row('Fish', `${t.fish[i]} / ${t.fishCap[i]}`); row('Surface stone', String(t.stone[i]));
-      row('Underground', t.depType[i] ? (t.depKnown[i] ? `${LW.DEPOSIT_NAME[t.depType[i]]} (${t.depAmt[i]} left)` : 'something, undiscovered') : 'nothing of note');
-      row('Path', t.path[i] === 2 ? 'a worn path' : t.path[i] === 1 ? 'a faint trail' : '—'); if (t.snow[i]) row('Snow', pct(t.snow[i] / 255)); if (t.fire[i]) row('Fire', 'burning!'); if (t.burnt[i]) row('Scorched', 'yes');
+      row('Hőmérséklet', `${w.tileTemp(i).toFixed(1)} °C`); row('Magasság', `${Math.round((t.elev[i] - w.cfg.world.seaLevel) * 2500)} m`); row('Nedvesség', pct(t.moist[i] / 255)); row('Termékenység', pct(t.fert[i] / 255));
+      row('Ehető növény', `${t.veg[i]} / ${t.vegCap[i]}`); row('Fák', `${t.trees[i]} / ${t.treeCap[i]}`); row('Vadak', `${t.animals[i]} / ${t.animalCap[i]}`); if (t.fishCap[i]) row('Halak', `${t.fish[i]} / ${t.fishCap[i]}`); row('Felszíni kő', String(t.stone[i]));
+      row('Föld alatt', t.depType[i] ? (t.depKnown[i] ? `${HU().deposit(t.depType[i])} (${t.depAmt[i]} maradt)` : 'valami, még felfedezetlen') : 'semmi említésre méltó');
+      row('Ösvény', t.path[i] === 2 ? 'kitaposott út' : t.path[i] === 1 ? 'halvány csapás' : '—'); if (t.snow[i]) row('Hó', pct(t.snow[i] / 255)); if (t.fire[i]) row('Tűz', 'ég!'); if (t.burnt[i]) row('Leégett', 'igen');
       el.appendChild(kv);
-      el.appendChild(h('p', { class: 'tiny', style: 'margin-top:10px' }, 'Creator note: the underground is real. Deposits are finite and only people who dig will know what lies beneath.'));
+      el.appendChild(h('p', { class: 'tiny', style: 'margin-top:10px' }, 'Teremtői jegyzet: a föld alatti világ valódi. A lelőhelyek végesek, és csak az tud róluk, aki ás.'));
       return el;
     }
     showDeceased(d) {
-      const w = this.world; const el = h('div'); el.appendChild(h('h1', null, d.name, h('small', null, `${d.sex === 'f' ? 'woman' : 'man'} · lived Y${LW.Time.year(d.bornTick)} – Y${LW.Time.year(d.diedTick)} · died of ${d.cause} at ${Math.floor(LW.Time.ageYears(d.bornTick, d.diedTick))}`)));
+      const w = this.world; const el = h('div'); el.appendChild(h('h1', null, d.name, h('small', null, `${d.sex === 'f' ? 'nő' : 'férfi'} · élt: ${LW.Time.year(d.bornTick)}. – ${LW.Time.year(d.diedTick)}. év · halála oka: ${d.cause}, ${Math.floor(LW.Time.ageYears(d.bornTick, d.diedTick))} évesen`)));
       const link = (id) => { const o = w.agents.get(id) || w.deceased.get(id); return h('span', { class: 'chip' + (w.agents.has(id) ? ' link' : ''), onclick: () => { if (w.agents.has(id)) { this.closeModal(); this.select(w.agents.get(id)); } else if (o) this.showDeceased(o); } }, o ? o.name + (w.agents.has(id) ? '' : ' †') : '?'); };
-      el.appendChild(h('div', { class: 'kv' }, h('span', null, 'Parents'), h('div', { class: 'chips' }, ...(d.parents.filter((p) => p != null).length ? d.parents.filter((p) => p != null).map(link) : [h('span', { class: 'chip' }, d.genesis ? 'none — created' : 'unknown')])), h('span', null, 'Children'), h('div', { class: 'chips' }, ...(d.children.length ? d.children.map(link) : [h('span', { class: 'chip' }, 'none')])), h('span', null, 'Was'), h('span', null, cap(d.occupation || '—'))));
+      el.appendChild(h('div', { class: 'kv' }, h('span', null, 'Szülők'), h('div', { class: 'chips' }, ...(d.parents.filter((p) => p != null).length ? d.parents.filter((p) => p != null).map(link) : [h('span', { class: 'chip' }, d.genesis ? 'nincs — teremtetett' : 'ismeretlen')])), h('span', null, 'Gyermekek'), h('div', { class: 'chips' }, ...(d.children.length ? d.children.map(link) : [h('span', { class: 'chip' }, 'nincs')])), h('span', null, 'Volt'), h('span', null, HU().occupation(d.occupation || '—'))));
       if (d.achievements.length) el.appendChild(h('div', { class: 'chips', style: 'margin-top:8px' }, ...d.achievements.map((x) => h('span', { class: 'chip gold' }, x))));
-      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { onclick: () => { this.closeModal(); this.showTree(d); } }, 'Family tree'), h('button', { class: 'primary', onclick: () => this.closeModal() }, 'Close')));
+      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { onclick: () => { this.closeModal(); this.showTree(d); } }, 'Családfa'), h('button', { class: 'primary', onclick: () => this.closeModal() }, 'Bezár')));
       this.modal(el);
     }
-    // ---------------- family tree (canvas)
+    // ---------------- családfa (vászon)
     showTree(root) {
       const w = this.world; const get = (id) => w.agents.get(id) || w.deceased.get(id);
-      // collect ancestors and descendants with generation offsets
       const nodes = new Map(); const visit = (p, g) => { if (!p || nodes.has(p.id)) return; nodes.set(p.id, { p, g }); for (const par of p.parents) if (par != null) visit(get(par), g - 1); for (const c of p.children) visit(get(c), g + 1); };
       visit(root, 0);
       const byGen = new Map(); for (const n of nodes.values()) { if (!byGen.has(n.g)) byGen.set(n.g, []); byGen.get(n.g).push(n); }
       const gens = [...byGen.keys()].sort((a, b) => a - b);
-      const el = h('div'); el.appendChild(h('h1', null, 'Family tree', h('small', null, `${root.name} · ${nodes.size} people · ${gens.length} generations`)));
-      const cv = h('canvas', { id: 'tree' }); el.appendChild(cv); el.appendChild(h('p', { class: 'tiny' }, 'Drag to pan · wheel to zoom · click a living person to inspect.')); el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => this.closeModal() }, 'Close')));
+      const el = h('div'); el.appendChild(h('h1', null, 'Családfa', h('small', null, `${root.name} · ${nodes.size} ember · ${gens.length} nemzedék`)));
+      const cv = h('canvas', { id: 'tree' }); el.appendChild(cv); el.appendChild(h('p', { class: 'tiny' }, 'Húzással mozgatható · görgővel nagyítható · élő emberre kattintva megnyílik.')); el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => this.closeModal() }, 'Bezár')));
       this.modal(el);
       cv.width = cv.clientWidth; cv.height = cv.clientHeight; const c = cv.getContext('2d');
       const pos = new Map(); const BW = 96, BH = 34, GX = 18, GY = 70;
@@ -256,7 +257,7 @@
         c.clearRect(0, 0, cv.width, cv.height); c.save(); c.translate(view.x, view.y); c.scale(view.s, view.s);
         c.strokeStyle = 'rgba(255,255,255,0.25)'; c.lineWidth = 1;
         for (const n of nodes.values()) { const a = pos.get(n.p.id); for (const par of n.p.parents) { const b = par != null ? pos.get(par) : null; if (!b) continue; c.beginPath(); c.moveTo(b.x, b.y + BH / 2); c.lineTo(b.x, b.y + BH / 2 + 12); c.lineTo(a.x, a.y - BH / 2 - 12); c.lineTo(a.x, a.y - BH / 2); c.stroke(); } }
-        for (const n of nodes.values()) { const p = pos.get(n.p.id); const alive = w.agents.has(n.p.id); c.fillStyle = n.p.id === root.id ? 'rgba(224,177,90,0.25)' : alive ? 'rgba(90,200,184,0.15)' : 'rgba(255,255,255,0.05)'; c.strokeStyle = n.p.id === root.id ? '#e0b15a' : alive ? '#5ac8b8' : '#444'; c.fillRect(p.x - BW / 2, p.y - BH / 2, BW, BH); c.strokeRect(p.x - BW / 2, p.y - BH / 2, BW, BH); c.fillStyle = n.p.palette ? n.p.palette.skin : '#888'; c.fillRect(p.x - BW / 2 + 5, p.y - 8, 10, 10); c.fillStyle = n.p.palette ? n.p.palette.hair : '#444'; c.fillRect(p.x - BW / 2 + 5, p.y - 11, 10, 4); c.fillStyle = alive ? '#eee' : '#888'; c.font = '11px system-ui'; c.textAlign = 'left'; c.fillText(n.p.name.slice(0, 11), p.x - BW / 2 + 20, p.y - 1); c.fillStyle = '#777'; c.font = '9px system-ui'; c.fillText(alive ? `${Math.floor(LW.Agents.age(w, n.p))} y` : `†${LW.Time.year(n.p.diedTick)}`, p.x - BW / 2 + 20, p.y + 11); }
+        for (const n of nodes.values()) { const p = pos.get(n.p.id); const alive = w.agents.has(n.p.id); c.fillStyle = n.p.id === root.id ? 'rgba(224,177,90,0.25)' : alive ? 'rgba(90,200,184,0.15)' : 'rgba(255,255,255,0.05)'; c.strokeStyle = n.p.id === root.id ? '#e0b15a' : alive ? '#5ac8b8' : '#444'; c.fillRect(p.x - BW / 2, p.y - BH / 2, BW, BH); c.strokeRect(p.x - BW / 2, p.y - BH / 2, BW, BH); c.fillStyle = n.p.palette ? n.p.palette.skin : '#888'; c.fillRect(p.x - BW / 2 + 5, p.y - 8, 10, 10); c.fillStyle = n.p.palette ? n.p.palette.hair : '#444'; c.fillRect(p.x - BW / 2 + 5, p.y - 11, 10, 4); c.fillStyle = alive ? '#eee' : '#888'; c.font = '11px system-ui'; c.textAlign = 'left'; c.fillText(n.p.name.slice(0, 11), p.x - BW / 2 + 20, p.y - 1); c.fillStyle = '#777'; c.font = '9px system-ui'; c.fillText(alive ? `${Math.floor(LW.Agents.age(w, n.p))} éves` : `†${LW.Time.year(n.p.diedTick)}. év`, p.x - BW / 2 + 20, p.y + 11); }
         c.restore();
       };
       draw();
@@ -265,96 +266,108 @@
       window.addEventListener('mouseup', (e) => { if (!drag) return; if (!drag.moved) { const rect = cv.getBoundingClientRect(); const mx = (e.clientX - rect.left - view.x) / view.s, my = (e.clientY - rect.top - view.y) / view.s; for (const n of nodes.values()) { const p = pos.get(n.p.id); if (Math.abs(mx - p.x) < BW / 2 && Math.abs(my - p.y) < BH / 2) { if (w.agents.has(n.p.id)) { this.closeModal(); this.select(w.agents.get(n.p.id)); this.r.centerOn(n.p.x, n.p.y); } else this.showDeceased(n.p); break; } } } drag = null; });
       cv.addEventListener('wheel', (e) => { e.preventDefault(); view.s = LW.clamp(view.s * (e.deltaY < 0 ? 1.15 : 0.87), 0.3, 3); draw(); }, { passive: false });
     }
-    // ---------------- god bar
+    // ---------------- Teremtő-sáv
     buildGodBar() {
-      const box = $('#god-interventions'); box.innerHTML = ''; box.appendChild(h('span', { class: 'gtitle' }, 'Creator'));
+      const box = $('#god-interventions'); box.innerHTML = ''; box.appendChild(h('span', { class: 'gtitle' }, 'Teremtő'));
       for (const [k, K] of Object.entries(LW.God.KINDS)) { const b = h('button', { class: 'godbtn' + (['disease', 'kill', 'destroy', 'meteor', 'earthquake', 'fire', 'lightning'].includes(k) ? ' danger' : ''), title: K.desc, onclick: () => this.pickGod(k) }, h('i', null, K.icon), K.label); b.dataset.god = k; box.appendChild(b); }
-      const cb = $('#god-commands'); cb.innerHTML = ''; cb.appendChild(h('span', { class: 'gtitle', id: 'cmd-title' }, 'Command'));
+      const cb = $('#god-commands'); cb.innerHTML = ''; cb.appendChild(h('span', { class: 'gtitle', id: 'cmd-title' }, 'Parancs'));
       for (const [k, label] of Object.entries(LW.God.COMMANDS)) cb.appendChild(h('button', { class: 'godbtn', onclick: () => this.pickCmd(k) }, h('i', null, { go: '➤', build: '⌂', follow: '↝', protect: '⛨', explore: '✧', leave: '⇥', search: '⌕' }[k]), label));
-      const mode = h('button', { class: 'modebtn', id: 'cmd-mode', onclick: () => { this.cmdMode = this.cmdMode === 'force' ? 'message' : 'force'; this.refreshGodBar(); this.click(); } }, 'Divine message'); cb.appendChild(mode);
+      const mode = h('button', { class: 'modebtn', id: 'cmd-mode', onclick: () => { this.cmdMode = this.cmdMode === 'force' ? 'message' : 'force'; this.refreshGodBar(); this.click(); } }, 'Isteni üzenet'); cb.appendChild(mode);
     }
-    pickGod(k) { this.click(); if (this.godTool === k) { this.godTool = null; this.r.godCursor = null; $('#world').classList.remove('god'); } else { this.godTool = k; this.pendingCmd = null; const K = LW.God.KINDS[k]; this.r.godCursor = { kind: k, radius: { rain: 12, forest: 3, food: 3, animals: 4, resource: 6, disease: 5, healing: 5, fertility: 6, earthquake: 8, meteor: 4 }[k] || 0 }; $('#world').classList.add('god'); if (K.target === 'world') { const text = LW.God.intervene(this.world, k, { x: -1, y: -1 }); if (text) this.audio.play(k === 'storm' ? 'thunder' : 'god'); this.godTool = null; this.r.godCursor = null; $('#world').classList.remove('god'); this.app.save(); } } this.refreshGodBar(); }
-    pickCmd(k) { this.click(); const a = this.world.agents.get(this.selected); if (!a) return; if (k === 'leave' || k === 'build') { LW.God.command(this.world, a, k, { force: this.cmdMode === 'force' }); this.audio.play('command'); this.app.save(); return; } this.pendingCmd = k; this.godTool = null; this.r.godCursor = null; $('#world').classList.add('god'); this.toast(LW.God.COMMANDS[k], k === 'follow' || k === 'protect' ? 'Click on a person.' : 'Click on the map.', true); this.refreshGodBar(); }
+    pickGod(k) { this.click(); if (this.app.observer) { this.toast('Megfigyelő mód', 'Innen nem tudsz beavatkozni. A menüből átveheted a világot.', true); return; } if (this.godTool === k) { this.godTool = null; this.r.godCursor = null; $('#world').classList.remove('god'); } else { this.godTool = k; this.pendingCmd = null; const K = LW.God.KINDS[k]; this.r.godCursor = { kind: k, radius: { rain: 12, forest: 3, food: 3, animals: 4, resource: 6, disease: 5, healing: 5, fertility: 6, earthquake: 8, meteor: 4 }[k] || 0 }; $('#world').classList.add('god'); if (K.target === 'world') { const text = LW.God.intervene(this.world, k, { x: -1, y: -1 }); if (text) this.audio.play(k === 'storm' ? 'thunder' : 'god'); this.godTool = null; this.r.godCursor = null; $('#world').classList.remove('god'); this.app.save(true); } } this.refreshGodBar(); }
+    pickCmd(k) { this.click(); if (this.app.observer) return; const a = this.world.agents.get(this.selected); if (!a) return; if (k === 'leave' || k === 'build') { LW.God.command(this.world, a, k, { force: this.cmdMode === 'force' }); this.audio.play('command'); this.app.save(true); return; } this.pendingCmd = k; this.godTool = null; this.r.godCursor = null; $('#world').classList.add('god'); this.toast(LW.God.COMMANDS[k], k === 'follow' || k === 'protect' ? 'Kattints egy emberre.' : 'Kattints a térképre.', true); this.refreshGodBar(); }
     refreshGodBar() {
       document.querySelectorAll('[data-god]').forEach((b) => b.classList.toggle('active', b.dataset.god === this.godTool));
+      $('#godbar').classList.toggle('hidden', !!this.app.observer);
       const agentSel = this.selKind === 'agent' && this.world.agents.has(this.selected);
       $('#god-commands').classList.toggle('hidden', !agentSel);
-      if (agentSel) { $('#cmd-title').textContent = `Command ${this.world.agents.get(this.selected).name}`; const m = $('#cmd-mode'); m.textContent = this.cmdMode === 'force' ? 'FORCE' : 'Divine message'; m.classList.toggle('active', this.cmdMode === 'force'); }
+      if (agentSel) { $('#cmd-title').textContent = `Parancs: ${this.world.agents.get(this.selected).name}`; const m = $('#cmd-mode'); m.textContent = this.cmdMode === 'force' ? 'KÉNYSZER' : 'Isteni üzenet'; m.classList.toggle('active', this.cmdMode === 'force'); }
     }
-    // ---------------- toasts & modals
+    // ---------------- értesítések & ablakok
     toast(title, text, minor) { const box = $('#toasts'); const el = h('div', { class: 'toast' + (minor ? ' minor' : '') }, h('b', null, title), h('span', null, text)); box.appendChild(el); setTimeout(() => el.remove(), minor ? 3600 : 6800); while (box.children.length > 4) box.removeChild(box.firstChild); }
     modal(content) { const m = $('#modal'); m.innerHTML = ''; m.appendChild(content); $('#overlay').classList.remove('hidden'); }
     closeModal() { $('#overlay').classList.add('hidden'); }
+    showObserver(reason) { let b = $('#observer'); if (!b) { b = h('div', { id: 'observer' }); document.body.appendChild(b); } b.innerHTML = ''; b.appendChild(h('b', null, 'MEGFIGYELŐ MÓD')); b.appendChild(h('span', null, ` ${reason || 'A világ máshol fut.'} A kép percenként frissül. `)); b.appendChild(h('button', { onclick: () => { this.click(); if (LW.Cloud.canWrite) this.app.takeOver(); else this.showMenu(); } }, LW.Cloud.canWrite ? 'Átveszem itt' : 'Teremtő-kulcs megadása')); b.classList.remove('hidden'); this.refreshGodBar(); this.refreshCloud(); }
+    hideObserver() { const b = $('#observer'); if (b) b.classList.add('hidden'); this.refreshGodBar(); this.refreshCloud(); }
     showMenu() {
-      const app = this.app; const el = h('div'); const w = this.world;
-      el.appendChild(h('h1', null, w.name, h('small', null, `seed ${w.seed} · ${w.shape} · engine ${LW.ENGINE_VERSION}`)));
+      const app = this.app; const el = h('div'); const w = this.world; const C = LW.Cloud;
+      el.appendChild(h('h1', null, w.name, h('small', null, `seed ${w.seed} · ${HU().shape(w.shape)} · motor ${LW.ENGINE_VERSION}`)));
+      // felhő
+      const cloudBox = h('div', { style: 'border:1px solid rgba(224,177,90,.3);border-radius:6px;padding:10px 12px;margin:10px 0' });
+      cloudBox.appendChild(h('h3', { style: 'margin:0 0 6px;font-size:11px;letter-spacing:.2em;color:#e0b15a' }, 'FELHŐ — A VILÁG OTTHONA'));
+      cloudBox.appendChild(h('p', { class: 'tiny', style: 'margin:0 0 6px' }, `A világ a GitHub-repóban él (${C.owner}/${C.repo}, „${C.branch}” ág), és félóránként a GitHub gépei is továbbviszik, amikor senki nem nézi. Bárki nézheti; írni csak a Teremtő-kulccsal lehet. Állapot: ${app.observer ? 'megfigyelő' : C.canWrite ? (C.status === 'error' ? 'hiba — ' + C.error : C.lastSaveMs ? 'mentve ' + LW.Time.realSpan(Date.now() - C.lastSaveMs) + ' óta' : 'kulcs megadva') : 'NINCS KULCS — ez a gép csak helyben ment'}.`));
+      const tokenIn = h('input', { type: 'password', placeholder: 'GitHub személyes hozzáférési kulcs (Contents: read & write)', style: 'width:100%', value: '' });
+      cloudBox.appendChild(tokenIn);
+      cloudBox.appendChild(h('div', { class: 'btnrow' }, h('button', { onclick: async () => { const t = tokenIn.value.trim(); if (!t) return; try { await C.verify(t); this.toast('Kulcs elfogadva', 'Ez a gép mostantól a Teremtő gépe; a világ a felhőbe ment.', true); if (app.observer) app.takeOver(); else app.save(true); this.showMenu(); } catch (e) { this.toast('A kulcs nem jó', String(e.message || e), true); } } }, 'Kulcs mentése'), C.canWrite ? h('button', { onclick: () => { C.setToken(''); this.toast('Kulcs törölve', 'Ez a gép csak helyben ment.', true); this.showMenu(); } }, 'Kulcs törlése') : null, app.observer && C.canWrite ? h('button', { class: 'primary', onclick: () => { this.closeModal(); app.takeOver(); } }, 'Átveszem itt a világot') : null));
+      cloudBox.appendChild(h('p', { class: 'tiny', style: 'margin:6px 0 0' }, 'Kulcs: github.com → Settings → Developer settings → Personal access tokens → Fine-grained → csak ez a repó, Contents: Read and write. A kulcs csak ebben a böngészőben tárolódik.'));
+      el.appendChild(cloudBox);
       const vol = h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: this.audio.volume, oninput: (e) => this.audio.setVolume(+e.target.value) });
-      el.appendChild(h('div', { class: 'kv', style: 'margin:10px 0' }, h('span', null, 'Sound volume'), vol));
+      el.appendChild(h('div', { class: 'kv', style: 'margin:10px 0' }, h('span', null, 'Hangerő'), vol));
       const grid = h('div', { class: 'menu-grid' });
-      grid.appendChild(h('button', { onclick: () => { app.save(true); this.toast('Saved', 'The world is safe in this browser.', true); } }, 'Save now', h('small', null, 'Autosaves every 30 s and when you leave')));
-      grid.appendChild(h('button', { onclick: () => app.exportWorld() }, 'Export world', h('small', null, 'Download a .json you can import anywhere')));
-      grid.appendChild(h('button', { onclick: () => app.importWorld() }, 'Import world', h('small', null, 'Replace the current world with a file')));
-      for (let s = 1; s <= 3; s++) { const has = app.hasSnapshot(s); grid.appendChild(h('button', { onclick: async () => { await app.snapshot(s); this.showMenu(); } }, `Snapshot slot ${s}`, h('small', null, has ? `saved · ${has}` : 'empty — click to save'))); if (has) grid.appendChild(h('button', { onclick: () => { if (confirm('Restore this snapshot? The current world will be replaced. Export it first if you want to keep it.')) app.restoreSnapshot(s); } }, `Restore slot ${s}`, h('small', null, 'restore, then continue = an alternate timeline'))); }
-      grid.appendChild(h('button', { onclick: () => this.showNewWorld() }, 'New world…', h('small', null, 'A different seed, a different history')));
-      grid.appendChild(h('button', { onclick: () => { $('#debug').classList.toggle('hidden'); } }, 'Debug overlay', h('small', null, 'tick µs, ticks/s, render ms (` key)')));
-      grid.appendChild(h('button', { onclick: () => { this.closeModal(); this.showWelcomeReport(app.lastReport); } }, 'Last visit report', h('small', null, 'What happened while you were away')));
+      grid.appendChild(h('button', { onclick: () => { app.save(true); this.toast('Mentve', 'A világ biztonságban van.', true); } }, 'Mentés most', h('small', null, 'Automatikus mentés 30 mp-enként és kilépéskor')));
+      grid.appendChild(h('button', { onclick: () => app.exportWorld() }, 'Világ exportálása', h('small', null, 'Letölt egy .json fájlt, amit bárhol importálhatsz')));
+      grid.appendChild(h('button', { onclick: () => app.importWorld() }, 'Világ importálása', h('small', null, 'Fájlból cseréli a jelenlegi világot')));
+      for (let s = 1; s <= 3; s++) { const has = app.hasSnapshot(s); grid.appendChild(h('button', { onclick: async () => { await app.snapshot(s); this.showMenu(); } }, `Pillanatkép ${s}. hely`, h('small', null, has ? `mentve · ${has}` : 'üres — kattints a mentéshez'))); if (has) grid.appendChild(h('button', { onclick: () => { if (confirm('Visszaállítod ezt a pillanatképet? A jelenlegi világ lecserélődik. Előbb exportáld, ha meg akarod tartani.')) app.restoreSnapshot(s); } }, `Visszaállítás ${s}. hely`, h('small', null, 'visszaállítás, majd folytatás = alternatív idővonal'))); }
+      grid.appendChild(h('button', { onclick: () => this.showNewWorld() }, 'Új világ…', h('small', null, 'Más seed, más történelem')));
+      grid.appendChild(h('button', { onclick: () => { $('#debug').classList.toggle('hidden'); } }, 'Fejlesztői kijelző', h('small', null, 'tick µs, tick/s, rajzolás ms (` billentyű)')));
+      grid.appendChild(h('button', { onclick: () => { this.closeModal(); this.showWelcomeReport(app.lastReport); } }, 'Utolsó látogatás jelentése', h('small', null, 'Mi történt, amíg nem voltál itt')));
       el.appendChild(grid);
-      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => this.closeModal() }, 'Back to the world')));
+      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => this.closeModal() }, 'Vissza a világhoz')));
       this.modal(el);
     }
     showNewWorld() {
-      const el = h('div'); el.appendChild(h('h1', null, 'Genesis', h('small', null, 'a new world replaces the current one')));
+      const el = h('div'); el.appendChild(h('h1', null, 'Genezis', h('small', null, 'az új világ a jelenlegit váltja fel')));
       const seed = h('input', { type: 'text', value: String((Math.random() * 4294967295) >>> 0), style: 'width:100%' }); const pop = h('input', { type: 'number', min: 2, max: 20, value: 3, style: 'width:80px' });
-      el.appendChild(h('p', null, 'World seed')); el.appendChild(seed); el.appendChild(h('p', null, 'Genesis population (2–20)')); el.appendChild(pop);
-      el.appendChild(h('p', { class: 'tiny' }, 'Export your current world first if you want to keep it.'));
-      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { onclick: () => this.showMenu() }, 'Back'), h('button', { class: 'primary', onclick: () => { const s = seed.value.trim(); const n = /^\d+$/.test(s) ? (+s >>> 0) : LW.hash32(s); this.closeModal(); this.app.newWorld(n, LW.clamp(+pop.value || 3, 2, 20)); } }, 'Create')));
+      el.appendChild(h('p', null, 'Világ-seed')); el.appendChild(seed); el.appendChild(h('p', null, 'Kezdő népesség (2–20)')); el.appendChild(pop);
+      el.appendChild(h('p', { class: 'tiny' }, 'Előbb exportáld a jelenlegi világot, ha meg akarod tartani.'));
+      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { onclick: () => this.showMenu() }, 'Vissza'), h('button', { class: 'primary', onclick: () => { const s = seed.value.trim(); const n = /^\d+$/.test(s) ? (+s >>> 0) : LW.hash32(s); this.closeModal(); this.app.newWorld(n, LW.clamp(+pop.value || 3, 2, 20)); } }, 'Teremtés')));
       this.modal(el);
     }
     showHelp() {
-      const el = h('div'); el.appendChild(h('h1', null, 'How to watch a world', h('small', null, 'You are the Creator. The world does not need you.')));
-      el.appendChild(h('div', { class: 'help-grid' }, h('b', null, 'drag / WASD'), h('span', null, 'pan the camera'), h('b', null, 'wheel / + −'), h('span', null, 'zoom (close zoom shows people, far zoom shows civilizations)'), h('b', null, 'click'), h('span', null, 'inspect a person, building or tile'), h('b', null, 'F'), h('span', null, 'follow the selected person'), h('b', null, 'T'), h('span', null, 'family tree of the selected person'), h('b', null, 'space'), h('span', null, 'pause'), h('b', null, '1–5'), h('span', null, 'speed presets'), h('b', null, 'O / H'), h('span', null, 'world overview / back to the Genesis site'), h('b', null, 'right-click / Esc'), h('span', null, 'cancel a Creator tool'), h('b', null, '`'), h('span', null, 'debug overlay')));
-      el.appendChild(h('p', null, 'Creator tools at the bottom change the physical world; people who witness them remember, tell others, and may come to believe. Select a person to send divine commands — as a message they interpret, or as force.'));
-      el.appendChild(h('p', null, 'The world keeps living while this page is closed: when you return, the missing time is simulated and a report tells you what happened.'));
-      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => { this.closeModal(); if (!this.world.meta.started) this.showGenesis(); } }, 'Close')));
+      const el = h('div'); el.appendChild(h('h1', null, 'Hogyan nézz egy világot', h('small', null, 'Te vagy a Teremtő. A világnak nincs rád szüksége.')));
+      el.appendChild(h('div', { class: 'help-grid' }, h('b', null, 'húzás / WASD'), h('span', null, 'kamera mozgatása'), h('b', null, 'görgő / + −'), h('span', null, 'nagyítás (közelről emberek, távolról civilizációk)'), h('b', null, 'kattintás'), h('span', null, 'ember, épület vagy mező megvizsgálása'), h('b', null, 'F'), h('span', null, 'a kiválasztott ember követése'), h('b', null, 'T'), h('span', null, 'a kiválasztott ember családfája'), h('b', null, 'szóköz'), h('span', null, 'szünet'), h('b', null, '1–5'), h('span', null, 'sebességfokozatok'), h('b', null, 'O / H'), h('span', null, 'világtérkép / vissza a Genezis helyére'), h('b', null, 'jobb klikk / Esc'), h('span', null, 'Teremtő-eszköz elvetése'), h('b', null, '`'), h('span', null, 'fejlesztői kijelző')));
+      el.appendChild(h('p', null, 'A lenti Teremtő-eszközök a fizikai világot változtatják; aki látja, emlékezik rá, továbbadja, és hit alakulhat belőle. Válassz ki egy embert isteni parancshoz — üzenetként, amit ő értelmez, vagy kényszerként.'));
+      el.appendChild(h('p', null, 'A világ akkor is él, amikor ez az oldal be van zárva: a felhőben lakik, a GitHub gépei félóránként továbbviszik, és visszatéréskor jelentést kapsz arról, mi történt.'));
+      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => { this.closeModal(); if (!this.world.meta.started && !this.app.observer) this.showGenesis(); } }, 'Bezár')));
       this.modal(el);
     }
     showGenesis() {
       const w = this.world; const names = [...w.agents.values()].map((a) => a.name).join(', ');
-      const el = h('div'); el.appendChild(h('h1', null, 'Genesis', h('small', null, 'a world is born')));
-      el.appendChild(h('div', { class: 'big' }, w.name)); el.appendChild(h('p', null, `A ${w.shape === 'twin' ? 'world of two lands' : w.shape} with a mean temperature of ${w.climateMean.toFixed(0)}°C. Three small beings stand in a vast wild world: ${names}. They know nothing. They will learn.`));
-      el.appendChild(h('p', { class: 'tiny' }, 'Seed ' + w.seed + ' · the world is saved in this browser automatically · export it from the menu to keep it forever.'));
-      el.appendChild(h('p', null, h('b', null, 'Time has not started yet.'), ' It starts the moment you press Watch — and from then on it never waits for you: while this page is closed, while your computer is off, they keep living, and you will be told what happened.'));
-      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { onclick: () => { this.closeModal(); this.showHelp(); } }, 'How does this work?'), h('button', { class: 'primary', onclick: () => { this.closeModal(); this.app.startAudio(); this.app.beginWorld(); } }, 'Watch')));
+      const el = h('div'); el.appendChild(h('h1', null, 'Genezis', h('small', null, 'egy világ születik')));
+      el.appendChild(h('div', { class: 'big' }, w.name)); el.appendChild(h('p', null, `${HU().shape(w.shape)}, ${w.climateMean.toFixed(0)} °C-os átlaghőmérséklettel. Három kis lény áll egy hatalmas, vad világban: ${names}. Semmit sem tudnak. Tanulni fognak.`));
+      el.appendChild(h('p', { class: 'tiny' }, 'Seed ' + w.seed + ' · a világ automatikusan mentődik · a menüből exportálhatod, hogy örökre megőrizd.'));
+      el.appendChild(h('p', null, h('b', null, 'Az idő még nem indult el.'), ' A Nézem gombra indul — és onnantól nem vár rád: amíg az oldal zárva van, amíg a géped ki van kapcsolva, ők tovább élnek, és elmondjuk, mi történt.'));
+      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { onclick: () => { this.closeModal(); this.showHelp(); } }, 'Hogyan működik?'), h('button', { class: 'primary', onclick: () => { this.closeModal(); this.app.startAudio(); this.app.beginWorld(); } }, 'Nézem')));
       this.modal(el);
     }
     showCatchup(progress, label) {
-      let m = $('#modal'); if (!m.querySelector('#cu-bar')) { const el = h('div'); el.appendChild(h('h1', null, 'Welcome back, Creator', h('small', null, 'the world did not wait for you'))); el.appendChild(h('p', { id: 'cu-label' }, label)); el.appendChild(h('div', { class: 'progress' }, h('div', { id: 'cu-bar' }))); this.modal(el); }
+      let m = $('#modal'); if (!m.querySelector('#cu-bar')) { const el = h('div'); el.appendChild(h('h1', null, 'Üdv újra, Teremtő', h('small', null, 'a világ nem várt rád'))); el.appendChild(h('p', { id: 'cu-label' }, label)); el.appendChild(h('div', { class: 'progress' }, h('div', { id: 'cu-bar' }))); this.modal(el); }
       $('#cu-label').textContent = label; $('#cu-bar').style.width = Math.round(progress * 100) + '%';
     }
     showWelcomeReport(rep) {
       if (!rep || rep.skipped) { this.closeModal(); return; }
-      const w = this.world; const b = rep.before, a = rep.after; const el = h('div');
-      el.appendChild(h('h1', null, 'Welcome back, Creator', h('small', null, `you were away ${LW.Time.realSpan(rep.awayMs)} · world time elapsed ${LW.Time.span(rep.worldTicks)}${rep.capped ? ' (capped)' : ''}`)));
+      const b = rep.before, a = rep.after; const el = h('div');
+      el.appendChild(h('h1', null, 'Üdv újra, Teremtő', h('small', null, `${LW.Time.realSpan(rep.awayMs)} voltál távol · a világban ${LW.Time.span(rep.worldTicks)} telt el${rep.capped ? ' (korlátozva)' : ''}`)));
       const cell = (label, from, to, sub) => h('div', { class: 'cell' }, h('label', null, label), h('b', null, String(to)), from != null && from !== to ? h('span', { class: 'delta' }, `${from} → ${to}`) : null, sub ? h('div', null, h('small', null, sub)) : null);
-      el.appendChild(h('div', { class: 'report' }, cell('Population', b.population, a.population, `${a.births - b.births} born · ${a.deaths - b.deaths} died`), cell('Settlements', b.settlements, a.settlements), cell('Technology', b.techLevel, a.techLevel, `${Math.max(0, a.discoveries - b.discoveries)} new discoveries`), cell('Buildings', null, a.buildings - b.buildings, 'completed'), cell('Couples', null, a.couples - b.couples, 'formed'), cell('Belief in you', pct(rep.beliefBefore || 0), pct(rep.beliefAfter || 0))));
+      el.appendChild(h('div', { class: 'report' }, cell('Népesség', b.population, a.population, `${a.births - b.births} született · ${a.deaths - b.deaths} meghalt`), cell('Települések', b.settlements, a.settlements), cell('Technológia', b.techLevel, a.techLevel, `${Math.max(0, a.discoveries - b.discoveries)} új felfedezés`), cell('Épületek', null, a.buildings - b.buildings, 'elkészült'), cell('Párok', null, a.couples - b.couples, 'alakult'), cell('Hit benned', pct(rep.beliefBefore || 0), pct(rep.beliefAfter || 0))));
       const newTechs = a.techs.filter((t) => !b.techs.includes(t)).map((t) => LW.Tech.D[t].name).filter(Boolean);
-      if (newTechs.length) el.appendChild(h('p', null, h('b', null, 'Discovered: '), newTechs.join(', ')));
-      const firsts = (rep.firsts || []).slice(0, 8); if (firsts.length) { el.appendChild(h('h3', { style: 'color:#e0b15a;letter-spacing:.2em;font-size:11px;margin:12px 0 4px' }, 'HISTORIC FIRSTS')); for (const [, f] of firsts) el.appendChild(h('div', { class: 'feed-item i3' }, h('span', { class: 'first' }, '★ ' + f.title), f.text)); }
-      const ch = (rep.chronicle || []).filter((e) => !e.first).slice(-10); if (ch.length) { el.appendChild(h('h3', { style: 'color:#a9a395;letter-spacing:.2em;font-size:11px;margin:12px 0 4px' }, 'MAJOR EVENTS')); for (const e of ch) el.appendChild(h('div', { class: 'feed-item ' + (e.god ? 'god' : 'i2') }, h('time', null, `Y${e.year}`), e.text)); }
-      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => { this.closeModal(); this.app.startAudio(); } }, 'See the world')));
+      if (newTechs.length) el.appendChild(h('p', null, h('b', null, 'Felfedezték: '), newTechs.join(', ')));
+      const firsts = (rep.firsts || []).slice(0, 8); if (firsts.length) { el.appendChild(h('h3', { style: 'color:#e0b15a;letter-spacing:.2em;font-size:11px;margin:12px 0 4px' }, 'TÖRTÉNELMI ELSŐK')); for (const [, f] of firsts) el.appendChild(h('div', { class: 'feed-item i3' }, h('span', { class: 'first' }, '★ ' + f.title), f.text)); }
+      const ch = (rep.chronicle || []).filter((e) => !e.first).slice(-10); if (ch.length) { el.appendChild(h('h3', { style: 'color:#a9a395;letter-spacing:.2em;font-size:11px;margin:12px 0 4px' }, 'FONTOS ESEMÉNYEK')); for (const e of ch) el.appendChild(h('div', { class: 'feed-item ' + (e.god ? 'god' : 'i2') }, h('time', null, `${e.year}. év`), e.text)); }
+      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => { this.closeModal(); this.app.startAudio(); } }, 'Megnézem a világot')));
       this.modal(el);
     }
-    // ---------------- sounds
+    // ---------------- hangok
     bindSounds(world) {
       const on = (t, name, cond) => world.events.on(t, (ev) => { if (this.app.catchingUp || (cond && !cond(ev))) return; this.audio.play(name); });
       on('AgentBorn', 'birth'); on('AgentDied', 'death'); on('CoupleFormed', 'love', (e) => e.stage === 'partners'); on('DiscoveryMade', 'discovery', (e) => !LW.Tech.D[e.tech].hidden); on('BuildingCompleted', 'build', (e) => e.kind !== 'campfire'); on('Lightning', 'thunder'); on('WildfireStarted', 'fire'); on('SettlementFounded', 'settlement'); on('SettlementGrew', 'settlement'); on('ConflictOccurred', 'conflict'); on('DivineCommandInterpreted', 'command');
     }
-    // ---------------- per-frame update
+    // ---------------- képkockánkénti frissítés
     update(dt) {
       const now = performance.now(); if (now - this.lastPanel < 250) return; this.lastPanel = now;
-      this.refreshTop(); if (this.selected != null && !$('#right').classList.contains('hidden')) this.renderInspector();
+      this.refreshTop(); this.refreshCloud(); if (this.selected != null && !$('#right').classList.contains('hidden')) this.renderInspector();
       if (this.tab === 'people' && (this.frameCount = (this.frameCount || 0) + 1) % 12 === 0) this.renderPeople();
-      const dbg = $('#debug'); if (!dbg.classList.contains('hidden')) { const p = this.sim.perf; dbg.textContent = `tick ${p.tickUs.toFixed(0)} µs (max ${p.tickMaxUs.toFixed(0)}) · ${p.ticksLastSec} ticks/s · render ${this.r.perf.ms.toFixed(1)} ms · agents ${this.world.population} · buildings ${this.world.buildings.size} · burning ${this.world.burning.size} · dirty ${this.world.dirtyTiles.size} · save ${(this.app.lastSaveSize / 1024).toFixed(0)} KB · errors ${this.sim.errors.length}`; }
+      const dbg = $('#debug'); if (!dbg.classList.contains('hidden')) { const p = this.sim.perf; dbg.textContent = `tick ${p.tickUs.toFixed(0)} µs (max ${p.tickMaxUs.toFixed(0)}) · ${p.ticksLastSec} tick/s · rajz ${this.r.perf.ms.toFixed(1)} ms · emberek ${this.world.population} · épületek ${this.world.buildings.size} · ég ${this.world.burning.size} · piszkos ${this.world.dirtyTiles.size} · mentés ${(this.app.lastSaveSize / 1024).toFixed(0)} KB · hibák ${this.sim.errors.length} · felhő ${LW.Cloud.status}`; }
     }
   }
   LW.UI = UI;

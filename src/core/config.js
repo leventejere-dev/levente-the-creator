@@ -68,36 +68,36 @@
 
   /** Item catalogue. food = need restored per unit; spoilDays = mean life; weight for carry. */
   const ITEMS = {
-    berries:     { food: 0.30, water: 0.05, spoilDays: 4,  weight: 0.5, label: 'Berries' },
-    roots:       { food: 0.35, spoilDays: 8,  weight: 0.7, label: 'Roots' },
-    meat_raw:    { food: 0.45, spoilDays: 2,  weight: 1.2, label: 'Raw meat', raw: 'meat_cooked' },
-    meat_cooked: { food: 0.70, spoilDays: 6,  weight: 1.0, label: 'Cooked meat' },
-    fish_raw:    { food: 0.35, spoilDays: 2,  weight: 0.8, label: 'Raw fish', raw: 'fish_cooked' },
-    fish_cooked: { food: 0.55, spoilDays: 6,  weight: 0.7, label: 'Cooked fish' },
-    dried_food:  { food: 0.50, spoilDays: 60, weight: 0.5, label: 'Dried food' },
-    grain:       { food: 0.30, spoilDays: 90, weight: 0.5, label: 'Grain' },
-    wood:   { weight: 1.5, label: 'Wood' },
-    stone:  { weight: 2.0, label: 'Stone' },
-    flint:  { weight: 0.8, label: 'Flint' },
-    fiber:  { weight: 0.3, label: 'Plant fiber' },
-    clay:   { weight: 1.5, label: 'Clay' },
-    hide:   { weight: 1.0, label: 'Hide' },
-    handaxe:{ weight: 1.0, label: 'Hand axe', tool: true },
-    spear:  { weight: 1.2, label: 'Spear', tool: true },
-    basket: { weight: 0.6, label: 'Basket', tool: true, carryBonus: 8 },
-    pot:    { weight: 1.5, label: 'Clay pot', tool: true, carryBonus: 3 },
-    ore_copper: { weight: 2.5, label: 'Strange green stone' },
-    ore_tin:    { weight: 2.5, label: 'Grey heavy stone' },
-    ore_iron:   { weight: 2.5, label: 'Rust-red stone' },
-    coal:       { weight: 1.5, label: 'Black burning stone' },
-    gold_nugget:{ weight: 1.0, label: 'Shiny yellow stone' },
-    salt:       { weight: 1.0, label: 'Salt' },
-    gems:       { weight: 0.5, label: 'Glittering stone' },
+    berries:     { food: 0.30, water: 0.05, spoilDays: 4,  weight: 0.5, label: 'Bogyó' },
+    roots:       { food: 0.35, spoilDays: 8,  weight: 0.7, label: 'Gyökér' },
+    meat_raw:    { food: 0.45, spoilDays: 2,  weight: 1.2, label: 'Nyers hús', raw: 'meat_cooked' },
+    meat_cooked: { food: 0.70, spoilDays: 6,  weight: 1.0, label: 'Sült hús' },
+    fish_raw:    { food: 0.35, spoilDays: 2,  weight: 0.8, label: 'Nyers hal', raw: 'fish_cooked' },
+    fish_cooked: { food: 0.55, spoilDays: 6,  weight: 0.7, label: 'Sült hal' },
+    dried_food:  { food: 0.50, spoilDays: 60, weight: 0.5, label: 'Szárított étel' },
+    grain:       { food: 0.30, spoilDays: 90, weight: 0.5, label: 'Gabona' },
+    wood:   { weight: 1.5, label: 'Fa' },
+    stone:  { weight: 2.0, label: 'Kő' },
+    flint:  { weight: 0.8, label: 'Kova' },
+    fiber:  { weight: 0.3, label: 'Rost' },
+    clay:   { weight: 1.5, label: 'Agyag' },
+    hide:   { weight: 1.0, label: 'Bőr' },
+    handaxe:{ weight: 1.0, label: 'Kézibalta', tool: true },
+    spear:  { weight: 1.2, label: 'Lándzsa', tool: true },
+    basket: { weight: 0.6, label: 'Kosár', tool: true, carryBonus: 8 },
+    pot:    { weight: 1.5, label: 'Agyagedény', tool: true, carryBonus: 3 },
+    ore_copper: { weight: 2.5, label: 'Furcsa zöld kő' },
+    ore_tin:    { weight: 2.5, label: 'Szürke nehéz kő' },
+    ore_iron:   { weight: 2.5, label: 'Rozsdavörös kő' },
+    coal:       { weight: 1.5, label: 'Fekete égő kő' },
+    gold_nugget:{ weight: 1.0, label: 'Csillogó sárga kő' },
+    salt:       { weight: 1.0, label: 'Só' },
+    gems:       { weight: 0.5, label: 'Szikrázó kő' },
   };
   const FOOD_ITEMS = Object.keys(ITEMS).filter((k) => ITEMS[k].food);
 
   const BIOME = { OCEAN: 0, LAKE: 1, RIVER: 2, BEACH: 3, GRASSLAND: 4, FOREST: 5, DENSE_FOREST: 6, HILLS: 7, MOUNTAIN: 8, PEAK: 9, MARSH: 10, TUNDRA: 11, DESERT: 12, SAVANNA: 13 };
-  const BIOME_NAME = ['Ocean', 'Lake', 'River', 'Beach', 'Grassland', 'Forest', 'Dense forest', 'Hills', 'Mountain', 'Peak', 'Marsh', 'Tundra', 'Desert', 'Savanna'];
+  const BIOME_NAME = ['Óceán', 'Tó', 'Folyó', 'Part', 'Mező', 'Erdő', 'Sűrű erdő', 'Dombság', 'Hegység', 'Csúcs', 'Mocsár', 'Tundra', 'Sivatag', 'Szavanna'];
   const DEPOSIT = { NONE: 0, CLAY: 1, FLINT: 2, SALT: 3, COAL: 4, COPPER: 5, TIN: 6, IRON: 7, GOLD: 8, GEMS: 9, OIL: 10 };
   const DEPOSIT_NAME = ['none', 'clay', 'flint', 'salt', 'coal', 'copper', 'tin', 'iron', 'gold', 'gems', 'oil'];
   const DEPOSIT_ITEM = [null, 'clay', 'flint', 'salt', 'coal', 'ore_copper', 'ore_tin', 'ore_iron', 'gold_nugget', 'gems', null];

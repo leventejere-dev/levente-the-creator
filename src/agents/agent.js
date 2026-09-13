@@ -44,7 +44,7 @@
         const ti = world.randomNear(world.genesis.x, world.genesis.y, 2);
         const a = this.create(world, { name: world.language.person(sex, 0.5), sex, bornTick: world.tick - Math.round(age * T.TICKS_PER_YEAR), x: world.xOf(ti) + 0.5, y: world.yOf(ti) + 0.5, genesis: true });
         a.inv.berries = 3; // a few berries in hand: the first hours are for looking around
-        a.achievements.push('One of the First');
+        a.achievements.push('Az Elsők egyike');
         out.push(a);
         world.events.emit('AgentBorn', { tick: world.tick, agentId: a.id, genesis: true, tile: ti });
       }
@@ -62,10 +62,10 @@
       for (let k = 0; k < 200; k++) { const i = rng.int(0, world.w * world.h - 1); const b = t.biome[i]; if (!(b === B.GRASSLAND || b === B.FOREST || b === B.SAVANNA || b === B.DENSE_FOREST) || t.veg[i] < 40) continue; const x = world.xOf(i), y = world.yOf(i); let dmin = 1e9; for (const o of people) dmin = Math.min(dmin, LW.dist(x, y, o.x, o.y)); const score = Math.min(dmin, 40) - Math.abs(t.baseTemp[i] - 15); if (score > best) { best = score; ti = i; } }
       if (ti < 0 || best < 10) return;
       const a = this.create(world, { name: world.language.person(sex, 0.5), sex, bornTick: world.tick - Math.round(rng.range(17, 30) * T.TICKS_PER_YEAR), x: world.xOf(ti) + 0.5, y: world.yOf(ti) + 0.5 });
-      a.inv.berries = 4; a.achievements.push('Came from beyond'); a.skills.gathering = 0.2; a.skills.foraging = 0.2;
+      a.inv.berries = 4; a.achievements.push('A messzeségből jött'); a.skills.gathering = 0.2; a.skills.foraging = 0.2;
       LW.Perception.scan(world, a);
       const target = [...world.agents.values()].find((o) => o.id !== a.id); if (target) { a.knowledge.places.set(this.poiKey('water', world.idx(target.x | 0, target.y | 0)), { k: 'water', i: world.idx(target.x | 0, target.y | 0), q: 1, t: world.tick }); a.plan = { goal: 'explore', steps: [{ op: 'moveTo', i: world.idx(target.x | 0, target.y | 0), near: 1, explore: true }], i: 0, startedTick: world.tick, done: false, priority: 1, score: 5 }; }
-      this.memory(world, a, { type: 'arrival', text: 'came over the hills from a land I no longer remember', importance: 0.7, emotion: 'excitement', intensity: 0.5 });
+      this.memory(world, a, { type: 'arrival', text: 'a dombokon túlról jöttem, egy földről, amire már nem emlékszem', importance: 0.7, emotion: 'excitement', intensity: 0.5 });
       world.events.emit('StrangerArrived', { tick: world.tick, agentId: a.id, tile: ti, first: !world.firsts || !world.firsts['stranger'] });
       world.events.emit('AgentBorn', { tick: world.tick, agentId: a.id, genesis: true, stranger: true, tile: ti });
     },
@@ -120,7 +120,7 @@
       const d = LW.ITEMS[item]; if (!d || !d.food || !this.removeItem(a, item, 1)) return false;
       a.needs.food = Math.min(1, a.needs.food + d.food); if (d.water) a.needs.water = Math.min(1, a.needs.water + d.water);
       a.lastMeal = world.tick; a.emotions.joy = Math.min(1, a.emotions.joy + 0.04);
-      if (d.raw && world.rng.chance(0.02 * (1 - a.genes.physiology.immunity))) { a.injury = Math.min(0.9, a.injury + 0.15); a.emotions.stress += 0.1; this.memory(world, a, { type: 'illness', text: 'fell ill after eating raw food', importance: 0.4, emotion: 'sadness', intensity: 0.4 }); }
+      if (d.raw && world.rng.chance(0.02 * (1 - a.genes.physiology.immunity))) { a.injury = Math.min(0.9, a.injury + 0.15); a.emotions.stress += 0.1; this.memory(world, a, { type: 'illness', text: 'rosszul lettem a nyers ételtől', importance: 0.4, emotion: 'sadness', intensity: 0.4 }); }
       return true;
     },
     practice(a, skill, n = 1) { a.skills[skill] = Math.min(1, (a.skills[skill] || 0) + 0.0007 * n * (1 - (a.skills[skill] || 0))); },
@@ -207,7 +207,7 @@
       for (const k in E) { const b = base[k] || 0; const rate = k === 'grief' ? 0.0015 : k === 'love' ? 0.003 : 0.006; E[k] += (b - E[k]) * rate; if (E[k] < 0.001) E[k] = 0; }
       if (a.needs.food < 0.2 || a.needs.water < 0.2) E.stress = Math.min(1, E.stress + 0.01);
       if (a.needs.social < 0.15) E.loneliness = Math.min(1, E.loneliness + 0.004);
-      if (a.health <= 0) this.die(world, a, a.needs.water <= 0 ? 'dehydration' : a.needs.food <= 0 ? 'starvation' : a.needs.warmth <= 0 ? 'cold' : world.tiles.fire[i] ? 'fire' : a.injury > 0.5 ? 'injury' : 'illness');
+      if (a.health <= 0) this.die(world, a, a.needs.water <= 0 ? 'kiszáradás' : a.needs.food <= 0 ? 'éhezés' : a.needs.warmth <= 0 ? 'kihűlés' : world.tiles.fire[i] ? 'tűz' : a.injury > 0.5 ? 'sérülés' : 'betegség');
     },
     dangerAt(world, a, i, fx) {
       let d = 0; const t = world.tiles;
@@ -223,11 +223,11 @@
       LW.Social.daily(world, a);
       // old age
       const age = this.age(world, a); const lon = a.genes.physiology.longevity;
-      if (age > lon - 10 && rng.chance(0.00025 * Math.exp((age - lon) / 5))) { this.die(world, a, 'old age'); return; }
+      if (age > lon - 10 && rng.chance(0.00025 * Math.exp((age - lon) / 5))) { this.die(world, a, 'öregség'); return; }
       // baseline illness
-      if (rng.chance(0.0006 * (1 - a.genes.physiology.immunity * 0.7) * (a.needs.food < 0.3 ? 2 : 1))) { a.injury = Math.min(0.8, a.injury + 0.3); a.emotions.stress += 0.2; this.memory(world, a, { type: 'illness', text: 'fell ill', importance: 0.4, emotion: 'fear', intensity: 0.4 }); world.events.emit('AgentIll', { tick: world.tick, agentId: a.id }); }
+      if (rng.chance(0.0006 * (1 - a.genes.physiology.immunity * 0.7) * (a.needs.food < 0.3 ? 2 : 1))) { a.injury = Math.min(0.8, a.injury + 0.3); a.emotions.stress += 0.2; this.memory(world, a, { type: 'illness', text: 'megbetegedtem', importance: 0.4, emotion: 'fear', intensity: 0.4 }); world.events.emit('AgentIll', { tick: world.tick, agentId: a.id }); }
       // predators at night handled per tick; here: pregnancy & development
-      if (a.pregnancy) { if (world.tick - a.pregnancy.since >= cfg.gestationDays * TPD) this.birth(world, a); else if (a.health < 0.3 && rng.chance(0.03)) { a.pregnancy = null; a.emotions.grief = Math.min(1, a.emotions.grief + 0.5); this.memory(world, a, { type: 'loss', text: 'lost the unborn child', importance: 0.8, emotion: 'grief', intensity: 0.8 }); } }
+      if (a.pregnancy) { if (world.tick - a.pregnancy.since >= cfg.gestationDays * TPD) this.birth(world, a); else if (a.health < 0.3 && rng.chance(0.03)) { a.pregnancy = null; a.emotions.grief = Math.min(1, a.emotions.grief + 0.5); this.memory(world, a, { type: 'loss', text: 'elvesztettem a meg nem született gyermekem', importance: 0.8, emotion: 'grief', intensity: 0.8 }); } }
       const st = this.stage(world, a);
       if ((st === 'child' || st === 'adolescent') && LW.Time.dayOfYear(world.tick) % 30 === (a.id % 30)) LW.Genetics.develop(world, a, this.caregivers(world, a));
       if (LW.Time.dayOfYear(world.tick) === (a.id % 360)) { LW.Tech.forgetCheck(world, a); for (const s in a.skills) a.skills[s] = Math.max(0.02, a.skills[s] - 0.01); }
@@ -236,13 +236,13 @@
     },
     occupationLabel(world, a) {
       const st = this.stage(world, a); if (st === 'infant') return 'infant'; if (st === 'child') return 'child';
-      const c = a.counters; const cand = [['gatherer', c.gathered], ['builder', c.built * 6], ['hunter', c.hunted || 0], ['crafter', (c.crafted || 0) * 3], ['explorer', (c.explored || 0)], ['tinkerer', c.experiments * 4], ['farmer', (c.farmed || 0) * 2], ['fisher', (c.fished || 0)]];
+      const c = a.counters; const cand = [['gatherer', c.gathered], ['builder', c.built * 6], ['hunter', c.hunted || 0], ['crafter', (c.crafted || 0) * 3], ['explorer', (c.explored || 0)], ['tinkerer', c.experiments * 4], ['farmer', (c.farmed || 0) * 2], ['fisher', (c.fished || 0)]]; // ids; LW.HU.occupation() names them
       cand.sort((x, y) => y[1] - x[1]); return cand[0][1] > 5 ? cand[0][0] : (st === 'elder' ? 'elder' : 'forager');
     },
     damage(world, a, amount, cause) {
       a.injury = Math.min(0.95, a.injury + amount * 0.6); a.health = Math.max(0, a.health - amount); a.emotions.fear = Math.min(1, a.emotions.fear + amount); a.emotions.stress = Math.min(1, a.emotions.stress + amount * 0.5);
       world.events.emit('AgentInjured', { tick: world.tick, agentId: a.id, cause, amount });
-      this.memory(world, a, { type: 'injury', text: `was hurt by ${cause}`, importance: 0.5 + amount * 0.4, emotion: 'fear', intensity: 0.5 + amount * 0.5 });
+      this.memory(world, a, { type: 'injury', text: `megsérültem: ${cause}`, importance: 0.5 + amount * 0.4, emotion: 'fear', intensity: 0.5 + amount * 0.5 });
       if (a.health <= 0) this.die(world, a, cause);
     },
 
@@ -271,9 +271,9 @@
       mother.health = Math.max(0.15, mother.health - 0.12 * (1 - mother.health * 0.5));
       // memories & emotions
       const first = !world.firsts || !world.firsts['born'];
-      this.memory(world, mother, { type: 'birth', text: `gave birth to ${child.name}`, importance: 0.95, emotion: 'joy', intensity: 0.9, subjects: [child.id] });
+      this.memory(world, mother, { type: 'birth', text: `világra hoztam őt: ${child.name}`, importance: 0.95, emotion: 'joy', intensity: 0.9, subjects: [child.id] });
       mother.emotions.joy = 1; mother.emotions.love = Math.min(1, mother.emotions.love + 0.6); mother.needs.affection = 1;
-      if (father && world.agents.has(father.id)) { this.memory(world, father, { type: 'birth', text: `became father of ${child.name}`, importance: 0.9, emotion: 'joy', intensity: 0.85, subjects: [child.id] }); father.emotions.joy = Math.min(1, father.emotions.joy + 0.7); father.emotions.pride = Math.min(1, father.emotions.pride + 0.5); }
+      if (father && world.agents.has(father.id)) { this.memory(world, father, { type: 'birth', text: `apa lettem: ${child.name}`, importance: 0.9, emotion: 'joy', intensity: 0.85, subjects: [child.id] }); father.emotions.joy = Math.min(1, father.emotions.joy + 0.7); father.emotions.pride = Math.min(1, father.emotions.pride + 0.5); }
       world.stats.births++;
       world.events.emit('AgentBorn', { tick: world.tick, agentId: child.id, motherId: mother.id, fatherId: pg.by, tile: world.idx(child.x | 0, child.y | 0), first });
       return child;
@@ -296,7 +296,7 @@
         if (o.id === a.id) continue;
         const r = o.relationships.get(a.id); const kin = o.parents.includes(a.id) || a.parents.includes(o.id) || o.partner === a.id;
         const close = kin ? 1 : r ? Math.max(r.friendship, r.romance, r.attraction * 0.5) : 0;
-        if (close > 0.25) { o.emotions.grief = Math.min(1, o.emotions.grief + close * 0.9); o.emotions.sadness = Math.min(1, o.emotions.sadness + close * 0.6); this.memory(world, o, { type: 'death', text: `${a.name} died of ${cause}`, importance: 0.6 + close * 0.35, emotion: 'grief', intensity: close, subjects: [a.id] }); }
+        if (close > 0.25) { o.emotions.grief = Math.min(1, o.emotions.grief + close * 0.9); o.emotions.sadness = Math.min(1, o.emotions.sadness + close * 0.6); this.memory(world, o, { type: 'death', text: `${a.name} meghalt: ${cause}`, importance: 0.6 + close * 0.35, emotion: 'grief', intensity: close, subjects: [a.id] }); }
         if (o.partner === a.id) { o.partner = null; if (r) r.status = 'widowed'; }
         if (o.plan && o.plan.target === a.id) o.plan = null;
       }

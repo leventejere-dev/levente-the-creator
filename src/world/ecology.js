@@ -111,7 +111,7 @@
         const rain = world.rainAt(i);
         t.fire[i] = Math.max(0, t.fire[i] - 6 - Math.round(rain * 30));
         t.trees[i] = Math.max(0, t.trees[i] - 5); t.veg[i] = Math.max(0, t.veg[i] - 10); t.animals[i] = Math.max(0, t.animals[i] - 6);
-        const b = world.buildingAt(i); if (b) LW.Buildings.damage(world, b, 0.06, 'fire');
+        const b = world.buildingAt(i); if (b) LW.Buildings.damage(world, b, 0.06, 'tűz');
         const x = i % w, y = (i / w) | 0;
         const fuelHere = t.fire[i] / 255;
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {

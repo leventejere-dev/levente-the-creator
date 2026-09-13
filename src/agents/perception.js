@@ -39,9 +39,9 @@
         const def = LW.Buildings.def(bld);
         if (def.divine && !a.memory.episodic.some((m) => m.buildingId === bld.id)) LW.God.witnessManifestation(world, a, bld);
       }
-      if (sawFire) { if (LW.Tech.observe(world, a, 'fire')) { A.memory(world, a, { type: 'phenomenon', text: 'saw fire for the first time', importance: 0.85, emotion: 'fear', intensity: 0.7 }); a.emotions.fear = Math.min(1, a.emotions.fear + 0.3); a.emotions.excitement = Math.min(1, a.emotions.excitement + 0.5); } }
+      if (sawFire) { if (LW.Tech.observe(world, a, 'fire')) { A.memory(world, a, { type: 'phenomenon', text: 'először láttam tüzet', importance: 0.85, emotion: 'fear', intensity: 0.7 }); a.emotions.fear = Math.min(1, a.emotions.fear + 0.3); a.emotions.excitement = Math.min(1, a.emotions.excitement + 0.5); } }
       if (sawClay) LW.Tech.observe(world, a, 'clay');
-      if (foundDeposit && a.knowledge.techs.has('digging')) { LW.Tech.learn(world, a, 'ore_lore_' + LW.DEPOSIT_NAME[foundDeposit.dt], 'observation'); world.events.emit('ResourceFound', { tick: world.tick, agentId: a.id, tile: foundDeposit.i, deposit: LW.DEPOSIT_NAME[foundDeposit.dt], first: !world.firsts || !world.firsts['deposit:' + LW.DEPOSIT_NAME[foundDeposit.dt]] }); A.memory(world, a, { type: 'find', text: `found ${LW.ITEMS[LW.DEPOSIT_ITEM[foundDeposit.dt]].label.toLowerCase()}`, importance: 0.6, emotion: 'excitement', intensity: 0.5 }); }
+      if (foundDeposit && a.knowledge.techs.has('digging')) { LW.Tech.learn(world, a, 'ore_lore_' + LW.DEPOSIT_NAME[foundDeposit.dt], 'observation'); world.events.emit('ResourceFound', { tick: world.tick, agentId: a.id, tile: foundDeposit.i, deposit: LW.DEPOSIT_NAME[foundDeposit.dt], first: !world.firsts || !world.firsts['deposit:' + LW.DEPOSIT_NAME[foundDeposit.dt]] }); A.memory(world, a, { type: 'find', text: `találtam: ${LW.ITEMS[LW.DEPOSIT_ITEM[foundDeposit.dt]].label.toLowerCase()}`, importance: 0.6, emotion: 'excitement', intensity: 0.5 }); }
       // other people
       a.threat = null;
       const others = world.agentsNear(a.x, a.y, R, a.id);
@@ -51,7 +51,7 @@
         // learning by watching (children especially)
         if (o.plan && o.plan.tag && LW.dist(a.x, a.y, o.x, o.y) <= 3) this.observePractice(world, a, o, o.plan.tag);
         // jealousy: partner flirting with someone else
-        if (a.partner === o.id && o.plan && o.plan.goal === 'flirt' && o.plan.target !== a.id) { const rival = world.agents.get(o.plan.target); if (rival) { r.jealousy = Math.min(1, r.jealousy + 0.25); r.resentment = Math.min(1, r.resentment + 0.1 * (1 - a.personality.patience)); const rr = LW.Relationships.ensure(world, a, rival); rr.resentment = Math.min(1, rr.resentment + 0.15); a.emotions.jealousy = Math.min(1, a.emotions.jealousy + 0.4); a.emotions.anger = Math.min(1, a.emotions.anger + 0.2 * a.personality.aggression); A.memory(world, a, { type: 'jealousy', text: `saw ${o.name} flirting with ${rival.name}`, importance: 0.6, emotion: 'jealousy', intensity: 0.6, subjects: [o.id, rival.id] }); } }
+        if (a.partner === o.id && o.plan && o.plan.goal === 'flirt' && o.plan.target !== a.id) { const rival = world.agents.get(o.plan.target); if (rival) { r.jealousy = Math.min(1, r.jealousy + 0.25); r.resentment = Math.min(1, r.resentment + 0.1 * (1 - a.personality.patience)); const rr = LW.Relationships.ensure(world, a, rival); rr.resentment = Math.min(1, rr.resentment + 0.15); a.emotions.jealousy = Math.min(1, a.emotions.jealousy + 0.4); a.emotions.anger = Math.min(1, a.emotions.anger + 0.2 * a.personality.aggression); A.memory(world, a, { type: 'jealousy', text: `láttam, ahogy ${o.name} flörtöl vele: ${rival.name}`, importance: 0.6, emotion: 'jealousy', intensity: 0.6, subjects: [o.id, rival.id] }); } }
         if (r.fear > 0.5 || (o.emotions.anger > 0.7 && (o.relationships.get(a.id)?.resentment || 0) > 0.5)) a.threat = o.id;
       }
     },

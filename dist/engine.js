@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 19:00 */
+/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 19:29 */
 
 /* ===== core/rng.js ===== */
 /* LEVENTE — THE CREATOR · core/rng.js
@@ -186,36 +186,36 @@
 
   /** Item catalogue. food = need restored per unit; spoilDays = mean life; weight for carry. */
   const ITEMS = {
-    berries:     { food: 0.30, water: 0.05, spoilDays: 4,  weight: 0.5, label: 'Berries' },
-    roots:       { food: 0.35, spoilDays: 8,  weight: 0.7, label: 'Roots' },
-    meat_raw:    { food: 0.45, spoilDays: 2,  weight: 1.2, label: 'Raw meat', raw: 'meat_cooked' },
-    meat_cooked: { food: 0.70, spoilDays: 6,  weight: 1.0, label: 'Cooked meat' },
-    fish_raw:    { food: 0.35, spoilDays: 2,  weight: 0.8, label: 'Raw fish', raw: 'fish_cooked' },
-    fish_cooked: { food: 0.55, spoilDays: 6,  weight: 0.7, label: 'Cooked fish' },
-    dried_food:  { food: 0.50, spoilDays: 60, weight: 0.5, label: 'Dried food' },
-    grain:       { food: 0.30, spoilDays: 90, weight: 0.5, label: 'Grain' },
-    wood:   { weight: 1.5, label: 'Wood' },
-    stone:  { weight: 2.0, label: 'Stone' },
-    flint:  { weight: 0.8, label: 'Flint' },
-    fiber:  { weight: 0.3, label: 'Plant fiber' },
-    clay:   { weight: 1.5, label: 'Clay' },
-    hide:   { weight: 1.0, label: 'Hide' },
-    handaxe:{ weight: 1.0, label: 'Hand axe', tool: true },
-    spear:  { weight: 1.2, label: 'Spear', tool: true },
-    basket: { weight: 0.6, label: 'Basket', tool: true, carryBonus: 8 },
-    pot:    { weight: 1.5, label: 'Clay pot', tool: true, carryBonus: 3 },
-    ore_copper: { weight: 2.5, label: 'Strange green stone' },
-    ore_tin:    { weight: 2.5, label: 'Grey heavy stone' },
-    ore_iron:   { weight: 2.5, label: 'Rust-red stone' },
-    coal:       { weight: 1.5, label: 'Black burning stone' },
-    gold_nugget:{ weight: 1.0, label: 'Shiny yellow stone' },
-    salt:       { weight: 1.0, label: 'Salt' },
-    gems:       { weight: 0.5, label: 'Glittering stone' },
+    berries:     { food: 0.30, water: 0.05, spoilDays: 4,  weight: 0.5, label: 'Bogyó' },
+    roots:       { food: 0.35, spoilDays: 8,  weight: 0.7, label: 'Gyökér' },
+    meat_raw:    { food: 0.45, spoilDays: 2,  weight: 1.2, label: 'Nyers hús', raw: 'meat_cooked' },
+    meat_cooked: { food: 0.70, spoilDays: 6,  weight: 1.0, label: 'Sült hús' },
+    fish_raw:    { food: 0.35, spoilDays: 2,  weight: 0.8, label: 'Nyers hal', raw: 'fish_cooked' },
+    fish_cooked: { food: 0.55, spoilDays: 6,  weight: 0.7, label: 'Sült hal' },
+    dried_food:  { food: 0.50, spoilDays: 60, weight: 0.5, label: 'Szárított étel' },
+    grain:       { food: 0.30, spoilDays: 90, weight: 0.5, label: 'Gabona' },
+    wood:   { weight: 1.5, label: 'Fa' },
+    stone:  { weight: 2.0, label: 'Kő' },
+    flint:  { weight: 0.8, label: 'Kova' },
+    fiber:  { weight: 0.3, label: 'Rost' },
+    clay:   { weight: 1.5, label: 'Agyag' },
+    hide:   { weight: 1.0, label: 'Bőr' },
+    handaxe:{ weight: 1.0, label: 'Kézibalta', tool: true },
+    spear:  { weight: 1.2, label: 'Lándzsa', tool: true },
+    basket: { weight: 0.6, label: 'Kosár', tool: true, carryBonus: 8 },
+    pot:    { weight: 1.5, label: 'Agyagedény', tool: true, carryBonus: 3 },
+    ore_copper: { weight: 2.5, label: 'Furcsa zöld kő' },
+    ore_tin:    { weight: 2.5, label: 'Szürke nehéz kő' },
+    ore_iron:   { weight: 2.5, label: 'Rozsdavörös kő' },
+    coal:       { weight: 1.5, label: 'Fekete égő kő' },
+    gold_nugget:{ weight: 1.0, label: 'Csillogó sárga kő' },
+    salt:       { weight: 1.0, label: 'Só' },
+    gems:       { weight: 0.5, label: 'Szikrázó kő' },
   };
   const FOOD_ITEMS = Object.keys(ITEMS).filter((k) => ITEMS[k].food);
 
   const BIOME = { OCEAN: 0, LAKE: 1, RIVER: 2, BEACH: 3, GRASSLAND: 4, FOREST: 5, DENSE_FOREST: 6, HILLS: 7, MOUNTAIN: 8, PEAK: 9, MARSH: 10, TUNDRA: 11, DESERT: 12, SAVANNA: 13 };
-  const BIOME_NAME = ['Ocean', 'Lake', 'River', 'Beach', 'Grassland', 'Forest', 'Dense forest', 'Hills', 'Mountain', 'Peak', 'Marsh', 'Tundra', 'Desert', 'Savanna'];
+  const BIOME_NAME = ['Óceán', 'Tó', 'Folyó', 'Part', 'Mező', 'Erdő', 'Sűrű erdő', 'Dombság', 'Hegység', 'Csúcs', 'Mocsár', 'Tundra', 'Sivatag', 'Szavanna'];
   const DEPOSIT = { NONE: 0, CLAY: 1, FLINT: 2, SALT: 3, COAL: 4, COPPER: 5, TIN: 6, IRON: 7, GOLD: 8, GEMS: 9, OIL: 10 };
   const DEPOSIT_NAME = ['none', 'clay', 'flint', 'salt', 'coal', 'copper', 'tin', 'iron', 'gold', 'gems', 'oil'];
   const DEPOSIT_ITEM = [null, 'clay', 'flint', 'salt', 'coal', 'ore_copper', 'ore_tin', 'ore_iron', 'gold_nugget', 'gems', null];
@@ -242,6 +242,38 @@
   LW.EMOTIONS = EMOTIONS;
   LW.NEEDS = NEEDS;
   LW.SKILLS = SKILLS;
+})(globalThis.LW || (globalThis.LW = {}));
+
+
+/* ===== core/hu.js ===== */
+/* LEVENTE — THE CREATOR · core/hu.js — magyar megnevezések a belső azonosítókhoz (a motor kulcsai angolok maradnak) */
+(function (LW) {
+  'use strict';
+  const M = {
+    need: { food: 'Étel', water: 'Víz', energy: 'Energia', warmth: 'Meleg', safety: 'Biztonság', social: 'Társaság', affection: 'Gyengédség', curiosity: 'Kíváncsiság' },
+    emotion: { joy: 'öröm', sadness: 'szomorúság', fear: 'félelem', anger: 'harag', stress: 'feszültség', love: 'szerelem', attraction: 'vonzalom', jealousy: 'féltékenység', loneliness: 'magány', grief: 'gyász', excitement: 'izgalom', shame: 'szégyen', pride: 'büszkeség' },
+    trait: { curiosity: 'kíváncsiság', creativity: 'kreativitás', intelligence: 'értelem', empathy: 'együttérzés', aggression: 'agresszió', patience: 'türelem', bravery: 'bátorság', sociability: 'társaságkedvelés', ambition: 'becsvágy', discipline: 'fegyelem', loyalty: 'hűség', greed: 'kapzsiság', riskTolerance: 'kockázatvállalás', optimism: 'derűlátás', dominance: 'uralkodás', humor: 'humor' },
+    skill: { gathering: 'gyűjtögetés', hunting: 'vadászat', crafting: 'kézművesség', building: 'építés', foraging: 'növényismeret', social: 'társas', exploring: 'felfedezés', medicine: 'gyógyítás', farming: 'földművelés' },
+    occupation: { infant: 'csecsemő', child: 'gyermek', adolescent: 'serdülő', adult: 'felnőtt', elder: 'idős', forager: 'gyűjtögető', gatherer: 'gyűjtögető', builder: 'építő', hunter: 'vadász', crafter: 'kézműves', explorer: 'felfedező', tinkerer: 'kísérletező', farmer: 'földműves', fisher: 'halász' },
+    goal: { flee: 'menekülés', divine: 'a Teremtő hívása', eat: 'evés', drink: 'ivás', sleep: 'alvás', getWarm: 'melegedés', careForChild: 'gyermek gondozása', shareFood: 'étel megosztása', followParent: 'szülő követése', socialize: 'társaság', flirt: 'flört', mate: 'együttlét', stockpile: 'tartalék gyűjtése', buildShelter: 'otthon építése', helpBuild: 'segítés az építésben', makeFire: 'tűzgyújtás', tendFire: 'tűz táplálása', craft: 'készítés', experiment: 'kísérletezés', dig: 'ásás', farm: 'földművelés', explore: 'felfedezés', fight: 'verekedés', teach: 'tanítás', pickup: 'felszedés', mourn: 'gyász', rest: 'pihenés' },
+    goalVerb: { flee: 'menekül', divine: 'a Teremtőnek felel', eat: 'ételt keres', drink: 'inni megy', sleep: 'alszik', getWarm: 'meleget keres', careForChild: 'a gyermekét gondozza', shareFood: 'ételt oszt meg', followParent: 'a szülője mellett marad', socialize: 'társaságot keres', flirt: 'flörtöl', mate: 'együtt van a párjával', stockpile: 'ételt gyűjt későbbre', buildShelter: 'otthont épít', helpBuild: 'segít építeni', makeFire: 'tüzet gyújt', tendFire: 'a tüzet táplálja', craft: 'készít valamit', experiment: 'kísérletezik', dig: 'ás', farm: 'a földet műveli', explore: 'felfedez', fight: 'verekszik', teach: 'tanít', pickup: 'felszed valamit', mourn: 'gyászol', rest: 'pihen' },
+    ctx: { hunger: 'éhség', thirst: 'szomj', tired: 'fáradtság', cold: 'hideg', danger: 'veszély', night: 'éjszaka', feels: 'érzett °C' },
+    op: { moveTo: 'megy', follow: 'követ', flee: 'menekül', gather: 'gyűjt', hunt: 'vadászik', fish: 'halászik', consume: 'eszik', drink: 'iszik', takeFood: 'ételt vesz ki', store: 'elrak', sleep: 'alszik', wait: 'vár', interact: 'beszél', buildNew: 'helyet jelöl', deliver: 'anyagot hoz', build: 'épít', refuel: 'tüzel', craft: 'készít', experiment: 'kísérletezik', dig: 'ás', give: 'ad', pickup: 'felszed', plant: 'vet', harvest: 'arat', divineDone: 'teljesít' },
+    deposit: ['semmi', 'agyag', 'kova', 'só', 'szén', 'réz', 'ón', 'vas', 'arany', 'drágakő', 'olaj'],
+    depositItem: ['', 'agyagot', 'kovát', 'sót', 'szenet', 'rezet', 'ónt', 'vasat', 'aranyat', 'drágakövet', 'olajat'],
+    tier: { camp: 'tábor', hamlet: 'tanya', village: 'falu', town: 'mezőváros', city: 'város', metropolis: 'nagyváros' },
+    tierBecame: { camp: 'táborrá', hamlet: 'tanyává', village: 'faluvá', town: 'mezővárossá', city: 'várossá', metropolis: 'nagyvárossá' },
+    shape: { continent: 'Egy kontinens', archipelago: 'Egy szigetvilág', twin: 'Két földrész világa' },
+    eventType: { AgentBorn: 'Születés', AgentDied: 'Halál', Killing: 'Gyilkosság', CoupleFormed: 'Szerelem', CoupleBroke: 'Szakítás', Pregnancy: 'Terhesség', DiscoveryMade: 'Felfedezés', KnowledgeLost: 'Elveszett tudás', BuildingCompleted: 'Építés', BuildingDestroyed: 'Pusztulás', SettlementFounded: 'Település', SettlementGrew: 'Növekedés', SettlementAbandoned: 'Elnéptelenedés', SettlementResettled: 'Újranépesedés', ResourceFound: 'Lelet', WildfireStarted: 'Erdőtűz', BeliefFormed: 'Hit', ConflictOccurred: 'Összecsapás', StrangerArrived: 'Idegen', Harvest: 'Aratás', WeatherChanged: 'Időjárás' },
+  };
+  const HU = {
+    ...M,
+    need: (k) => M.need[k] || k, emotion: (k) => M.emotion[k] || k, trait: (k) => M.trait[k] || k, skill: (k) => M.skill[k] || k,
+    occupation: (k) => M.occupation[k] || k, goal: (k) => M.goal[k] || k, goalVerb: (k) => M.goalVerb[k] || k, ctx: (k) => M.ctx[k] || k, op: (k) => M.op[k] || k,
+    deposit: (i) => M.deposit[i] || '?', depositByName: (n) => M.deposit[LW.DEPOSIT_NAME.indexOf(n)] || n, depositItemByName: (n) => M.depositItem[LW.DEPOSIT_NAME.indexOf(n)] || n,
+    tier: (k) => M.tier[k] || k, tierBecame: (k) => M.tierBecame[k] || k, shape: (k) => M.shape[k] || k, eventType: (k) => M.eventType[k] || k,
+  };
+  LW.HU = HU;
 })(globalThis.LW || (globalThis.LW = {}));
 
 
@@ -285,7 +317,7 @@
     day: (tick) => Math.floor(tick / T.TICKS_PER_DAY),
     year: (tick) => Math.floor(tick / T.TICKS_PER_YEAR),
     season: (tick) => Math.floor(Time.dayOfYear(tick) / T.SEASON_DAYS), // 0 spring 1 summer 2 autumn 3 winter
-    seasonName: (tick) => ['Spring', 'Summer', 'Autumn', 'Winter'][Time.season(tick)],
+    seasonName: (tick) => ['Tavasz', 'Nyár', 'Ősz', 'Tél'][Time.season(tick)],
     month: (tick) => Math.floor(Time.dayOfYear(tick) / T.DAYS_PER_MONTH),
     dayOfMonth: (tick) => (Time.dayOfYear(tick) % T.DAYS_PER_MONTH) + 1,
     /** 0..1 fraction through the year */
@@ -306,22 +338,22 @@
       if (h > b - 0.75) return 1 - smoothstep(b - 0.75, b + 1, h);
       return 1;
     },
-    stamp: (tick) => { const y = Time.year(tick), d = Time.dayOfYear(tick) + 1, h = Time.hour(tick), m = Time.minute(tick); return `Y${y} D${d} ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; },
+    stamp: (tick) => { const y = Time.year(tick), d = Time.dayOfYear(tick) + 1, h = Time.hour(tick), m = Time.minute(tick); return `${y}. év ${d}. nap ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; },
     clock: (tick) => `${String(Time.hour(tick)).padStart(2, '0')}:${String(Time.minute(tick)).padStart(2, '0')}`,
     /** human friendly duration of ticks */
     span: (ticks) => {
       const days = ticks / T.TICKS_PER_DAY;
-      if (days < 1) return `${Math.round(ticks / T.TICKS_PER_HOUR)} hours`;
-      if (days < 60) return `${Math.round(days)} days`;
+      if (days < 1) return `${Math.round(ticks / T.TICKS_PER_HOUR)} óra`;
+      if (days < 60) return `${Math.round(days)} nap`;
       const years = days / T.DAYS_PER_YEAR;
-      if (years < 2) return `${Math.round(days / 30)} months`;
-      return `${years.toFixed(years < 10 ? 1 : 0)} years`;
+      if (years < 2) return `${Math.round(days / 30)} hónap`;
+      return `${years.toFixed(years < 10 ? 1 : 0)} év`;
     },
     realSpan: (ms) => {
-      const s = Math.floor(ms / 1000); if (s < 60) return `${s} s`;
-      const m = Math.floor(s / 60); if (m < 60) return `${m} min`;
-      const h = Math.floor(m / 60); if (h < 48) return `${h} h ${m % 60} min`;
-      const d = Math.floor(h / 24); return `${d} days ${h % 24} h`;
+      const s = Math.floor(ms / 1000); if (s < 60) return `${s} mp`;
+      const m = Math.floor(s / 60); if (m < 60) return `${m} perc`;
+      const h = Math.floor(m / 60); if (h < 48) return `${h} óra ${m % 60} perc`;
+      const d = Math.floor(h / 24); return `${d} nap ${h % 24} óra`;
     },
   };
 
@@ -917,8 +949,8 @@
 
     describe(tempC) {
       const eff = this.effectiveState();
-      if ((eff.state === 'rain' || eff.state === 'storm') && tempC < 0.5) return eff.state === 'storm' ? 'Blizzard' : 'Snow';
-      return { clear: 'Clear', cloudy: 'Cloudy', overcast: 'Overcast', rain: 'Rain', storm: 'Storm', fog: 'Fog' }[eff.state];
+      if ((eff.state === 'rain' || eff.state === 'storm') && tempC < 0.5) return eff.state === 'storm' ? 'Hóvihar' : 'Havazás';
+      return { clear: 'Derült', cloudy: 'Felhős', overcast: 'Borult', rain: 'Eső', storm: 'Vihar', fog: 'Köd' }[eff.state];
     }
 
     toJSON() { return { state: this.state, prevState: this.prevState, intensity: this.intensity, cloud: this.cloud, humidity: this.humidity, wind: this.wind, tempOffset: this.tempOffset, override: this.override, sinceChange: this.sinceChange }; }
@@ -1044,7 +1076,7 @@
         const rain = world.rainAt(i);
         t.fire[i] = Math.max(0, t.fire[i] - 6 - Math.round(rain * 30));
         t.trees[i] = Math.max(0, t.trees[i] - 5); t.veg[i] = Math.max(0, t.veg[i] - 10); t.animals[i] = Math.max(0, t.animals[i] - 6);
-        const b = world.buildingAt(i); if (b) LW.Buildings.damage(world, b, 0.06, 'fire');
+        const b = world.buildingAt(i); if (b) LW.Buildings.damage(world, b, 0.06, 'tűz');
         const x = i % w, y = (i / w) | 0;
         const fuelHere = t.fire[i] / 255;
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -1080,31 +1112,31 @@
   'use strict';
 
   const D = {
-    fire_awareness: { name: 'Knowledge of Fire', era: 'primitive', hidden: true, desc: 'Has seen fire and understood it is a thing that can be had.' },
-    clay_awareness: { name: 'Knowledge of Clay', era: 'primitive', hidden: true, desc: 'Knows the soft earth by the water can be shaped.' },
-    foraging_lore: { name: 'Plant Lore', era: 'primitive', prereq: [], items: { berries: 3, roots: 2 }, difficulty: 0.35, need: 'food', skill: 'foraging', minSkill: 0.12, wow: 'First Plant Lore', desc: 'Which plants feed, which harm. Better foraging.' },
-    stone_knapping: { name: 'Stone Tools', era: 'primitive', prereq: [], items: { stone: 2, flint: 1 }, difficulty: 0.5, need: 'food', skill: 'crafting', minSkill: 0.1, accidents: [{ during: 'gather:stone', chance: 0.01 }], recipes: ['handaxe'], wow: 'First Stone Tool', desc: 'Striking stone against stone makes an edge.' },
-    fire_making: { name: 'Fire Making', era: 'primitive', prereq: [], items: { wood: 3 }, difficulty: 0.72, boosts: { fire_awareness: 0.25, stone_knapping: 0.1 }, need: 'warmth', skill: 'crafting', accidents: [{ during: 'craft:handaxe', chance: 0.03 }, { during: 'gather:stone', chance: 0.004 }], buildings: ['campfire'], wow: 'First Fire', desc: 'Fire can be made, not only found.' },
-    cooking: { name: 'Cooking', era: 'primitive', prereq: ['fire_making'], itemsAny: [{ meat_raw: 1 }, { fish_raw: 1 }], nearby: 'fire', difficulty: 0.4, need: 'food', skill: 'crafting', accidents: [{ during: 'rest:fire', chance: 0.04, itemsAny: [{ meat_raw: 1 }, { fish_raw: 1 }] }], recipes: ['meat_cooked', 'fish_cooked'], wow: 'First Cooked Meal', desc: 'Meat over fire is safer, richer, keeps longer.' },
-    shelter_building: { name: 'Shelter Building', era: 'primitive', prereq: [], items: { wood: 4, fiber: 2 }, difficulty: 0.45, need: 'warmth', skill: 'building', buildings: ['lean_to'], wow: 'First Shelter', desc: 'Branches leaned together keep out rain and wind.' },
-    fiber_twisting: { name: 'Cordage', era: 'primitive', prereq: [], items: { fiber: 3 }, difficulty: 0.4, skill: 'crafting', minSkill: 0.1, desc: 'Twisted plant fibers make rope.' },
-    basket_weaving: { name: 'Basket Weaving', era: 'primitive', prereq: ['fiber_twisting'], items: { fiber: 6 }, difficulty: 0.55, need: 'food', skill: 'crafting', minSkill: 0.2, recipes: ['basket'], wow: 'First Basket', desc: 'Carry more, gather more.' },
-    spear_making: { name: 'Spear Making', era: 'primitive', prereq: ['stone_knapping'], items: { wood: 1, flint: 1, fiber: 1 }, difficulty: 0.5, need: 'food', skill: 'crafting', minSkill: 0.2, recipes: ['spear'], wow: 'First Spear', desc: 'A sharp stone on a shaft. Hunting becomes possible.' },
-    fishing: { name: 'Fishing', era: 'primitive', prereq: [], items: { wood: 1, fiber: 1 }, nearby: 'water', difficulty: 0.5, need: 'food', skill: 'hunting', minSkill: 0.05, wow: 'First Catch', desc: 'The water is full of food for those who learn to take it.' },
-    woodworking: { name: 'Woodworking', era: 'primitive', prereq: ['stone_knapping'], items: { wood: 4 }, difficulty: 0.55, skill: 'crafting', minSkill: 0.3, desc: 'Shaping wood with stone tools.' },
-    hut_construction: { name: 'Hut Building', era: 'primitive', prereq: ['shelter_building', 'woodworking', 'fiber_twisting'], items: { wood: 6, fiber: 2 }, difficulty: 0.75, need: 'warmth', skill: 'building', minSkill: 0.35, buildings: ['hut'], wow: 'First Hut', desc: 'A real home: walls, roof, a place to keep things.' },
-    digging: { name: 'Digging', era: 'primitive', prereq: ['stone_knapping'], items: { stone: 1, wood: 1 }, difficulty: 0.5, skill: 'gathering', minSkill: 0.35, desc: 'What lies under the ground can be reached.' },
-    pottery: { name: 'Pottery', era: 'primitive', prereq: ['fire_making', 'clay_awareness'], items: { clay: 4 }, nearby: 'fire', difficulty: 0.8, skill: 'crafting', minSkill: 0.4, accidents: [{ during: 'rest:fire', chance: 0.01, items: { clay: 1 } }], recipes: ['pot'], wow: 'First Pottery', desc: 'Clay hardened in fire holds water and grain.' },
-    food_drying: { name: 'Food Preservation', era: 'primitive', prereq: ['fire_making'], itemsAny: [{ meat_raw: 2 }, { fish_raw: 2 }, { berries: 4 }], difficulty: 0.6, need: 'food', skill: 'crafting', minSkill: 0.3, recipes: ['dried_food'], buildings: ['storage_pit'], wow: 'First Food Store', desc: 'Dried food survives the winter.' },
-    hide_working: { name: 'Hide Working', era: 'primitive', prereq: ['stone_knapping'], items: { hide: 2 }, difficulty: 0.55, need: 'warmth', skill: 'crafting', minSkill: 0.3, recipes: ['clothes'], wow: 'First Clothing', desc: 'Animal skins become warm clothing.' },
-    seed_planting: { name: 'Agriculture', era: 'neolithic', prereq: ['foraging_lore', 'digging'], items: { roots: 2, berries: 2 }, difficulty: 0.92, need: 'food', skill: 'foraging', minSkill: 0.55, buildings: ['farm_plot'], wow: 'First Farm', desc: 'Seeds put in the ground come back as food.' },
-    herbal_medicine: { name: 'Herbal Medicine', era: 'primitive', prereq: ['foraging_lore'], items: { fiber: 2, berries: 2 }, difficulty: 0.7, skill: 'foraging', minSkill: 0.35, wow: 'First Healer', desc: 'Some plants close wounds and calm fevers.' },
-    stone_masonry: { name: 'Stone Masonry', era: 'neolithic', prereq: ['hut_construction', 'digging'], items: { stone: 8, clay: 2 }, difficulty: 0.92, skill: 'building', minSkill: 0.6, buildings: ['stone_house'], wow: 'First Stone House', desc: 'Stones fitted and bound with clay stand for generations.' },
-    ore_lore_copper: { name: 'Knowledge of Green Stone', era: 'neolithic', hidden: true, desc: 'A strange green-veined stone has been found. Nobody knows its use yet.' },
-    ore_lore_tin: { name: 'Knowledge of Grey Stone', era: 'neolithic', hidden: true, desc: 'A heavy grey stone. Its use is unknown.' },
-    ore_lore_iron: { name: 'Knowledge of Red Stone', era: 'neolithic', hidden: true, desc: 'Rust-red rock, heavy and useless so far.' },
-    ore_lore_coal: { name: 'Knowledge of Burning Stone', era: 'neolithic', hidden: true, desc: 'A black stone that burns.' },
-    ore_lore_gold: { name: 'Knowledge of Shining Stone', era: 'neolithic', hidden: true, desc: 'A soft yellow stone that never dulls. Beautiful.' },
+    fire_awareness: { name: 'A tűz ismerete', era: 'primitive', hidden: true, desc: 'Látott már tüzet, és megértette, hogy az birtokolható.' },
+    clay_awareness: { name: 'Az agyag ismerete', era: 'primitive', hidden: true, desc: 'Tudja, hogy a víz menti puha föld formázható.' },
+    foraging_lore: { name: 'Növényismeret', era: 'primitive', prereq: [], items: { berries: 3, roots: 2 }, difficulty: 0.35, need: 'food', skill: 'foraging', minSkill: 0.12, wow: 'Első növényismeret', desc: 'Melyik növény táplál, melyik árt. Jobb gyűjtögetés.' },
+    stone_knapping: { name: 'Kőszerszám', era: 'primitive', prereq: [], items: { stone: 2, flint: 1 }, difficulty: 0.5, need: 'food', skill: 'crafting', minSkill: 0.1, accidents: [{ during: 'gather:stone', chance: 0.01 }], recipes: ['handaxe'], wow: 'Első kőszerszám', desc: 'Kő a kőhöz ütve élt ad.' },
+    fire_making: { name: 'Tűzgyújtás', era: 'primitive', prereq: [], items: { wood: 3 }, difficulty: 0.72, boosts: { fire_awareness: 0.25, stone_knapping: 0.1 }, need: 'warmth', skill: 'crafting', accidents: [{ during: 'craft:handaxe', chance: 0.03 }, { during: 'gather:stone', chance: 0.004 }], buildings: ['campfire'], wow: 'Első tűz', desc: 'A tüzet nemcsak találni, csinálni is lehet.' },
+    cooking: { name: 'Főzés', era: 'primitive', prereq: ['fire_making'], itemsAny: [{ meat_raw: 1 }, { fish_raw: 1 }], nearby: 'fire', difficulty: 0.4, need: 'food', skill: 'crafting', accidents: [{ during: 'rest:fire', chance: 0.04, itemsAny: [{ meat_raw: 1 }, { fish_raw: 1 }] }], recipes: ['meat_cooked', 'fish_cooked'], wow: 'Első főtt étel', desc: 'A tűz fölött a hús biztonságosabb, táplálóbb, tovább eláll.' },
+    shelter_building: { name: 'Fedezéképítés', era: 'primitive', prereq: [], items: { wood: 4, fiber: 2 }, difficulty: 0.45, need: 'warmth', skill: 'building', buildings: ['lean_to'], wow: 'Első fedezék', desc: 'Egymásnak támasztott ágak kizárják az esőt és a szelet.' },
+    fiber_twisting: { name: 'Kötélfonás', era: 'primitive', prereq: [], items: { fiber: 3 }, difficulty: 0.4, skill: 'crafting', minSkill: 0.1, desc: 'A sodort növényi rost kötelet ad.' },
+    basket_weaving: { name: 'Kosárfonás', era: 'primitive', prereq: ['fiber_twisting'], items: { fiber: 6 }, difficulty: 0.55, need: 'food', skill: 'crafting', minSkill: 0.2, recipes: ['basket'], wow: 'Első kosár', desc: 'Többet vihetsz, többet gyűjthetsz.' },
+    spear_making: { name: 'Lándzsakészítés', era: 'primitive', prereq: ['stone_knapping'], items: { wood: 1, flint: 1, fiber: 1 }, difficulty: 0.5, need: 'food', skill: 'crafting', minSkill: 0.2, recipes: ['spear'], wow: 'Első lándzsa', desc: 'Éles kő egy nyélen. Megkezdődhet a vadászat.' },
+    fishing: { name: 'Halászat', era: 'primitive', prereq: [], items: { wood: 1, fiber: 1 }, nearby: 'water', difficulty: 0.5, need: 'food', skill: 'hunting', minSkill: 0.05, wow: 'Első fogás', desc: 'A víz tele van étellel annak, aki megtanulja kivenni.' },
+    woodworking: { name: 'Famegmunkálás', era: 'primitive', prereq: ['stone_knapping'], items: { wood: 4 }, difficulty: 0.55, skill: 'crafting', minSkill: 0.3, desc: 'Fa formázása kőszerszámmal.' },
+    hut_construction: { name: 'Kunyhóépítés', era: 'primitive', prereq: ['shelter_building', 'woodworking', 'fiber_twisting'], items: { wood: 6, fiber: 2 }, difficulty: 0.75, need: 'warmth', skill: 'building', minSkill: 0.35, buildings: ['hut'], wow: 'Első kunyhó', desc: 'Igazi otthon: falak, tető, hely a holminak.' },
+    digging: { name: 'Ásás', era: 'primitive', prereq: ['stone_knapping'], items: { stone: 1, wood: 1 }, difficulty: 0.5, skill: 'gathering', minSkill: 0.35, desc: 'Ami a föld alatt van, elérhető.' },
+    pottery: { name: 'Fazekasság', era: 'primitive', prereq: ['fire_making', 'clay_awareness'], items: { clay: 4 }, nearby: 'fire', difficulty: 0.8, skill: 'crafting', minSkill: 0.4, accidents: [{ during: 'rest:fire', chance: 0.01, items: { clay: 1 } }], recipes: ['pot'], wow: 'Első agyagedény', desc: 'A tűzben keményedett agyag vizet és gabonát tart.' },
+    food_drying: { name: 'Tartósítás', era: 'primitive', prereq: ['fire_making'], itemsAny: [{ meat_raw: 2 }, { fish_raw: 2 }, { berries: 4 }], difficulty: 0.6, need: 'food', skill: 'crafting', minSkill: 0.3, recipes: ['dried_food'], buildings: ['storage_pit'], wow: 'Első éléskamra', desc: 'A szárított étel kibírja a telet.' },
+    hide_working: { name: 'Bőrmegmunkálás', era: 'primitive', prereq: ['stone_knapping'], items: { hide: 2 }, difficulty: 0.55, need: 'warmth', skill: 'crafting', minSkill: 0.3, recipes: ['clothes'], wow: 'Első ruha', desc: 'Az állatbőrből meleg ruha lesz.' },
+    seed_planting: { name: 'Földművelés', era: 'neolithic', prereq: ['foraging_lore', 'digging'], items: { roots: 2, berries: 2 }, difficulty: 0.92, need: 'food', skill: 'foraging', minSkill: 0.55, buildings: ['farm_plot'], wow: 'Első szántó', desc: 'A földbe tett mag ételként tér vissza.' },
+    herbal_medicine: { name: 'Gyógynövények', era: 'primitive', prereq: ['foraging_lore'], items: { fiber: 2, berries: 2 }, difficulty: 0.7, skill: 'foraging', minSkill: 0.35, wow: 'Első gyógyító', desc: 'Néhány növény sebet zár és lázat csillapít.' },
+    stone_masonry: { name: 'Kőművesség', era: 'neolithic', prereq: ['hut_construction', 'digging'], items: { stone: 8, clay: 2 }, difficulty: 0.92, skill: 'building', minSkill: 0.6, buildings: ['stone_house'], wow: 'Első kőház', desc: 'Az agyaggal kötött, illesztett kő nemzedékeken át áll.' },
+    ore_lore_copper: { name: 'A zöld kő ismerete', era: 'neolithic', hidden: true, desc: 'Furcsa, zölderes követ találtak. Még senki sem tudja, mire jó.' },
+    ore_lore_tin: { name: 'A szürke kő ismerete', era: 'neolithic', hidden: true, desc: 'Nehéz szürke kő. Használata ismeretlen.' },
+    ore_lore_iron: { name: 'A vörös kő ismerete', era: 'neolithic', hidden: true, desc: 'Rozsdavörös, nehéz, egyelőre haszontalan kő.' },
+    ore_lore_coal: { name: 'Az égő kő ismerete', era: 'neolithic', hidden: true, desc: 'Fekete kő, amely ég.' },
+    ore_lore_gold: { name: 'A fénylő kő ismerete', era: 'neolithic', hidden: true, desc: 'Puha sárga kő, amely sosem homályosul. Gyönyörű.' },
   };
   for (const id in D) D[id].id = id;
 
@@ -1118,7 +1150,7 @@
     dried_food: { out: { dried_food: 2 }, inpAny: [{ meat_raw: 2 }, { fish_raw: 2 }, { berries: 4 }], ticks: 24, tech: 'food_drying', nearby: 'fire', skill: 'crafting', tag: 'craft:dry' },
     clothes: { out: { clothes: 1 }, inp: { hide: 2, fiber: 1 }, ticks: 20, tech: 'hide_working', skill: 'crafting', tag: 'craft:clothes' },
   };
-  LW.ITEMS.clothes = { weight: 1.0, label: 'Hide clothing', tool: true, warmth: 8 };
+  LW.ITEMS.clothes = { weight: 1.0, label: 'Bőrruha', tool: true, warmth: 8 };
 
   /** Where an item can be obtained from the world (POI kind) — null = only via crafting/inventory. */
   const SOURCE = { berries: 'food', roots: 'food', wood: 'wood', stone: 'stone', flint: 'flint', fiber: 'fiber', clay: 'clay', meat_raw: 'animals', fish_raw: 'fish' };
@@ -1196,17 +1228,17 @@
       const ev = { tick: world.tick, agentId: a.id, tech: id, source, teacherId: teacher ? teacher.id : undefined, first, tile: world.idx(a.x | 0, a.y | 0) };
       if (source === 'taught' || source === 'observed_practice' || source === 'inherited') world.events.emit('KnowledgeTransferred', ev);
       else { world.stats.discoveries++; world.events.emit('DiscoveryMade', ev); }
-      if (!d.hidden && source !== 'taught') { LW.Agents.memory(world, a, { type: 'discovery', text: `discovered ${d.name}`, importance: first ? 0.95 : 0.7, emotion: 'pride', intensity: first ? 0.9 : 0.6, tech: id }); a.emotions.pride = Math.min(1, a.emotions.pride + 0.6); a.emotions.joy = Math.min(1, a.emotions.joy + 0.4); a.needs.curiosity = 1; }
+      if (!d.hidden && source !== 'taught') { LW.Agents.memory(world, a, { type: 'discovery', text: `rájöttem: ${d.name.toLowerCase()}`, importance: first ? 0.95 : 0.7, emotion: 'pride', intensity: first ? 0.9 : 0.6, tech: id }); a.emotions.pride = Math.min(1, a.emotions.pride + 0.6); a.emotions.joy = Math.min(1, a.emotions.joy + 0.4); a.needs.curiosity = 1; }
     },
     /** Union of everything anyone alive knows. */
     worldKnowledge(world) { const s = new Set(); for (const a of world.agents.values()) for (const t of a.knowledge.techs) s.add(t); return s; },
     techLevel(known) {
       const has = (k) => known.has(k);
-      if (has('stone_masonry') && has('seed_planting')) return 'Neolithic';
-      if (has('seed_planting') || (has('pottery') && has('hut_construction'))) return 'Early Neolithic';
-      if (has('stone_knapping') && has('fire_making')) return 'Stone Age';
-      if (has('stone_knapping') || has('fire_making') || has('shelter_building')) return 'Early Stone Age';
-      return 'Primitive';
+      if (has('stone_masonry') && has('seed_planting')) return 'Újkőkor';
+      if (has('seed_planting') || (has('pottery') && has('hut_construction'))) return 'Korai újkőkor';
+      if (has('stone_knapping') && has('fire_making')) return 'Kőkor';
+      if (has('stone_knapping') || has('fire_making') || has('shelter_building')) return 'Korai kőkor';
+      return 'Kezdetleges';
     },
     /** Elder forgetting & knowledge loss (called yearly per agent). */
     forgetCheck(world, a) {
@@ -1239,16 +1271,16 @@
   const TPD = LW.TIME.TICKS_PER_DAY;
 
   const DEFS = {
-    campfire:    { label: 'Campfire', cost: { wood: 3 }, ticks: 8, warmth: 14, light: 1, safety: 0.5, radius: 2, fuelTicks: TPD * 2, tech: 'fire_making', lifeDays: 120 },
-    lean_to:     { label: 'Lean-to', cost: { wood: 6, fiber: 2 }, ticks: 40, insulation: 9, safety: 0.3, sleep: 0.5, capacity: 3, storage: 10, dwelling: true, tech: 'shelter_building', lifeDays: 420 },
-    hut:         { label: 'Hut', cost: { wood: 14, fiber: 6, stone: 2 }, ticks: 160, insulation: 14, safety: 0.6, sleep: 0.8, capacity: 5, storage: 40, dwelling: true, tech: 'hut_construction', lifeDays: 2400, light: 0.4 },
-    stone_house: { label: 'Stone house', cost: { stone: 24, wood: 10, clay: 6 }, ticks: 400, insulation: 18, safety: 0.85, sleep: 0.95, capacity: 6, storage: 80, dwelling: true, tech: 'stone_masonry', lifeDays: 9000, light: 0.6 },
-    storage_pit: { label: 'Storage pit', cost: { wood: 4, stone: 2 }, ticks: 40, storage: 60, preserve: 0.5, tech: 'food_drying', lifeDays: 800 },
-    farm_plot:   { label: 'Farm plot', cost: { wood: 2 }, ticks: 60, farm: true, tech: 'seed_planting', lifeDays: 400 },
-    monolith:    { label: 'Monolith', cost: {}, ticks: 0, divine: true, lifeDays: 1e9, light: 0.3 },
-    light:       { label: 'Pillar of light', cost: {}, ticks: 0, divine: true, lifeDays: 3, light: 1.5 },
-    orb:         { label: 'Floating orb', cost: {}, ticks: 0, divine: true, lifeDays: 7, light: 0.8 },
-    avatar:      { label: 'The Creator', cost: {}, ticks: 0, divine: true, lifeDays: 2, light: 1.0 },
+    campfire:    { label: 'Tábortűz', cost: { wood: 3 }, ticks: 8, warmth: 14, light: 1, safety: 0.5, radius: 2, fuelTicks: TPD * 2, tech: 'fire_making', lifeDays: 120 },
+    lean_to:     { label: 'Fedezék', cost: { wood: 6, fiber: 2 }, ticks: 40, insulation: 9, safety: 0.3, sleep: 0.5, capacity: 3, storage: 10, dwelling: true, tech: 'shelter_building', lifeDays: 420 },
+    hut:         { label: 'Kunyhó', cost: { wood: 14, fiber: 6, stone: 2 }, ticks: 160, insulation: 14, safety: 0.6, sleep: 0.8, capacity: 5, storage: 40, dwelling: true, tech: 'hut_construction', lifeDays: 2400, light: 0.4 },
+    stone_house: { label: 'Kőház', cost: { stone: 24, wood: 10, clay: 6 }, ticks: 400, insulation: 18, safety: 0.85, sleep: 0.95, capacity: 6, storage: 80, dwelling: true, tech: 'stone_masonry', lifeDays: 9000, light: 0.6 },
+    storage_pit: { label: 'Tárolóverem', cost: { wood: 4, stone: 2 }, ticks: 40, storage: 60, preserve: 0.5, tech: 'food_drying', lifeDays: 800 },
+    farm_plot:   { label: 'Szántó', cost: { wood: 2 }, ticks: 60, farm: true, tech: 'seed_planting', lifeDays: 400 },
+    monolith:    { label: 'Monolit', cost: {}, ticks: 0, divine: true, lifeDays: 1e9, light: 0.3 },
+    light:       { label: 'Fényoszlop', cost: {}, ticks: 0, divine: true, lifeDays: 3, light: 1.5 },
+    orb:         { label: 'Lebegő gömb', cost: {}, ticks: 0, divine: true, lifeDays: 7, light: 0.8 },
+    avatar:      { label: 'A Teremtő', cost: {}, ticks: 0, divine: true, lifeDays: 2, light: 1.0 },
   };
 
   const Buildings = {
@@ -1290,7 +1322,7 @@
         if (def.dwelling) for (const cid of a.children) { const c = world.agents.get(cid); if (c && c.home == null && LW.Time.ageYears(c.bornTick, world.tick) < world.cfg.agents.adultAge) this.moveIn(world, b, c); }
         if (b.kind === 'campfire') { b.fuel = def.fuelTicks; b.lit = true; }
         world.events.emit('BuildingCompleted', { tick: world.tick, buildingId: b.id, kind: b.kind, agentId: a.id, tile: world.idx(b.x, b.y), first: !world.firsts || !world.firsts['building:' + b.kind] });
-        LW.Agents.memory(world, a, { type: 'built', text: `built a ${def.label.toLowerCase()}`, importance: 0.6, emotion: 'pride', intensity: 0.6, buildingId: b.id });
+        LW.Agents.memory(world, a, { type: 'built', text: `felépítettem: ${def.label.toLowerCase()}`, importance: 0.6, emotion: 'pride', intensity: 0.6, buildingId: b.id });
         a.emotions.pride = Math.min(1, a.emotions.pride + 0.4);
         return true;
       }
@@ -1313,9 +1345,9 @@
     },
     destroy(world, b, cause) {
       const def = DEFS[b.kind];
-      for (const rid of b.residents) { const r = world.agents.get(rid); if (r) { r.home = null; LW.Agents.memory(world, r, { type: 'loss', text: `lost home to ${cause}`, importance: 0.7, emotion: 'sadness', intensity: 0.7 }); r.emotions.sadness = Math.min(1, r.emotions.sadness + 0.5); if (cause === 'fire') r.emotions.fear = Math.min(1, r.emotions.fear + 0.5); } }
+      for (const rid of b.residents) { const r = world.agents.get(rid); if (r) { r.home = null; LW.Agents.memory(world, r, { type: 'loss', text: `elvesztettem az otthonom (${cause})`, importance: 0.7, emotion: 'sadness', intensity: 0.7 }); r.emotions.sadness = Math.min(1, r.emotions.sadness + 0.5); if (cause === 'tűz') r.emotions.fear = Math.min(1, r.emotions.fear + 0.5); } }
       // drop stored items on the ground
-      const i = world.idx(b.x, b.y); world.ground = world.ground || new Map(); const g = world.ground.get(i) || {}; for (const k in b.storage) g[k] = (g[k] || 0) + Math.floor(b.storage[k] * (cause === 'fire' ? 0.2 : 0.8)); world.ground.set(i, g);
+      const i = world.idx(b.x, b.y); world.ground = world.ground || new Map(); const g = world.ground.get(i) || {}; for (const k in b.storage) g[k] = (g[k] || 0) + Math.floor(b.storage[k] * (cause === 'tűz' ? 0.2 : 0.8)); world.ground.set(i, g);
       world.removeBuilding(b.id); world.dirtyTiles.add(i);
       world.events.emit(def.divine ? 'ManifestationEnded' : 'BuildingDestroyed', { tick: world.tick, buildingId: b.id, kind: b.kind, cause, tile: i, ownerId: b.ownerId });
     },
@@ -1328,8 +1360,8 @@
         const def = DEFS[b.kind];
         if (b.kind === 'campfire' && b.lit && b.progress >= 1) { b.fuel--; if (b.fuel <= 0) { b.lit = false; world.dirtyTiles.add(world.idx(b.x, b.y)); world.events.emit('FireWentOut', { tick: world.tick, buildingId: b.id, tile: world.idx(b.x, b.y) }); } }
         if ((b.id % TPD) === s) { // once per day per building
-          if (b.progress >= 1 || def.divine) { b.hp -= 1 / def.lifeDays; if (b.hp <= 0) { this.destroy(world, b, def.divine ? 'faded' : 'decay'); continue; } }
-          else if (world.tick - b.startedTick > TPD * 200) { this.destroy(world, b, 'abandoned'); continue; }
+          if (b.progress >= 1 || def.divine) { b.hp -= 1 / def.lifeDays; if (b.hp <= 0) { this.destroy(world, b, def.divine ? 'elhalványult' : 'elkorhadt'); continue; } }
+          else if (world.tick - b.startedTick > TPD * 200) { this.destroy(world, b, 'félbehagyták'); continue; }
           if (def.farm && b.progress >= 1 && b.planted) {
             const i = world.idx(b.x, b.y), t = world.tiles; const season = LW.Time.season(world.tick);
             const g = 0.014 * (0.3 + 0.7 * t.fert[i] / 255) * (0.3 + 0.7 * t.moist[i] / 255) * [1, 1.1, 0.6, 0][season];
@@ -1561,11 +1593,11 @@
       }
     },
     label(r) {
-      if (!r) return 'stranger';
-      if (r.status === 'partner') return 'partner'; if (r.status === 'dating') return 'dating'; if (r.status === 'ex') return 'former partner'; if (r.status === 'family') return 'family';
-      if (r.resentment > 0.5 && r.resentment > r.friendship) return 'enemy'; if (r.resentment > 0.3 && r.resentment > r.friendship) return 'rival';
-      if (r.friendship > 0.6) return 'close friend'; if (r.friendship > 0.3) return 'friend'; if (r.familiarity > 0.15) return 'acquaintance';
-      return 'stranger';
+      if (!r) return 'idegen';
+      if (r.status === 'partner') return 'pár'; if (r.status === 'dating') return 'jár vele'; if (r.status === 'ex') return 'volt pár'; if (r.status === 'family') return 'rokon';
+      if (r.resentment > 0.5 && r.resentment > r.friendship) return 'ellenség'; if (r.resentment > 0.3 && r.resentment > r.friendship) return 'rivális';
+      if (r.friendship > 0.6) return 'jó barát'; if (r.friendship > 0.3) return 'barát'; if (r.familiarity > 0.15) return 'ismerős';
+      return 'idegen';
     },
   };
   LW.Relationships = Relationships;
@@ -1619,7 +1651,7 @@
         const ti = world.randomNear(world.genesis.x, world.genesis.y, 2);
         const a = this.create(world, { name: world.language.person(sex, 0.5), sex, bornTick: world.tick - Math.round(age * T.TICKS_PER_YEAR), x: world.xOf(ti) + 0.5, y: world.yOf(ti) + 0.5, genesis: true });
         a.inv.berries = 3; // a few berries in hand: the first hours are for looking around
-        a.achievements.push('One of the First');
+        a.achievements.push('Az Elsők egyike');
         out.push(a);
         world.events.emit('AgentBorn', { tick: world.tick, agentId: a.id, genesis: true, tile: ti });
       }
@@ -1637,10 +1669,10 @@
       for (let k = 0; k < 200; k++) { const i = rng.int(0, world.w * world.h - 1); const b = t.biome[i]; if (!(b === B.GRASSLAND || b === B.FOREST || b === B.SAVANNA || b === B.DENSE_FOREST) || t.veg[i] < 40) continue; const x = world.xOf(i), y = world.yOf(i); let dmin = 1e9; for (const o of people) dmin = Math.min(dmin, LW.dist(x, y, o.x, o.y)); const score = Math.min(dmin, 40) - Math.abs(t.baseTemp[i] - 15); if (score > best) { best = score; ti = i; } }
       if (ti < 0 || best < 10) return;
       const a = this.create(world, { name: world.language.person(sex, 0.5), sex, bornTick: world.tick - Math.round(rng.range(17, 30) * T.TICKS_PER_YEAR), x: world.xOf(ti) + 0.5, y: world.yOf(ti) + 0.5 });
-      a.inv.berries = 4; a.achievements.push('Came from beyond'); a.skills.gathering = 0.2; a.skills.foraging = 0.2;
+      a.inv.berries = 4; a.achievements.push('A messzeségből jött'); a.skills.gathering = 0.2; a.skills.foraging = 0.2;
       LW.Perception.scan(world, a);
       const target = [...world.agents.values()].find((o) => o.id !== a.id); if (target) { a.knowledge.places.set(this.poiKey('water', world.idx(target.x | 0, target.y | 0)), { k: 'water', i: world.idx(target.x | 0, target.y | 0), q: 1, t: world.tick }); a.plan = { goal: 'explore', steps: [{ op: 'moveTo', i: world.idx(target.x | 0, target.y | 0), near: 1, explore: true }], i: 0, startedTick: world.tick, done: false, priority: 1, score: 5 }; }
-      this.memory(world, a, { type: 'arrival', text: 'came over the hills from a land I no longer remember', importance: 0.7, emotion: 'excitement', intensity: 0.5 });
+      this.memory(world, a, { type: 'arrival', text: 'a dombokon túlról jöttem, egy földről, amire már nem emlékszem', importance: 0.7, emotion: 'excitement', intensity: 0.5 });
       world.events.emit('StrangerArrived', { tick: world.tick, agentId: a.id, tile: ti, first: !world.firsts || !world.firsts['stranger'] });
       world.events.emit('AgentBorn', { tick: world.tick, agentId: a.id, genesis: true, stranger: true, tile: ti });
     },
@@ -1695,7 +1727,7 @@
       const d = LW.ITEMS[item]; if (!d || !d.food || !this.removeItem(a, item, 1)) return false;
       a.needs.food = Math.min(1, a.needs.food + d.food); if (d.water) a.needs.water = Math.min(1, a.needs.water + d.water);
       a.lastMeal = world.tick; a.emotions.joy = Math.min(1, a.emotions.joy + 0.04);
-      if (d.raw && world.rng.chance(0.02 * (1 - a.genes.physiology.immunity))) { a.injury = Math.min(0.9, a.injury + 0.15); a.emotions.stress += 0.1; this.memory(world, a, { type: 'illness', text: 'fell ill after eating raw food', importance: 0.4, emotion: 'sadness', intensity: 0.4 }); }
+      if (d.raw && world.rng.chance(0.02 * (1 - a.genes.physiology.immunity))) { a.injury = Math.min(0.9, a.injury + 0.15); a.emotions.stress += 0.1; this.memory(world, a, { type: 'illness', text: 'rosszul lettem a nyers ételtől', importance: 0.4, emotion: 'sadness', intensity: 0.4 }); }
       return true;
     },
     practice(a, skill, n = 1) { a.skills[skill] = Math.min(1, (a.skills[skill] || 0) + 0.0007 * n * (1 - (a.skills[skill] || 0))); },
@@ -1782,7 +1814,7 @@
       for (const k in E) { const b = base[k] || 0; const rate = k === 'grief' ? 0.0015 : k === 'love' ? 0.003 : 0.006; E[k] += (b - E[k]) * rate; if (E[k] < 0.001) E[k] = 0; }
       if (a.needs.food < 0.2 || a.needs.water < 0.2) E.stress = Math.min(1, E.stress + 0.01);
       if (a.needs.social < 0.15) E.loneliness = Math.min(1, E.loneliness + 0.004);
-      if (a.health <= 0) this.die(world, a, a.needs.water <= 0 ? 'dehydration' : a.needs.food <= 0 ? 'starvation' : a.needs.warmth <= 0 ? 'cold' : world.tiles.fire[i] ? 'fire' : a.injury > 0.5 ? 'injury' : 'illness');
+      if (a.health <= 0) this.die(world, a, a.needs.water <= 0 ? 'kiszáradás' : a.needs.food <= 0 ? 'éhezés' : a.needs.warmth <= 0 ? 'kihűlés' : world.tiles.fire[i] ? 'tűz' : a.injury > 0.5 ? 'sérülés' : 'betegség');
     },
     dangerAt(world, a, i, fx) {
       let d = 0; const t = world.tiles;
@@ -1798,11 +1830,11 @@
       LW.Social.daily(world, a);
       // old age
       const age = this.age(world, a); const lon = a.genes.physiology.longevity;
-      if (age > lon - 10 && rng.chance(0.00025 * Math.exp((age - lon) / 5))) { this.die(world, a, 'old age'); return; }
+      if (age > lon - 10 && rng.chance(0.00025 * Math.exp((age - lon) / 5))) { this.die(world, a, 'öregség'); return; }
       // baseline illness
-      if (rng.chance(0.0006 * (1 - a.genes.physiology.immunity * 0.7) * (a.needs.food < 0.3 ? 2 : 1))) { a.injury = Math.min(0.8, a.injury + 0.3); a.emotions.stress += 0.2; this.memory(world, a, { type: 'illness', text: 'fell ill', importance: 0.4, emotion: 'fear', intensity: 0.4 }); world.events.emit('AgentIll', { tick: world.tick, agentId: a.id }); }
+      if (rng.chance(0.0006 * (1 - a.genes.physiology.immunity * 0.7) * (a.needs.food < 0.3 ? 2 : 1))) { a.injury = Math.min(0.8, a.injury + 0.3); a.emotions.stress += 0.2; this.memory(world, a, { type: 'illness', text: 'megbetegedtem', importance: 0.4, emotion: 'fear', intensity: 0.4 }); world.events.emit('AgentIll', { tick: world.tick, agentId: a.id }); }
       // predators at night handled per tick; here: pregnancy & development
-      if (a.pregnancy) { if (world.tick - a.pregnancy.since >= cfg.gestationDays * TPD) this.birth(world, a); else if (a.health < 0.3 && rng.chance(0.03)) { a.pregnancy = null; a.emotions.grief = Math.min(1, a.emotions.grief + 0.5); this.memory(world, a, { type: 'loss', text: 'lost the unborn child', importance: 0.8, emotion: 'grief', intensity: 0.8 }); } }
+      if (a.pregnancy) { if (world.tick - a.pregnancy.since >= cfg.gestationDays * TPD) this.birth(world, a); else if (a.health < 0.3 && rng.chance(0.03)) { a.pregnancy = null; a.emotions.grief = Math.min(1, a.emotions.grief + 0.5); this.memory(world, a, { type: 'loss', text: 'elvesztettem a meg nem született gyermekem', importance: 0.8, emotion: 'grief', intensity: 0.8 }); } }
       const st = this.stage(world, a);
       if ((st === 'child' || st === 'adolescent') && LW.Time.dayOfYear(world.tick) % 30 === (a.id % 30)) LW.Genetics.develop(world, a, this.caregivers(world, a));
       if (LW.Time.dayOfYear(world.tick) === (a.id % 360)) { LW.Tech.forgetCheck(world, a); for (const s in a.skills) a.skills[s] = Math.max(0.02, a.skills[s] - 0.01); }
@@ -1811,13 +1843,13 @@
     },
     occupationLabel(world, a) {
       const st = this.stage(world, a); if (st === 'infant') return 'infant'; if (st === 'child') return 'child';
-      const c = a.counters; const cand = [['gatherer', c.gathered], ['builder', c.built * 6], ['hunter', c.hunted || 0], ['crafter', (c.crafted || 0) * 3], ['explorer', (c.explored || 0)], ['tinkerer', c.experiments * 4], ['farmer', (c.farmed || 0) * 2], ['fisher', (c.fished || 0)]];
+      const c = a.counters; const cand = [['gatherer', c.gathered], ['builder', c.built * 6], ['hunter', c.hunted || 0], ['crafter', (c.crafted || 0) * 3], ['explorer', (c.explored || 0)], ['tinkerer', c.experiments * 4], ['farmer', (c.farmed || 0) * 2], ['fisher', (c.fished || 0)]]; // ids; LW.HU.occupation() names them
       cand.sort((x, y) => y[1] - x[1]); return cand[0][1] > 5 ? cand[0][0] : (st === 'elder' ? 'elder' : 'forager');
     },
     damage(world, a, amount, cause) {
       a.injury = Math.min(0.95, a.injury + amount * 0.6); a.health = Math.max(0, a.health - amount); a.emotions.fear = Math.min(1, a.emotions.fear + amount); a.emotions.stress = Math.min(1, a.emotions.stress + amount * 0.5);
       world.events.emit('AgentInjured', { tick: world.tick, agentId: a.id, cause, amount });
-      this.memory(world, a, { type: 'injury', text: `was hurt by ${cause}`, importance: 0.5 + amount * 0.4, emotion: 'fear', intensity: 0.5 + amount * 0.5 });
+      this.memory(world, a, { type: 'injury', text: `megsérültem: ${cause}`, importance: 0.5 + amount * 0.4, emotion: 'fear', intensity: 0.5 + amount * 0.5 });
       if (a.health <= 0) this.die(world, a, cause);
     },
 
@@ -1846,9 +1878,9 @@
       mother.health = Math.max(0.15, mother.health - 0.12 * (1 - mother.health * 0.5));
       // memories & emotions
       const first = !world.firsts || !world.firsts['born'];
-      this.memory(world, mother, { type: 'birth', text: `gave birth to ${child.name}`, importance: 0.95, emotion: 'joy', intensity: 0.9, subjects: [child.id] });
+      this.memory(world, mother, { type: 'birth', text: `világra hoztam őt: ${child.name}`, importance: 0.95, emotion: 'joy', intensity: 0.9, subjects: [child.id] });
       mother.emotions.joy = 1; mother.emotions.love = Math.min(1, mother.emotions.love + 0.6); mother.needs.affection = 1;
-      if (father && world.agents.has(father.id)) { this.memory(world, father, { type: 'birth', text: `became father of ${child.name}`, importance: 0.9, emotion: 'joy', intensity: 0.85, subjects: [child.id] }); father.emotions.joy = Math.min(1, father.emotions.joy + 0.7); father.emotions.pride = Math.min(1, father.emotions.pride + 0.5); }
+      if (father && world.agents.has(father.id)) { this.memory(world, father, { type: 'birth', text: `apa lettem: ${child.name}`, importance: 0.9, emotion: 'joy', intensity: 0.85, subjects: [child.id] }); father.emotions.joy = Math.min(1, father.emotions.joy + 0.7); father.emotions.pride = Math.min(1, father.emotions.pride + 0.5); }
       world.stats.births++;
       world.events.emit('AgentBorn', { tick: world.tick, agentId: child.id, motherId: mother.id, fatherId: pg.by, tile: world.idx(child.x | 0, child.y | 0), first });
       return child;
@@ -1871,7 +1903,7 @@
         if (o.id === a.id) continue;
         const r = o.relationships.get(a.id); const kin = o.parents.includes(a.id) || a.parents.includes(o.id) || o.partner === a.id;
         const close = kin ? 1 : r ? Math.max(r.friendship, r.romance, r.attraction * 0.5) : 0;
-        if (close > 0.25) { o.emotions.grief = Math.min(1, o.emotions.grief + close * 0.9); o.emotions.sadness = Math.min(1, o.emotions.sadness + close * 0.6); this.memory(world, o, { type: 'death', text: `${a.name} died of ${cause}`, importance: 0.6 + close * 0.35, emotion: 'grief', intensity: close, subjects: [a.id] }); }
+        if (close > 0.25) { o.emotions.grief = Math.min(1, o.emotions.grief + close * 0.9); o.emotions.sadness = Math.min(1, o.emotions.sadness + close * 0.6); this.memory(world, o, { type: 'death', text: `${a.name} meghalt: ${cause}`, importance: 0.6 + close * 0.35, emotion: 'grief', intensity: close, subjects: [a.id] }); }
         if (o.partner === a.id) { o.partner = null; if (r) r.status = 'widowed'; }
         if (o.plan && o.plan.target === a.id) o.plan = null;
       }
@@ -1929,9 +1961,9 @@
         const def = LW.Buildings.def(bld);
         if (def.divine && !a.memory.episodic.some((m) => m.buildingId === bld.id)) LW.God.witnessManifestation(world, a, bld);
       }
-      if (sawFire) { if (LW.Tech.observe(world, a, 'fire')) { A.memory(world, a, { type: 'phenomenon', text: 'saw fire for the first time', importance: 0.85, emotion: 'fear', intensity: 0.7 }); a.emotions.fear = Math.min(1, a.emotions.fear + 0.3); a.emotions.excitement = Math.min(1, a.emotions.excitement + 0.5); } }
+      if (sawFire) { if (LW.Tech.observe(world, a, 'fire')) { A.memory(world, a, { type: 'phenomenon', text: 'először láttam tüzet', importance: 0.85, emotion: 'fear', intensity: 0.7 }); a.emotions.fear = Math.min(1, a.emotions.fear + 0.3); a.emotions.excitement = Math.min(1, a.emotions.excitement + 0.5); } }
       if (sawClay) LW.Tech.observe(world, a, 'clay');
-      if (foundDeposit && a.knowledge.techs.has('digging')) { LW.Tech.learn(world, a, 'ore_lore_' + LW.DEPOSIT_NAME[foundDeposit.dt], 'observation'); world.events.emit('ResourceFound', { tick: world.tick, agentId: a.id, tile: foundDeposit.i, deposit: LW.DEPOSIT_NAME[foundDeposit.dt], first: !world.firsts || !world.firsts['deposit:' + LW.DEPOSIT_NAME[foundDeposit.dt]] }); A.memory(world, a, { type: 'find', text: `found ${LW.ITEMS[LW.DEPOSIT_ITEM[foundDeposit.dt]].label.toLowerCase()}`, importance: 0.6, emotion: 'excitement', intensity: 0.5 }); }
+      if (foundDeposit && a.knowledge.techs.has('digging')) { LW.Tech.learn(world, a, 'ore_lore_' + LW.DEPOSIT_NAME[foundDeposit.dt], 'observation'); world.events.emit('ResourceFound', { tick: world.tick, agentId: a.id, tile: foundDeposit.i, deposit: LW.DEPOSIT_NAME[foundDeposit.dt], first: !world.firsts || !world.firsts['deposit:' + LW.DEPOSIT_NAME[foundDeposit.dt]] }); A.memory(world, a, { type: 'find', text: `találtam: ${LW.ITEMS[LW.DEPOSIT_ITEM[foundDeposit.dt]].label.toLowerCase()}`, importance: 0.6, emotion: 'excitement', intensity: 0.5 }); }
       // other people
       a.threat = null;
       const others = world.agentsNear(a.x, a.y, R, a.id);
@@ -1941,7 +1973,7 @@
         // learning by watching (children especially)
         if (o.plan && o.plan.tag && LW.dist(a.x, a.y, o.x, o.y) <= 3) this.observePractice(world, a, o, o.plan.tag);
         // jealousy: partner flirting with someone else
-        if (a.partner === o.id && o.plan && o.plan.goal === 'flirt' && o.plan.target !== a.id) { const rival = world.agents.get(o.plan.target); if (rival) { r.jealousy = Math.min(1, r.jealousy + 0.25); r.resentment = Math.min(1, r.resentment + 0.1 * (1 - a.personality.patience)); const rr = LW.Relationships.ensure(world, a, rival); rr.resentment = Math.min(1, rr.resentment + 0.15); a.emotions.jealousy = Math.min(1, a.emotions.jealousy + 0.4); a.emotions.anger = Math.min(1, a.emotions.anger + 0.2 * a.personality.aggression); A.memory(world, a, { type: 'jealousy', text: `saw ${o.name} flirting with ${rival.name}`, importance: 0.6, emotion: 'jealousy', intensity: 0.6, subjects: [o.id, rival.id] }); } }
+        if (a.partner === o.id && o.plan && o.plan.goal === 'flirt' && o.plan.target !== a.id) { const rival = world.agents.get(o.plan.target); if (rival) { r.jealousy = Math.min(1, r.jealousy + 0.25); r.resentment = Math.min(1, r.resentment + 0.1 * (1 - a.personality.patience)); const rr = LW.Relationships.ensure(world, a, rival); rr.resentment = Math.min(1, rr.resentment + 0.15); a.emotions.jealousy = Math.min(1, a.emotions.jealousy + 0.4); a.emotions.anger = Math.min(1, a.emotions.anger + 0.2 * a.personality.aggression); A.memory(world, a, { type: 'jealousy', text: `láttam, ahogy ${o.name} flörtöl vele: ${rival.name}`, importance: 0.6, emotion: 'jealousy', intensity: 0.6, subjects: [o.id, rival.id] }); } }
         if (r.fear > 0.5 || (o.emotions.anger > 0.7 && (o.relationships.get(a.id)?.resentment || 0) > 0.5)) a.threat = o.id;
       }
     },
@@ -2023,7 +2055,7 @@
   const GOALS = {
     flee: {
       applicable: (c, a) => c.danger > 0.3,
-      score: (c, a) => [2.5 * c.danger * (1 + E(a).fear), [`danger ${LW.pct(c.danger)}`, `fear ${LW.pct(E(a).fear)}`]],
+      score: (c, a) => [2.5 * c.danger * (1 + E(a).fear), [`veszély ${LW.pct(c.danger)}`, `félelem ${LW.pct(E(a).fear)}`]],
       plan: (c, a) => ({ steps: [{ op: 'flee', n: 10 }], priority: 3 }),
     },
     divine: {
@@ -2033,7 +2065,7 @@
     },
     eat: {
       applicable: (c, a) => !c.infant && N(a).food < 0.8,
-      score: (c, a) => { let s = u(N(a).food) * 1.6 + (N(a).food < 0.1 ? 0.8 : 0); const f = []; f.push(`hunger ${LW.pct(1 - N(a).food)}`); if (c.foodInv) { s += N(a).food < 0.5 ? 0.5 : 0.2; f.push('has food'); } else if (c.storeFood > 0 && c.home) { s += 0.3; f.push('food at home'); } else if (!c.food && !(a.inv.spear && c.animals) && !(c.fish && a.knowledge.techs.has('fishing'))) { s *= 0.3; f.push('knows no food source'); } return [s, f]; },
+      score: (c, a) => { let s = u(N(a).food) * 1.6 + (N(a).food < 0.1 ? 0.8 : 0); const f = []; f.push(`éhség ${LW.pct(1 - N(a).food)}`); if (c.foodInv) { s += N(a).food < 0.5 ? 0.5 : 0.2; f.push('van nála étel'); } else if (c.storeFood > 0 && c.home) { s += 0.3; f.push('otthon van étel'); } else if (!c.food && !(a.inv.spear && c.animals) && !(c.fish && a.knowledge.techs.has('fishing'))) { s *= 0.3; f.push('nem ismer ételforrást'); } return [s, f]; },
       plan: (c, a) => {
         if (c.foodInv) return { steps: [{ op: 'consume' }] };
         if (c.storeFood > 0 && c.home) return { steps: [{ op: 'moveTo', i: c.world.idx(c.home.x, c.home.y) }, { op: 'takeFood', bid: c.home.id }, { op: 'consume' }] };
@@ -2047,17 +2079,17 @@
     },
     drink: {
       applicable: (c, a) => !c.infant && N(a).water < 0.75 && !!c.water,
-      score: (c, a) => [u(N(a).water) * 1.9 + (c.water.d < 3 ? 0.15 : 0), [`thirst ${LW.pct(1 - N(a).water)}`, `water ${Math.round(c.water.d)} tiles`]],
+      score: (c, a) => [u(N(a).water) * 1.9 + (c.water.d < 3 ? 0.15 : 0), [`szomj ${LW.pct(1 - N(a).water)}`, `víz ${Math.round(c.water.d)} mezőre`]],
       plan: (c, a) => { const t = tileNear(c.world, c.water.i); return t == null ? null : { steps: [{ op: 'moveTo', i: t, poi: { k: 'water', i: c.water.i } }, { op: 'drink', i: c.water.i }] }; },
     },
     sleep: {
       applicable: (c, a) => N(a).energy < 0.7 || (c.night && N(a).energy < 0.9),
-      score: (c, a) => { let s = u(N(a).energy) * 1.3 * (c.night ? 1.7 : 0.5) + (N(a).energy < 0.1 ? 1.5 : 0); if (c.night && N(a).energy < 0.6) s += 0.4; if (E(a).grief > 0.3) s += 0.2; const f = [`tired ${LW.pct(1 - N(a).energy)}`, c.night ? 'night' : 'day']; if (N(a).food < 0.12 && (c.foodInv || c.food || c.storeFood > 0)) { s *= 0.4; f.push('too hungry to sleep'); } if (N(a).water < 0.12 && c.water) { s *= 0.3; f.push('too thirsty to sleep'); } return [s, f]; },
+      score: (c, a) => { let s = u(N(a).energy) * 1.3 * (c.night ? 1.7 : 0.5) + (N(a).energy < 0.1 ? 1.5 : 0); if (c.night && N(a).energy < 0.6) s += 0.4; if (E(a).grief > 0.3) s += 0.2; const f = [`fáradtság ${LW.pct(1 - N(a).energy)}`, c.night ? 'éjszaka' : 'nappal']; if (N(a).food < 0.12 && (c.foodInv || c.food || c.storeFood > 0)) { s *= 0.4; f.push('túl éhes az alváshoz'); } if (N(a).water < 0.12 && c.water) { s *= 0.3; f.push('túl szomjas az alváshoz'); } return [s, f]; },
       plan: (c, a) => { const sh = c.shelter; if (sh && LW.dist(a.x, a.y, sh.x, sh.y) < 30) return { steps: [{ op: 'moveTo', i: c.world.idx(sh.x, sh.y) }, { op: 'sleep', bid: sh.id }], priority: 1 }; if (c.fire && LW.dist(a.x, a.y, c.fire.x, c.fire.y) < 20) return { steps: [{ op: 'moveTo', i: c.world.randomNear(c.fire.x, c.fire.y, 1) }, { op: 'sleep' }], priority: 1 }; return { steps: [{ op: 'sleep' }], priority: 1 }; },
     },
     getWarm: {
       applicable: (c, a) => !c.infant && (N(a).warmth < 0.75 || (c.rain > 0.3 && !c.fx.inside) || c.storm),
-      score: (c, a) => { let s = u(N(a).warmth) * 1.7; const f = [`cold ${LW.pct(1 - N(a).warmth)}`, `feels ${Math.round(c.effTemp)}°C`]; if (c.rain > 0.3 && !c.fx.inside) { s += c.rain * 0.7; f.push(`rain ${LW.pct(c.rain)}`); } if (c.storm && !c.fx.inside) { s += 0.6; f.push('storm'); } if (c.fx.inside || c.fx.fire) s *= 0.15; return [s, f]; },
+      score: (c, a) => { let s = u(N(a).warmth) * 1.7; const f = [`hideg ${LW.pct(1 - N(a).warmth)}`, `érzett ${Math.round(c.effTemp)} °C`]; if (c.rain > 0.3 && !c.fx.inside) { s += c.rain * 0.7; f.push(`eső ${LW.pct(c.rain)}`); } if (c.storm && !c.fx.inside) { s += 0.6; f.push('vihar'); } if (c.fx.inside || c.fx.fire) s *= 0.15; return [s, f]; },
       plan: (c, a) => {
         const opts = [];
         if (c.shelter) opts.push({ d: LW.dist(a.x, a.y, c.shelter.x, c.shelter.y), steps: [{ op: 'moveTo', i: c.world.idx(c.shelter.x, c.shelter.y) }, { op: 'wait', n: 8, at: 'shelter' }] });
@@ -2076,22 +2108,22 @@
     },
     careForChild: {
       applicable: (c, a) => c.adult && a.children.length > 0,
-      score: (c, a) => { let best = 0, who = null; for (const cid of a.children) { const ch = c.world.agents.get(cid); if (!ch || !A().isChild(c.world, ch)) continue; const st = A().stage(c.world, ch); const d = LW.dist(a.x, a.y, ch.x, ch.y); let s = 0; if (st === 'infant') { if (d > 3) s = 0.9 + Math.min(1, d / 10); } else if (N(ch).food < 0.45) s = u(N(ch).food) * 1.8 * (0.5 + P(a).empathy); if (N(ch).water < 0.3 && st === 'infant') s += 0.5; if (s > best) { best = s; who = ch; } } a._careTarget = who; return [best, who ? [`${who.name} food ${LW.pct(N(who).food)}`] : []]; },
+      score: (c, a) => { let best = 0, who = null; for (const cid of a.children) { const ch = c.world.agents.get(cid); if (!ch || !A().isChild(c.world, ch)) continue; const st = A().stage(c.world, ch); const d = LW.dist(a.x, a.y, ch.x, ch.y); let s = 0; if (st === 'infant') { if (d > 3) s = 0.9 + Math.min(1, d / 10); } else if (N(ch).food < 0.45) s = u(N(ch).food) * 1.8 * (0.5 + P(a).empathy); if (N(ch).water < 0.3 && st === 'infant') s += 0.5; if (s > best) { best = s; who = ch; } } a._careTarget = who; return [best, who ? [`${who.name} étele ${LW.pct(N(who).food)}`] : []]; },
       plan: (c, a) => { const ch = a._careTarget; if (!ch) return null; const st = A().stage(c.world, ch); if (st === 'infant' && N(ch).food >= 0.45) return { steps: [{ op: 'moveTo', i: c.world.idx(ch.x | 0, ch.y | 0) }, { op: 'wait', n: 6, at: 'child' }], target: ch.id }; if (c.foodInv) return { steps: [{ op: 'moveTo', i: c.world.idx(ch.x | 0, ch.y | 0) }, { op: 'give', target: ch.id, item: c.foodInv, n: 2 }], target: ch.id }; if (c.storeFood > 0 && c.home) return { steps: [{ op: 'moveTo', i: c.world.idx(c.home.x, c.home.y) }, { op: 'takeFood', bid: c.home.id, n: 3 }, { op: 'moveTo', i: c.world.idx(ch.x | 0, ch.y | 0) }, { op: 'give', target: ch.id, item: '*food', n: 2 }], target: ch.id }; const acq = acquireSteps(c.world, a, { berries: 4 }, c); if (!acq) return null; return { steps: [...acq, { op: 'moveTo', i: c.world.idx(ch.x | 0, ch.y | 0) }, { op: 'give', target: ch.id, item: '*food', n: 2 }], target: ch.id, tag: 'gather:berries' }; },
     },
     shareFood: {
       applicable: (c, a) => c.adult && !!c.foodInv && (a.inv[c.foodInv] || 0) >= 2,
-      score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { if (N(o).food > 0.3 || A().stage(c.world, o) === 'infant') continue; const r = a.relationships.get(o.id); const close = c.household.includes(o) ? 1 : r ? Math.max(r.friendship, r.romance, r.loyalty * 0.8) : 0.1; const s = u(N(o).food) * (0.4 + P(a).empathy) * (0.3 + close) * (1 - P(a).greed * 0.5); if (s > best) { best = s; who = o; } } a._shareTarget = who; return [best, who ? [`${who.name} hungry`, `empathy ${LW.pct(P(a).empathy)}`] : []]; },
+      score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { if (N(o).food > 0.3 || A().stage(c.world, o) === 'infant') continue; const r = a.relationships.get(o.id); const close = c.household.includes(o) ? 1 : r ? Math.max(r.friendship, r.romance, r.loyalty * 0.8) : 0.1; const s = u(N(o).food) * (0.4 + P(a).empathy) * (0.3 + close) * (1 - P(a).greed * 0.5); if (s > best) { best = s; who = o; } } a._shareTarget = who; return [best, who ? [`${who.name} éhes`, `együttérzés ${LW.pct(P(a).empathy)}`] : []]; },
       plan: (c, a) => a._shareTarget ? { steps: [{ op: 'moveTo', i: c.world.idx(a._shareTarget.x | 0, a._shareTarget.y | 0) }, { op: 'give', target: a._shareTarget.id, item: c.foodInv, n: 1 }], target: a._shareTarget.id } : null,
     },
     followParent: {
       applicable: (c, a) => (c.infant || c.stage === 'child') && A().caregivers(c.world, a).length > 0,
-      score: (c, a) => { const cg = A().caregivers(c.world, a); let d = 1e9, who = null; for (const p of cg) { const dd = LW.dist(a.x, a.y, p.x, p.y); if (dd < d) { d = dd; who = p; } } a._follow = who; const far = d > (c.infant ? 2 : 5); return [far ? 0.9 + Math.min(1, d / 12) + u(N(a).safety) * 0.5 : 0.05, [`parent ${Math.round(d)} tiles`]]; },
+      score: (c, a) => { const cg = A().caregivers(c.world, a); let d = 1e9, who = null; for (const p of cg) { const dd = LW.dist(a.x, a.y, p.x, p.y); if (dd < d) { d = dd; who = p; } } a._follow = who; const far = d > (c.infant ? 2 : 5); return [far ? 0.9 + Math.min(1, d / 12) + u(N(a).safety) * 0.5 : 0.05, [`szülő ${Math.round(d)} mezőre`]]; },
       plan: (c, a) => a._follow ? { steps: [{ op: 'follow', target: a._follow.id, n: 12 }], target: a._follow.id } : null,
     },
     socialize: {
       applicable: (c, a) => !c.infant && c.nearby.length > 0 && N(a).social < 0.85,
-      score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { if (A().stage(c.world, o) === 'infant' || o.sleeping) continue; const r = a.relationships.get(o.id); if (r && c.tick - r.last < 20) continue; const aff = r ? 0.3 + r.friendship * 0.7 + (r.status === 'family' ? 0.3 : 0) + (a.partner === o.id ? 0.4 : 0) - r.resentment : 0.35; const d = LW.dist(a.x, a.y, o.x, o.y); const s = u(N(a).social) * 0.95 * (0.5 + P(a).sociability) * Math.max(0.1, aff) * (1 - d / 25); if (s > best) { best = s; who = o; } } a._socialTarget = who; return [best + (E(a).loneliness * 0.3), who ? [`lonely ${LW.pct(1 - N(a).social)}`, `with ${who.name}`] : []]; },
+      score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { if (A().stage(c.world, o) === 'infant' || o.sleeping) continue; const r = a.relationships.get(o.id); if (r && c.tick - r.last < 20) continue; const aff = r ? 0.3 + r.friendship * 0.7 + (r.status === 'family' ? 0.3 : 0) + (a.partner === o.id ? 0.4 : 0) - r.resentment : 0.35; const d = LW.dist(a.x, a.y, o.x, o.y); const s = u(N(a).social) * 0.95 * (0.5 + P(a).sociability) * Math.max(0.1, aff) * (1 - d / 25); if (s > best) { best = s; who = o; } } a._socialTarget = who; return [best + (E(a).loneliness * 0.3), who ? [`magány ${LW.pct(1 - N(a).social)}`, `vele: ${who.name}`] : []]; },
       plan: (c, a) => a._socialTarget ? { steps: [{ op: 'moveTo', i: c.world.idx(a._socialTarget.x | 0, a._socialTarget.y | 0), near: 1 }, { op: 'interact', target: a._socialTarget.id, kind: 'converse', n: 4 }], target: a._socialTarget.id } : null,
     },
     flirt: {
@@ -2106,18 +2138,18 @@
           s *= 1 - LW.dist(a.x, a.y, o.x, o.y) / 30;
           if (s > best) { best = s; who = o; }
         }
-        a._flirtTarget = who; return [best, who ? [`attraction to ${who.name} ${LW.pct(a.relationships.get(who.id).attraction)}`, `affection need ${LW.pct(1 - N(a).affection)}`] : []];
+        a._flirtTarget = who; return [best, who ? [`vonzalom (${who.name}) ${LW.pct(a.relationships.get(who.id).attraction)}`, `gyengédségigény ${LW.pct(1 - N(a).affection)}`] : []];
       },
       plan: (c, a) => a._flirtTarget ? { steps: [{ op: 'moveTo', i: c.world.idx(a._flirtTarget.x | 0, a._flirtTarget.y | 0), near: 1 }, { op: 'interact', target: a._flirtTarget.id, kind: 'flirt', n: 4 }], target: a._flirtTarget.id } : null,
     },
     mate: {
       applicable: (c, a) => c.adult && a.partner != null && c.world.agents.has(a.partner),
-      score: (c, a) => { const p = c.world.agents.get(a.partner); const r = a.relationships.get(p.id); if (!r || p.sleeping && !c.night) return [0, []]; const d = LW.dist(a.x, a.y, p.x, p.y); let s = (u(N(a).affection) * 0.9 + E(a).love * 0.4) * (0.4 + r.attraction) * (c.night || c.fx.inside ? 1.2 : 0.45) * (1 - d / 30); if (r.resentment > 0.4) s *= 0.3; return [s, [`affection need ${LW.pct(1 - N(a).affection)}`, `love ${LW.pct(E(a).love)}`]]; },
+      score: (c, a) => { const p = c.world.agents.get(a.partner); const r = a.relationships.get(p.id); if (!r || p.sleeping && !c.night) return [0, []]; const d = LW.dist(a.x, a.y, p.x, p.y); let s = (u(N(a).affection) * 0.9 + E(a).love * 0.4) * (0.4 + r.attraction) * (c.night || c.fx.inside ? 1.2 : 0.45) * (1 - d / 30); if (r.resentment > 0.4) s *= 0.3; return [s, [`gyengédségigény ${LW.pct(1 - N(a).affection)}`, `szerelem ${LW.pct(E(a).love)}`]]; },
       plan: (c, a) => { const p = c.world.agents.get(a.partner); return { steps: [{ op: 'moveTo', i: c.world.idx(p.x | 0, p.y | 0), near: 1 }, { op: 'interact', target: p.id, kind: 'mate', n: 6 }], target: p.id }; },
     },
     stockpile: {
       applicable: (c, a) => !c.infant && c.stage !== 'child' && (c.food || (a.inv.spear && c.animals) || (c.fish && a.knowledge.techs.has('fishing'))),
-      score: (c, a) => { const hh = c.household.length; const stock = c.foodUnits + c.storeFood; const target = 1.2 * hh + (c.season === 2 ? 1.5 * hh : c.season === 3 ? 1.0 * hh : 0); const gap = 1 - Math.min(1, stock / Math.max(1, target)); let s = gap * 0.75 * (0.5 + P(a).discipline) * (c.season === 2 ? 1.4 : c.season === 3 ? 1.1 : 1); if (A().load(a) > A().capacity(c.world, a) * 0.85) s *= 0.2; if (c.night) s *= 0.4; if (N(a).warmth < 0.35) s *= 0.3; return [s, [`stock ${stock.toFixed(1)} / ${target.toFixed(1)}`, `discipline ${LW.pct(P(a).discipline)}`]]; },
+      score: (c, a) => { const hh = c.household.length; const stock = c.foodUnits + c.storeFood; const target = 1.2 * hh + (c.season === 2 ? 1.5 * hh : c.season === 3 ? 1.0 * hh : 0); const gap = 1 - Math.min(1, stock / Math.max(1, target)); let s = gap * 0.75 * (0.5 + P(a).discipline) * (c.season === 2 ? 1.4 : c.season === 3 ? 1.1 : 1); if (A().load(a) > A().capacity(c.world, a) * 0.85) s *= 0.2; if (c.night) s *= 0.4; if (N(a).warmth < 0.35) s *= 0.3; return [s, [`tartalék ${stock.toFixed(1)} / ${target.toFixed(1)}`, `fegyelem ${LW.pct(P(a).discipline)}`]]; },
       plan: (c, a) => {
         const opts = []; const cap = Math.max(2, Math.floor((A().capacity(c.world, a) - A().load(a)) / 0.6));
         if (c.food) opts.push({ d: c.food.d, steps: [{ op: 'moveTo', i: c.food.i, poi: { k: 'food', i: c.food.i } }, { op: 'gather', i: c.food.i, item: c.food.q > 60 && c.world.rng.chance(0.3) ? 'roots' : 'berries', n: Math.min(cap, 6) }], tag: 'gather:berries' });
@@ -2133,9 +2165,9 @@
       score: (c, a) => {
         const kind = a.knowledge.techs.has('stone_masonry') ? 'stone_house' : a.knowledge.techs.has('hut_construction') ? 'hut' : 'lean_to';
         const tier = { lean_to: 1, hut: 2, stone_house: 3 }; const cur = c.home ? tier[c.home.kind] || 0 : 0;
-        if (cur >= tier[kind]) return [0, ['home is good enough']];
-        let s = cur === 0 ? 1.15 : 0.55; const f = [cur === 0 ? 'no home' : `upgrade to ${kind}`];
-        if (N(a).warmth < 0.7) { s += 0.35; f.push('cold'); } if (c.rain > 0.2 && !c.fx.inside) { s += 0.3; f.push('rain'); } if (c.season === 2) { s += 0.35; f.push('autumn'); } if (c.season === 3) s += 0.2;
+        if (cur >= tier[kind]) return [0, ['az otthon elég jó']];
+        let s = cur === 0 ? 1.15 : 0.55; const f = [cur === 0 ? 'nincs otthona' : `jobb otthon: ${LW.Buildings.DEFS[kind].label.toLowerCase()}`];
+        if (N(a).warmth < 0.7) { s += 0.35; f.push('hideg'); } if (c.rain > 0.2 && !c.fx.inside) { s += 0.3; f.push('eső'); } if (c.season === 2) { s += 0.35; f.push('ősz'); } if (c.season === 3) s += 0.2;
         s += P(a).ambition * 0.3 + P(a).discipline * 0.2; if (c.night) s *= 0.3; if (a.pregnancy || c.household.length > 1) s += 0.2;
         a._buildKind = kind; return [s, f];
       },
@@ -2143,12 +2175,12 @@
     },
     helpBuild: {
       applicable: (c, a) => c.adult && !!findHouseholdSite(c, a),
-      score: (c, a) => { const b = findHouseholdSite(c, a); a._helpSite = b; return [0.75 + P(a).loyalty * 0.2 + (c.season === 2 ? 0.2 : 0), [`help build ${Bld().def(b).label}`]]; },
+      score: (c, a) => { const b = findHouseholdSite(c, a); a._helpSite = b; return [0.75 + P(a).loyalty * 0.2 + (c.season === 2 ? 0.2 : 0), [`segít építeni: ${Bld().def(b).label.toLowerCase()}`]]; },
       plan: (c, a) => buildPlanFor(c, a, a._helpSite),
     },
     makeFire: {
       applicable: (c, a) => c.adult && a.knowledge.techs.has('fire_making') && !(c.fire && LW.dist(a.x, a.y, c.fire.x, c.fire.y) < 6),
-      score: (c, a) => { let s = 0.5 + u(N(a).warmth) * 0.9 + (c.night ? 0.35 : 0) + (a.inv.meat_raw || a.inv.fish_raw ? 0.3 : 0) + (c.season === 3 ? 0.3 : 0); if (c.effTemp > 18 && !c.night) s *= 0.4; return [s, [`no fire near`, `feels ${Math.round(c.effTemp)}°C`]]; },
+      score: (c, a) => { let s = 0.5 + u(N(a).warmth) * 0.9 + (c.night ? 0.35 : 0) + (a.inv.meat_raw || a.inv.fish_raw ? 0.3 : 0) + (c.season === 3 ? 0.3 : 0); if (c.effTemp > 18 && !c.night) s *= 0.4; return [s, ['nincs tűz a közelben', `érzett ${Math.round(c.effTemp)} °C`]]; },
       plan: (c, a) => {
         const site = c.home ? c.world.randomNear(c.home.x, c.home.y, 1) : Bld().findSite(c.world, a, 'campfire'); if (site < 0) return null;
         const existing = [...c.world.buildings.values()].find((b) => b.kind === 'campfire' && !b.lit && LW.dist(b.x, b.y, a.x, a.y) < 6);
@@ -2159,7 +2191,7 @@
     },
     tendFire: {
       applicable: (c, a) => c.adult && a.knowledge.techs.has('fire_making') && !!c.fire && c.fire.fuel < LW.TIME.TICKS_PER_DAY * 0.7 && LW.dist(a.x, a.y, c.fire.x, c.fire.y) < 12,
-      score: (c, a) => [0.55 + (c.night ? 0.2 : 0) + (c.season === 3 ? 0.25 : 0) + P(a).discipline * 0.2, [`fire low (${Math.round(c.fire.fuel / 4)} h)`]],
+      score: (c, a) => [0.55 + (c.night ? 0.2 : 0) + (c.season === 3 ? 0.25 : 0) + P(a).discipline * 0.2, [`fogy a tűz (${Math.round(c.fire.fuel / 4)} óra)`]],
       plan: (c, a) => { const m = missingFor(a, { wood: 3 }); const acq = count(m) ? acquireSteps(c.world, a, m, c) : []; if (!acq) return null; return { steps: [...acq, { op: 'moveTo', i: c.world.idx(c.fire.x, c.fire.y), near: 1 }, { op: 'refuel', bid: c.fire.id }], tag: 'gather:wood' }; },
     },
     craft: {
@@ -2175,7 +2207,7 @@
         if (a.knowledge.techs.has('cooking') && (a.inv.meat_raw || a.inv.fish_raw) && c.fire) want.push([a.inv.meat_raw ? 'meat_cooked' : 'fish_cooked', 0.5 + u(N(a).food) * 0.6]);
         if (a.knowledge.techs.has('food_drying') && c.fire && ((a.inv.meat_raw || 0) >= 2 || (a.inv.fish_raw || 0) >= 2 || (a.inv.berries || 0) >= 6)) want.push(['dried_food', 0.45 + (c.season === 2 ? 0.3 : 0)]);
         for (const [r, s] of want) if (s > best) { best = s; which = r; }
-        a._craft = which; if (which) f.push(`wants ${which}`);
+        a._craft = which; if (which) f.push(`kellene: ${LW.ITEMS[which] ? LW.ITEMS[which].label.toLowerCase() : which}`);
         return [best * (0.6 + P(a).discipline * 0.4) * (c.night ? 0.5 : 1), f];
       },
       plan: (c, a) => {
@@ -2189,10 +2221,10 @@
     experiment: {
       applicable: (c, a) => (c.adult || c.stage === 'adolescent') && N(a).food > 0.25 && N(a).water > 0.25 && N(a).energy > 0.2 && N(a).warmth > 0.12,
       score: (c, a) => {
-        const el = LW.Tech.eligible(c.world, a); if (!el.length) return [0, ['nothing to try']];
+        const el = LW.Tech.eligible(c.world, a); if (!el.length) return [0, ['nincs mit kipróbálni']];
         let best = 0, which = null;
         for (const id of el) { const d = LW.Tech.D[id]; const need = d.need ? u(N(a)[d.need] ?? 1) : 0; const prog = a.knowledge.progress[id] || 0; const m = LW.Tech.missingItems(a, d); const feasible = count(m) === 0 || acquireSteps(c.world, a, m, c); if (!feasible) continue; if (d.nearby === 'fire' && !c.fire) continue; if (d.nearby === 'water' && !c.water) continue; const s = (0.25 + P(a).curiosity * 0.5) * (0.4 + P(a).creativity * 0.6) * (1 - d.difficulty * 0.5) + need * 0.7 + prog * 0.4 + u(N(a).curiosity) * 0.35 + (count(m) === 0 ? 0.15 : 0); if (s > best) { best = s; which = id; } }
-        a._exp = which; return [best * (c.night ? 0.4 : 1), which ? [`try ${LW.Tech.D[which].name}`, `curiosity ${LW.pct(P(a).curiosity)}`, `creativity ${LW.pct(P(a).creativity)}`] : []];
+        a._exp = which; return [best * (c.night ? 0.4 : 1), which ? [`próba: ${LW.Tech.D[which].name.toLowerCase()}`, `kíváncsiság ${LW.pct(P(a).curiosity)}`, `kreativitás ${LW.pct(P(a).creativity)}`] : []];
       },
       plan: (c, a) => {
         const id = a._exp; if (!id) return null; const d = LW.Tech.D[id]; const m = LW.Tech.missingItems(a, d); const acq = count(m) ? acquireSteps(c.world, a, m, c) : []; if (!acq) return null;
@@ -2205,42 +2237,42 @@
     },
     dig: {
       applicable: (c, a) => c.adult && a.knowledge.techs.has('digging') && !!(A().nearestPoi(c.world, a, 'deposit') || A().nearestPoi(c.world, a, 'clay')),
-      score: (c, a) => { const dep = A().nearestPoi(c.world, a, 'deposit'); const clay = A().nearestPoi(c.world, a, 'clay'); const wantClay = a.knowledge.techs.has('pottery') && (a.inv.clay || 0) < 4 || (a.knowledge.techs.has('stone_masonry') && (a.inv.clay || 0) < 2); let s = 0, t = null; if (clay && wantClay) { s = 0.5; t = clay; } if (dep && (!t || LW.dist(a.x, a.y, dep.x, dep.y) < 8)) { const s2 = 0.3 * (0.5 + P(a).curiosity) + (a.knowledge.techs.has('ore_lore_' + LW.DEPOSIT_NAME[dep.q]) ? 0 : 0.25); if (s2 > s) { s = s2; t = dep; } } a._digTarget = t; return [s * (c.night ? 0.3 : 1), t ? [`dig at ${t.x},${t.y}`] : []]; },
+      score: (c, a) => { const dep = A().nearestPoi(c.world, a, 'deposit'); const clay = A().nearestPoi(c.world, a, 'clay'); const wantClay = a.knowledge.techs.has('pottery') && (a.inv.clay || 0) < 4 || (a.knowledge.techs.has('stone_masonry') && (a.inv.clay || 0) < 2); let s = 0, t = null; if (clay && wantClay) { s = 0.5; t = clay; } if (dep && (!t || LW.dist(a.x, a.y, dep.x, dep.y) < 8)) { const s2 = 0.3 * (0.5 + P(a).curiosity) + (a.knowledge.techs.has('ore_lore_' + LW.DEPOSIT_NAME[dep.q]) ? 0 : 0.25); if (s2 > s) { s = s2; t = dep; } } a._digTarget = t; return [s * (c.night ? 0.3 : 1), t ? [`ásás itt: ${t.x},${t.y}`] : []]; },
       plan: (c, a) => a._digTarget ? { steps: [{ op: 'moveTo', i: a._digTarget.i }, { op: 'dig', i: a._digTarget.i, n: 8 }], tag: 'dig:ground' } : null,
     },
     farm: {
       applicable: (c, a) => c.adult && a.knowledge.techs.has('seed_planting'),
-      score: (c, a) => { const farm = [...c.world.buildings.values()].find((b) => b.kind === 'farm_plot' && b.ownerId === a.id); a._farm = farm; if (!farm) return [c.season <= 1 && c.home ? 0.6 + P(a).discipline * 0.3 : 0.1, ['wants a farm']]; if (farm.progress < 1) return [0.7, ['finish farm']]; if (!farm.planted && c.season <= 1) return [((a.inv.roots || 0) + (a.inv.berries || 0) >= 2 ? 0.75 : 0.3), ['plant']]; if (farm.planted && farm.crop >= 1) return [1.0 + u(N(a).food) * 0.5, ['harvest ready']]; return [0.05, ['crop growing']]; },
+      score: (c, a) => { const farm = [...c.world.buildings.values()].find((b) => b.kind === 'farm_plot' && b.ownerId === a.id); a._farm = farm; if (!farm) return [c.season <= 1 && c.home ? 0.6 + P(a).discipline * 0.3 : 0.1, ['szántót akar']]; if (farm.progress < 1) return [0.7, ['befejezi a szántót']]; if (!farm.planted && c.season <= 1) return [((a.inv.roots || 0) + (a.inv.berries || 0) >= 2 ? 0.75 : 0.3), ['vetés']]; if (farm.planted && farm.crop >= 1) return [1.0 + u(N(a).food) * 0.5, ['érett a termés']]; return [0.05, ['nő a termés']]; },
       plan: (c, a) => { const farm = a._farm; if (!farm) return buildPlan(c, a, 'farm_plot'); if (farm.progress < 1) return buildPlanFor(c, a, farm); if (!farm.planted) { const seeds = (a.inv.roots || 0) + (a.inv.berries || 0) >= 2 ? [] : acquireSteps(c.world, a, { berries: 2 }, c); if (!seeds) return null; return { steps: [...seeds, { op: 'moveTo', i: c.world.idx(farm.x, farm.y) }, { op: 'plant', bid: farm.id }], tag: 'farm:plant' }; } if (farm.crop >= 1) return { steps: [{ op: 'moveTo', i: c.world.idx(farm.x, farm.y) }, { op: 'harvest', bid: farm.id }], tag: 'farm:harvest' }; return null; },
     },
     explore: {
       applicable: (c, a) => !c.infant && c.stage !== 'child',
-      score: (c, a) => { let s = P(a).curiosity * (1 - E(a).fear) * 0.55 + u(N(a).curiosity) * 0.45; const f = [`curiosity ${LW.pct(P(a).curiosity)}`]; if (!c.water) { s += 1.0; f.push('no water known'); } if (!c.food) { s += 0.8; f.push('no food known'); } else if (c.food.d > 10) { s += 0.4; f.push('food is far'); } if (a.knowledge.places.size < 20) { s += 0.3; f.push('knows little'); } if (c.night) s *= 0.25; if (N(a).warmth < 0.5) s *= 0.3; if (N(a).food < 0.3 || N(a).water < 0.3) s *= (c.water && c.food) ? 0.3 : 1.2; return [s, f]; },
+      score: (c, a) => { let s = P(a).curiosity * (1 - E(a).fear) * 0.55 + u(N(a).curiosity) * 0.45; const f = [`kíváncsiság ${LW.pct(P(a).curiosity)}`]; if (!c.water) { s += 1.0; f.push('nem ismer vizet'); } if (!c.food) { s += 0.8; f.push('nem ismer ételt'); } else if (c.food.d > 10) { s += 0.4; f.push('messze az étel'); } if (a.knowledge.places.size < 20) { s += 0.3; f.push('keveset ismer'); } if (c.night) s *= 0.25; if (N(a).warmth < 0.5) s *= 0.3; if (N(a).food < 0.3 || N(a).water < 0.3) s *= (c.water && c.food) ? 0.3 : 1.2; return [s, f]; },
       plan: (c, a) => { const t = exploreTarget(c.world, a); return t == null ? null : { steps: [{ op: 'moveTo', i: t, explore: true }], tag: 'explore:walk' }; },
     },
     fight: {
       applicable: (c, a) => c.adult && E(a).anger > 0.5 && P(a).aggression > 0.4,
-      score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { const r = a.relationships.get(o.id); if (!r || r.resentment < 0.45) continue; const s = E(a).anger * P(a).aggression * r.resentment * 1.4 * (1 - r.fear) * (P(a).bravery + 0.3); if (s > best) { best = s; who = o; } } a._fightTarget = who; return [best, who ? [`anger ${LW.pct(E(a).anger)}`, `resents ${who.name}`] : []]; },
+      score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { const r = a.relationships.get(o.id); if (!r || r.resentment < 0.45) continue; const s = E(a).anger * P(a).aggression * r.resentment * 1.4 * (1 - r.fear) * (P(a).bravery + 0.3); if (s > best) { best = s; who = o; } } a._fightTarget = who; return [best, who ? [`harag ${LW.pct(E(a).anger)}`, `neheztel rá: ${who.name}`] : []]; },
       plan: (c, a) => a._fightTarget ? { steps: [{ op: 'moveTo', i: c.world.idx(a._fightTarget.x | 0, a._fightTarget.y | 0), near: 1 }, { op: 'interact', target: a._fightTarget.id, kind: 'fight', n: 2 }], target: a._fightTarget.id, priority: 2 } : null,
     },
     teach: {
       applicable: (c, a) => c.adult && a.knowledge.techs.size > 0 && c.nearby.length > 0,
-      score: (c, a) => { let best = 0, who = null, tech = null; for (const o of c.nearby) { if (o.sleeping || A().stage(c.world, o) === 'infant') continue; const r = a.relationships.get(o.id); const close = (a.children.includes(o.id) ? 0.8 : 0) + (r ? r.friendship * 0.6 : 0); if (close < 0.2) continue; for (const t of a.knowledge.techs) { if (o.knowledge.techs.has(t) || LW.Tech.D[t].hidden) continue; const pre = !LW.Tech.D[t].prereq || LW.Tech.D[t].prereq.every((p) => o.knowledge.techs.has(p)); if (!pre) continue; const s = 0.3 * close * (0.5 + P(a).empathy + P(a).sociability * 0.5) * (c.stage === 'elder' ? 1.5 : 1); if (s > best) { best = s; who = o; tech = t; } } } a._teach = who ? { who, tech } : null; return [best, who ? [`teach ${LW.Tech.D[tech].name} to ${who.name}`] : []]; },
+      score: (c, a) => { let best = 0, who = null, tech = null; for (const o of c.nearby) { if (o.sleeping || A().stage(c.world, o) === 'infant') continue; const r = a.relationships.get(o.id); const close = (a.children.includes(o.id) ? 0.8 : 0) + (r ? r.friendship * 0.6 : 0); if (close < 0.2) continue; for (const t of a.knowledge.techs) { if (o.knowledge.techs.has(t) || LW.Tech.D[t].hidden) continue; const pre = !LW.Tech.D[t].prereq || LW.Tech.D[t].prereq.every((p) => o.knowledge.techs.has(p)); if (!pre) continue; const s = 0.3 * close * (0.5 + P(a).empathy + P(a).sociability * 0.5) * (c.stage === 'elder' ? 1.5 : 1); if (s > best) { best = s; who = o; tech = t; } } } a._teach = who ? { who, tech } : null; return [best, who ? [`tanítja (${LW.Tech.D[tech].name.toLowerCase()}): ${who.name}`] : []]; },
       plan: (c, a) => a._teach ? { steps: [{ op: 'moveTo', i: c.world.idx(a._teach.who.x | 0, a._teach.who.y | 0), near: 1 }, { op: 'interact', target: a._teach.who.id, kind: 'teach', tech: a._teach.tech, n: 6 }], target: a._teach.who.id, tech: a._teach.tech } : null,
     },
     pickup: {
       applicable: (c, a) => !c.infant && !!c.world.ground && c.world.ground.size > 0,
-      score: (c, a) => { const g = nearestGround(c.world, a, 7); a._pick = g; return [g ? 0.45 : 0, g ? ['items on the ground'] : []]; },
+      score: (c, a) => { const g = nearestGround(c.world, a, 7); a._pick = g; return [g ? 0.45 : 0, g ? ['holmi hever a földön'] : []]; },
       plan: (c, a) => a._pick != null ? { steps: [{ op: 'moveTo', i: a._pick }, { op: 'pickup', i: a._pick }] } : null,
     },
     mourn: {
       applicable: (c, a) => E(a).grief > 0.35,
-      score: (c, a) => [E(a).grief * 0.7, [`grief ${LW.pct(E(a).grief)}`]],
+      score: (c, a) => [E(a).grief * 0.7, [`gyász ${LW.pct(E(a).grief)}`]],
       plan: (c, a) => ({ steps: [...(c.home ? [{ op: 'moveTo', i: c.world.idx(c.home.x, c.home.y) }] : []), { op: 'wait', n: 16, at: 'mourning' }] }),
     },
     rest: {
       applicable: () => true,
-      score: (c, a) => [0.12 + (N(a).energy < 0.5 ? 0.15 : 0) + (a.health < 0.5 ? 0.3 : 0), ['nothing pressing']],
+      score: (c, a) => [0.12 + (N(a).energy < 0.5 ? 0.15 : 0) + (a.health < 0.5 ? 0.3 : 0), ['semmi sürgős']],
       plan: (c, a) => ({ steps: [...(c.fire && LW.dist(a.x, a.y, c.fire.x, c.fire.y) > 2 && LW.dist(a.x, a.y, c.fire.x, c.fire.y) < 12 ? [{ op: 'moveTo', i: c.world.randomNear(c.fire.x, c.fire.y, 1) }] : []), { op: 'wait', n: 6, at: c.fire ? 'fire' : 'rest' }], tag: c.fire ? 'rest:fire' : 'rest:idle' }),
     },
   };
@@ -2286,7 +2318,7 @@
         const g = GOALS[id];
         try { if (!g.applicable(ctx, a)) continue; } catch (e) { continue; }
         let [s, factors] = g.score(ctx, a); if (!(s > 0)) continue;
-        if (a.failStreak && a.failStreak.goal === id && a.failStreak.count >= 3 && world.tick - a.failStreak.tick < 32) { s *= 0.3; factors = [...factors, `keeps failing (×${a.failStreak.count})`]; }
+        if (a.failStreak && a.failStreak.goal === id && a.failStreak.count >= 3 && world.tick - a.failStreak.tick < 32) { s *= 0.3; factors = [...factors, `sorra kudarc (×${a.failStreak.count})`]; }
         s += world.rng.gauss(0, sigma);
         cand.push({ id, s, factors });
       }
@@ -2319,7 +2351,7 @@
       if ((world.tick - a.lastDecisionTick) >= world.cfg.agents.decisionInterval && p.priority < 2) return true;
       return false;
     },
-    describeGoal(id) { return { flee: 'fleeing danger', divine: 'answering the Creator', eat: 'looking for food', drink: 'going to drink', sleep: 'sleeping', getWarm: 'seeking warmth', careForChild: 'caring for a child', shareFood: 'sharing food', followParent: 'staying near a parent', socialize: 'socializing', flirt: 'flirting', mate: 'being intimate', stockpile: 'gathering food for later', buildShelter: 'building a home', helpBuild: 'helping to build', makeFire: 'making a fire', tendFire: 'tending the fire', craft: 'crafting', experiment: 'experimenting', dig: 'digging', farm: 'farming', explore: 'exploring', fight: 'fighting', teach: 'teaching', pickup: 'picking things up', mourn: 'mourning', rest: 'resting' }[id] || id; },
+    describeGoal(id) { return LW.HU.goalVerb(id); },
   };
   LW.Brain = Brain;
 })(globalThis.LW || (globalThis.LW = {}));
@@ -2416,8 +2448,8 @@
     hunt(world, a, st) {
       if (!near(world, a, st.i, 2.5)) return FAIL; const t = world.tiles; st.t = (st.t || 0) + 1; st.got = st.got || 0;
       const p = 0.12 * (0.5 + a.skills.hunting) * (a.inv.spear ? 1.5 : 0.4) * (0.2 + t.animals[st.i] / 255) * (LW.Time.isNight(world.tick) ? 0.5 : 1);
-      if (world.rng.chance(p)) { t.animals[st.i] = Math.max(0, t.animals[st.i] - 30); A().makeRoom(world, a, 2.4); const q = A().addItem(world, a, 'meat_raw', 2); st.got += q; if (world.rng.chance(0.5)) A().addItem(world, a, 'hide', 1); a.counters.hunted = (a.counters.hunted || 0) + 1; A().practice(a, 'hunting', 3); a.emotions.excitement = Math.min(1, a.emotions.excitement + 0.3); A().memory(world, a, { type: 'hunt', text: 'brought down prey', importance: 0.35, emotion: 'excitement', intensity: 0.4 }); }
-      else if (world.rng.chance(0.006)) A().damage(world, a, 0.15, 'a wounded animal');
+      if (world.rng.chance(p)) { t.animals[st.i] = Math.max(0, t.animals[st.i] - 30); A().makeRoom(world, a, 2.4); const q = A().addItem(world, a, 'meat_raw', 2); st.got += q; if (world.rng.chance(0.5)) A().addItem(world, a, 'hide', 1); a.counters.hunted = (a.counters.hunted || 0) + 1; A().practice(a, 'hunting', 3); a.emotions.excitement = Math.min(1, a.emotions.excitement + 0.3); A().memory(world, a, { type: 'hunt', text: 'elejtettem egy vadat', importance: 0.35, emotion: 'excitement', intensity: 0.4 }); }
+      else if (world.rng.chance(0.006)) A().damage(world, a, 0.15, 'sebzett vad');
       if (st.got >= st.n) return DONE; if (t.animals[st.i] < 15) { A().forgetPlace(a, 'animals', st.i); return st.got ? DONE : FAIL; }
       return st.t >= 28 ? (st.got ? DONE : FAIL) : RUN;
     },
@@ -2482,7 +2514,7 @@
       st.t++; if (st.t < Math.max(1, Math.round(R.ticks * (1 - a.skills.crafting * 0.4)))) return RUN;
       for (const k in R.out) { const add = A().addItem(world, a, k, R.out[k]); if (add < R.out[k]) { world.ground = world.ground || new Map(); const i = world.idx(a.x | 0, a.y | 0); const g = world.ground.get(i) || {}; g[k] = (g[k] || 0) + (R.out[k] - add); world.ground.set(i, g); } }
       A().practice(a, 'crafting', 3); a.counters.crafted = (a.counters.crafted || 0) + 1;
-      if (LW.ITEMS[Object.keys(R.out)[0]].tool) { A().memory(world, a, { type: 'craft', text: `made a ${LW.ITEMS[Object.keys(R.out)[0]].label.toLowerCase()}`, importance: 0.4, emotion: 'pride', intensity: 0.4 }); world.events.emit('ItemCrafted', { tick: world.tick, agentId: a.id, item: Object.keys(R.out)[0], first: !world.firsts || !world.firsts['item:' + Object.keys(R.out)[0]] }); }
+      if (LW.ITEMS[Object.keys(R.out)[0]].tool) { A().memory(world, a, { type: 'craft', text: `készítettem: ${LW.ITEMS[Object.keys(R.out)[0]].label.toLowerCase()}`, importance: 0.4, emotion: 'pride', intensity: 0.4 }); world.events.emit('ItemCrafted', { tick: world.tick, agentId: a.id, item: Object.keys(R.out)[0], first: !world.firsts || !world.firsts['item:' + Object.keys(R.out)[0]] }); }
       LW.Tech.accident(world, a, R.tag); return DONE;
     },
     experiment(world, a, st) {
@@ -2491,14 +2523,14 @@
       if (d.nearby === 'fire' && !world.buildingsNear(a.x | 0, a.y | 0, 2).find((b) => b.kind === 'campfire' && b.lit)) return FAIL;
       if (!LW.Tech.hasItems(a, d)) return FAIL;
       a.counters.experiments++; const ok = LW.Tech.attempt(world, a, st.tech);
-      if (!ok) A().memory(world, a, { type: 'experiment', text: `tried ${d.name.toLowerCase()} and failed`, importance: 0.15, emotion: 'stress', intensity: 0.2 });
+      if (!ok) A().memory(world, a, { type: 'experiment', text: `próbáltam (${d.name.toLowerCase()}), nem sikerült`, importance: 0.15, emotion: 'stress', intensity: 0.2 });
       return DONE;
     },
     dig(world, a, st) {
       if (!near(world, a, st.i, 1.8)) return FAIL; st.t = (st.t || 0) + 1; if (st.t < st.n) return RUN;
       const t = world.tiles, i = st.i, dt = t.depType[i]; A().practice(a, 'gathering', 2);
       if (dt && t.depAmt[i] > 0) {
-        const item = LW.DEPOSIT_ITEM[dt]; if (item) { const q = Math.min(t.depAmt[i], world.rng.int(1, 3)); const add = A().addItem(world, a, item, q); t.depAmt[i] -= add; if (t.depKnown[i] < 2) { t.depKnown[i] = 2; world.dirtyTiles.add(i); } const name = LW.DEPOSIT_NAME[dt]; if (['copper', 'tin', 'iron', 'coal', 'gold'].includes(name) && !a.knowledge.techs.has('ore_lore_' + name)) { LW.Tech.learn(world, a, 'ore_lore_' + name, 'observation'); world.events.emit('ResourceFound', { tick: world.tick, agentId: a.id, tile: i, deposit: name, first: !world.firsts || !world.firsts['deposit:' + name] }); A().memory(world, a, { type: 'find', text: `dug up ${LW.ITEMS[item].label.toLowerCase()}`, importance: 0.6, emotion: 'excitement', intensity: 0.5 }); } if (dt === LW.DEPOSIT.CLAY) LW.Tech.observe(world, a, 'clay'); }
+        const item = LW.DEPOSIT_ITEM[dt]; if (item) { const q = Math.min(t.depAmt[i], world.rng.int(1, 3)); const add = A().addItem(world, a, item, q); t.depAmt[i] -= add; if (t.depKnown[i] < 2) { t.depKnown[i] = 2; world.dirtyTiles.add(i); } const name = LW.DEPOSIT_NAME[dt]; if (['copper', 'tin', 'iron', 'coal', 'gold'].includes(name) && !a.knowledge.techs.has('ore_lore_' + name)) { LW.Tech.learn(world, a, 'ore_lore_' + name, 'observation'); world.events.emit('ResourceFound', { tick: world.tick, agentId: a.id, tile: i, deposit: name, first: !world.firsts || !world.firsts['deposit:' + name] }); A().memory(world, a, { type: 'find', text: `kiástam: ${LW.ITEMS[item].label.toLowerCase()}`, importance: 0.6, emotion: 'excitement', intensity: 0.5 }); } if (dt === LW.DEPOSIT.CLAY) LW.Tech.observe(world, a, 'clay'); }
         if (t.depAmt[i] <= 0) { t.depType[i] = 0; A().forgetPlace(a, 'deposit', i); A().forgetPlace(a, 'clay', i); }
       } else { if (world.rng.chance(0.3)) A().addItem(world, a, 'stone', 1); if (t.biome[i] === LW.BIOME.MARSH && world.rng.chance(0.6)) { A().addItem(world, a, 'clay', 2); LW.Tech.observe(world, a, 'clay'); } }
       return DONE;
@@ -2538,12 +2570,12 @@
       else if (res === FAIL) { p.done = true; p.failed = true; if (a.sleeping) a.sleeping = false; }
     },
     describe(world, a) {
-      const p = a.plan; if (!p || p.done) return 'thinking';
-      const st = p.steps[p.i]; if (!st) return 'thinking';
-      const g = LW.Brain.describeGoal(p.goal);
+      const p = a.plan; if (!p || p.done) return 'gondolkodik';
+      const st = p.steps[p.i]; if (!st) return 'gondolkodik';
+      const g = LW.Brain.describeGoal(p.goal); const item = (k) => (LW.ITEMS[k] ? LW.ITEMS[k].label.toLowerCase() : k);
       switch (st.op) {
-        case 'moveTo': return `walking (${g})`; case 'gather': return `gathering ${st.item}`; case 'hunt': return 'hunting'; case 'fish': return 'fishing'; case 'sleep': return 'sleeping'; case 'interact': return st.kind === 'converse' ? 'talking' : st.kind === 'flirt' ? 'flirting' : st.kind === 'mate' ? 'being intimate' : st.kind === 'fight' ? 'fighting' : st.kind === 'teach' ? 'teaching' : st.kind;
-        case 'build': case 'buildNew': case 'deliver': return `building ${LW.Buildings.DEFS[p.kind] ? LW.Buildings.DEFS[p.kind].label.toLowerCase() : ''}`; case 'craft': return `making ${st.recipe.replace('_', ' ')}`; case 'experiment': return `experimenting: ${LW.Tech.D[st.tech].name}`; case 'dig': return 'digging'; case 'flee': return 'fleeing'; case 'wait': return st.at === 'fire' ? 'sitting by the fire' : st.at === 'mourning' ? 'mourning' : st.at === 'shelter' ? 'sheltering' : 'resting'; case 'follow': return 'following a parent';
+        case 'moveTo': return `úton van (${g})`; case 'gather': return `gyűjt: ${item(st.item)}`; case 'hunt': return 'vadászik'; case 'fish': return 'halászik'; case 'sleep': return 'alszik'; case 'interact': return st.kind === 'converse' ? 'beszélget' : st.kind === 'flirt' ? 'flörtöl' : st.kind === 'mate' ? 'együtt van a párjával' : st.kind === 'fight' ? 'verekszik' : st.kind === 'teach' ? 'tanít' : st.kind;
+        case 'build': case 'buildNew': case 'deliver': return `épít: ${LW.Buildings.DEFS[p.kind] ? LW.Buildings.DEFS[p.kind].label.toLowerCase() : ''}`; case 'craft': return `készít: ${st.recipe && LW.Tech.RECIPES[st.recipe] ? item(Object.keys(LW.Tech.RECIPES[st.recipe].out)[0]) : st.recipe}`; case 'experiment': return `kísérletezik: ${LW.Tech.D[st.tech].name.toLowerCase()}`; case 'dig': return 'ás'; case 'flee': return 'menekül'; case 'wait': return st.at === 'fire' ? 'a tűznél ül' : st.at === 'mourning' ? 'gyászol' : st.at === 'shelter' ? 'fedél alatt vár' : st.at === 'huddling' ? 'összebújva melegszik' : 'pihen'; case 'follow': return 'a szülőjét követi';
         default: return g;
       }
     },
@@ -2613,31 +2645,31 @@
         ra.attraction = b01(ra.attraction + 0.04); rt.attraction = b01(rt.attraction + 0.05);
         for (const x of [a, t]) { x.emotions.love = b01(x.emotions.love + 0.15); x.emotions.joy = b01(x.emotions.joy + 0.15); x.emotions.excitement = b01(x.emotions.excitement + 0.2); x.needs.affection = b01(x.needs.affection + 0.2); x.needs.social = b01(x.needs.social + 0.15); }
         if (firstTime) world.events.emit('Courtship', { tick: world.tick, agentId: a.id, otherId: t.id, importance: 0.2 });
-        M().add(world, a, { type: 'romance', text: `flirted with ${t.name}`, importance: 0.35, emotion: 'love', intensity: 0.4, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `${a.name} flirted with me`, importance: 0.35, emotion: 'love', intensity: 0.4, subjects: [a.id] });
+        M().add(world, a, { type: 'romance', text: `flörtöltem: ${t.name}`, importance: 0.35, emotion: 'love', intensity: 0.4, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `${a.name} flörtölt velem`, importance: 0.35, emotion: 'love', intensity: 0.4, subjects: [a.id] });
         if (ra.romance >= cfg.datingThreshold && rt.romance >= cfg.datingThreshold && ra.status !== 'dating' && ra.status !== 'partner') this.startDating(world, a, t, ra, rt);
         else if (ra.status === 'dating' && ra.romance >= cfg.partnerThreshold && rt.romance >= cfg.partnerThreshold && world.tick - ra.datingSince > LW.TIME.TICKS_PER_DAY * 8) { const leaves = (x, other, rx) => { if (x.partner == null || x.partner === other.id) return true; const cur = x.relationships.get(x.partner); return !cur || (rx.attraction > cur.attraction + 0.2 && cur.friendship < 0.5 && x.personality.loyalty < 0.6); }; if (leaves(a, t, ra) && leaves(t, a, rt)) this.becomePartners(world, a, t, ra, rt); }
       } else {
         ra.romance = Math.max(0, ra.romance - 0.1); ra.resentment = b01(ra.resentment + 0.05 * (1 - a.personality.patience)); rt.attraction = Math.max(0, rt.attraction - 0.03);
         a.emotions.shame = b01(a.emotions.shame + 0.3); a.emotions.sadness = b01(a.emotions.sadness + 0.15);
-        M().add(world, a, { type: 'rejection', text: `was turned down by ${t.name}`, importance: 0.45, emotion: 'shame', intensity: 0.5, subjects: [t.id] });
+        M().add(world, a, { type: 'rejection', text: `elutasított: ${t.name}`, importance: 0.45, emotion: 'shame', intensity: 0.5, subjects: [t.id] });
         world.events.emit('Rejection', { tick: world.tick, agentId: a.id, otherId: t.id, importance: 0.12 });
       }
     },
     startDating(world, a, t, ra, rt) {
       ra.status = 'dating'; rt.status = 'dating'; ra.datingSince = world.tick; rt.datingSince = world.tick;
       for (const x of [a, t]) { x.emotions.love = b01(x.emotions.love + 0.4); x.emotions.joy = b01(x.emotions.joy + 0.3); }
-      M().add(world, a, { type: 'romance', text: `began seeing ${t.name}`, importance: 0.75, emotion: 'love', intensity: 0.7, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `began seeing ${a.name}`, importance: 0.75, emotion: 'love', intensity: 0.7, subjects: [a.id] });
+      M().add(world, a, { type: 'romance', text: `járni kezdtünk: ${t.name}`, importance: 0.75, emotion: 'love', intensity: 0.7, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `járni kezdtünk: ${a.name}`, importance: 0.75, emotion: 'love', intensity: 0.7, subjects: [a.id] });
       world.events.emit('CoupleFormed', { tick: world.tick, agentId: a.id, otherId: t.id, stage: 'dating', first: !world.firsts || !world.firsts['love'] });
     },
     becomePartners(world, a, t, ra, rt) {
-      if (a.partner != null && a.partner !== t.id) this.breakup(world, a, world.agents.get(a.partner), 'left for another');
-      if (t.partner != null && t.partner !== a.id) this.breakup(world, t, world.agents.get(t.partner), 'left for another');
+      if (a.partner != null && a.partner !== t.id) this.breakup(world, a, world.agents.get(a.partner), 'másért ment el');
+      if (t.partner != null && t.partner !== a.id) this.breakup(world, t, world.agents.get(t.partner), 'másért ment el');
       a.partner = t.id; t.partner = a.id; ra.status = 'partner'; rt.status = 'partner'; ra.loyalty = b01(ra.loyalty + 0.3); rt.loyalty = b01(rt.loyalty + 0.3);
       // share a home
       const ha = a.home != null ? world.buildings.get(a.home) : null, ht = t.home != null ? world.buildings.get(t.home) : null;
       if (ha && !ht) LW.Buildings.moveIn(world, ha, t); else if (ht && !ha) LW.Buildings.moveIn(world, ht, a); else if (ha && ht && ha.id !== ht.id) { const better = (LW.Buildings.def(ha).capacity || 0) >= (LW.Buildings.def(ht).capacity || 0) ? ha : ht; LW.Buildings.moveIn(world, better, better === ha ? t : a); }
       for (const x of [a, t]) { x.emotions.love = 1; x.emotions.joy = b01(x.emotions.joy + 0.4); x.needs.affection = 1; }
-      M().add(world, a, { type: 'romance', text: `became partners with ${t.name}`, importance: 0.85, emotion: 'love', intensity: 0.85, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `became partners with ${a.name}`, importance: 0.85, emotion: 'love', intensity: 0.85, subjects: [a.id] });
+      M().add(world, a, { type: 'romance', text: `párom lett: ${t.name}`, importance: 0.85, emotion: 'love', intensity: 0.85, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `párom lett: ${a.name}`, importance: 0.85, emotion: 'love', intensity: 0.85, subjects: [a.id] });
       world.events.emit('CoupleFormed', { tick: world.tick, agentId: a.id, otherId: t.id, stage: 'partners', first: !world.firsts || !world.firsts['partners'] });
     },
     breakup(world, a, t, reason) {
@@ -2649,7 +2681,7 @@
       t.emotions.sadness = b01(t.emotions.sadness + 0.6); t.emotions.grief = b01(t.emotions.grief + 0.3); a.emotions.sadness = b01(a.emotions.sadness + 0.3);
       // the non-owner leaves the shared home
       if (a.home != null && a.home === t.home) { const h = world.buildings.get(a.home); if (h) LW.Buildings.moveOut(world, h.ownerId === a.id ? t : a); }
-      M().add(world, a, { type: 'romance', text: `broke up with ${t.name} (${reason})`, importance: 0.7, emotion: 'sadness', intensity: 0.6, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `${a.name} left me (${reason})`, importance: 0.8, emotion: 'grief', intensity: 0.75, subjects: [a.id] });
+      M().add(world, a, { type: 'romance', text: `szakítottam vele: ${t.name} (${reason})`, importance: 0.7, emotion: 'sadness', intensity: 0.6, subjects: [t.id] }); M().add(world, t, { type: 'romance', text: `${a.name} elhagyott (${reason})`, importance: 0.8, emotion: 'grief', intensity: 0.75, subjects: [a.id] });
       world.events.emit('CoupleBroke', { tick: world.tick, agentId: a.id, otherId: t.id, reason, first: !world.firsts || !world.firsts['breakup'] });
     },
     mate(world, a, t, ra, rt) {
@@ -2666,13 +2698,13 @@
       const rw = winner === a ? ra : rt, rl = winner === a ? rt : ra;
       const dmg = 0.12 + rng.f() * 0.3 * (winner.inv.spear ? 1.4 : 1);
       world.events.emit('ConflictOccurred', { tick: world.tick, agentId: a.id, otherId: t.id, winnerId: winner.id, first: !world.firsts || !world.firsts['conflict'] });
-      A().damage(world, loser, dmg, `a fight with ${winner.name}`); A().damage(world, winner, dmg * 0.25, `a fight with ${loser.name}`);
+      A().damage(world, loser, dmg, `verekedés (${winner.name})`); A().damage(world, winner, dmg * 0.25, `verekedés (${loser.name})`);
       if (!world.agents.has(loser.id)) { winner.counters.kills++; winner.emotions.shame = b01(winner.emotions.shame + 0.5 * winner.personality.empathy); world.events.emit('Killing', { tick: world.tick, agentId: winner.id, otherId: loser.id, first: !world.firsts || !world.firsts['murder'] }); for (const o of world.agents.values()) { if (o.id === winner.id) continue; const rr = o.relationships.get(loser.id); const close = o.parents.includes(loser.id) || loser.parents.includes(o.id) ? 1 : rr ? Math.max(rr.friendship, rr.romance) : 0; if (close > 0.3) { const ro = R().ensure(world, o, winner); ro.resentment = b01(ro.resentment + close * 0.6); ro.fear = b01(ro.fear + 0.3); } } }
       else { rl.fear = b01(rl.fear + 0.4); rl.resentment = b01(rl.resentment + 0.2); loser.emotions.anger = b01(loser.emotions.anger + 0.2); }
       winner.emotions.anger = Math.max(0, winner.emotions.anger - 0.5); winner.emotions.pride = b01(winner.emotions.pride + 0.2); rw.resentment = Math.max(0, rw.resentment - 0.3); rw.respect = Math.max(0, rw.respect - 0.1);
-      for (const o of world.agentsNear(a.x, a.y, 6)) { if (o === a || o === t) continue; o.emotions.fear = b01(o.emotions.fear + 0.2); M().add(world, o, { type: 'witness', text: `saw ${a.name} and ${t.name} fight`, importance: 0.4, emotion: 'fear', intensity: 0.4, subjects: [a.id, t.id] }); }
-      M().add(world, winner, { type: 'fight', text: `fought ${loser.name} and won`, importance: 0.5, emotion: 'pride', intensity: 0.5, subjects: [loser.id] });
-      if (world.agents.has(loser.id)) M().add(world, loser, { type: 'fight', text: `fought ${winner.name} and lost`, importance: 0.6, emotion: 'anger', intensity: 0.6, subjects: [winner.id] });
+      for (const o of world.agentsNear(a.x, a.y, 6)) { if (o === a || o === t) continue; o.emotions.fear = b01(o.emotions.fear + 0.2); M().add(world, o, { type: 'witness', text: `láttam, ahogy ${a.name} és ${t.name} összeverekedett`, importance: 0.4, emotion: 'fear', intensity: 0.4, subjects: [a.id, t.id] }); }
+      M().add(world, winner, { type: 'fight', text: `megverekedtem vele és győztem: ${loser.name}`, importance: 0.5, emotion: 'pride', intensity: 0.5, subjects: [loser.id] });
+      if (world.agents.has(loser.id)) M().add(world, loser, { type: 'fight', text: `megverekedtem vele és vesztettem: ${winner.name}`, importance: 0.6, emotion: 'anger', intensity: 0.6, subjects: [winner.id] });
     },
     teach(world, a, t, tech, ra, rt) {
       const d = LW.Tech.D[tech]; if (!d || t.knowledge.techs.has(tech)) return;
@@ -2686,7 +2718,7 @@
       rt.gratitude = b01(rt.gratitude + 0.3); rt.trust = b01(rt.trust + 0.05); rt.friendship = b01(rt.friendship + 0.05); ra.friendship = b01(ra.friendship + 0.02);
       a.emotions.joy = b01(a.emotions.joy + 0.1); a.emotions.pride = b01(a.emotions.pride + 0.1); t.emotions.joy = b01(t.emotions.joy + 0.15);
       const label = LW.ITEMS[item] ? LW.ITEMS[item].label.toLowerCase() : item;
-      M().add(world, t, { type: 'gift', text: `${a.name} gave me ${label}`, importance: 0.4, emotion: 'joy', intensity: 0.4, subjects: [a.id] });
+      M().add(world, t, { type: 'gift', text: `${a.name} adott nekem: ${label}`, importance: 0.4, emotion: 'joy', intensity: 0.4, subjects: [a.id] });
       world.events.emit('Gift', { tick: world.tick, agentId: a.id, otherId: t.id, item, n, importance: 0.1 });
       if (LW.ITEMS[item] && LW.ITEMS[item].food && A().stage(world, t) !== 'infant' && t.needs.food < 0.6) A().eat(world, t, item);
     },
@@ -2696,7 +2728,7 @@
         const t = world.agents.get(a.partner); if (!t) { a.partner = null; return; }
         const r = R().ensure(world, a, t); const cfg = world.cfg.social;
         let p = 0; if (r.resentment > r.friendship + cfg.breakupResentment) p += 0.25 * (1 - a.personality.patience); if (r.attraction < 0.15 && r.friendship < 0.3) p += 0.03; if (r.jealousy > 0.7) p += 0.2 * (1 - a.personality.patience);
-        if (p > 0 && world.rng.chance(p)) this.breakup(world, a, t, r.jealousy > 0.6 ? 'jealousy' : 'resentment');
+        if (p > 0 && world.rng.chance(p)) this.breakup(world, a, t, r.jealousy > 0.6 ? 'féltékenység' : 'neheztelés');
       }
       for (const [id, r] of a.relationships) if (r.status === 'dating' && world.tick - r.last > LW.TIME.TICKS_PER_DAY * 60) { r.status = 'acquaintance'; r.romance = 0; const t = world.agents.get(id); if (t) { const rt = t.relationships.get(a.id); if (rt && rt.status === 'dating') { rt.status = 'acquaintance'; rt.romance = 0; } } }
     },
@@ -2735,7 +2767,7 @@
           const founder = this.founder(world, list);
           const s = { id: world.nextIds.settlement++, name: world.language.place(), foundedTick: world.tick, founderId: founder ? founder.id : null, tier, peakTier: tier, x: cx, y: cy, buildingIds: [...ids], population: pop, dwellings, peakPopulation: pop, history: [], emptySince: -1, abandonedTick: null };
           world.settlements.set(s.id, s); match = s;
-          if (founder) { founder.achievements.push(`Founder of ${s.name}`); founder.importance += 1; LW.Agents.memory(world, founder, { type: 'settlement', text: `our camp became known as ${s.name}`, importance: 0.8, emotion: 'pride', intensity: 0.7 }); }
+          if (founder) { founder.achievements.push(`${s.name} alapítója`); founder.importance += 1; LW.Agents.memory(world, founder, { type: 'settlement', text: `a táborunk neve lett: ${s.name}`, importance: 0.8, emotion: 'pride', intensity: 0.7 }); }
           world.events.emit('SettlementFounded', { tick: world.tick, settlementId: s.id, name: s.name, tier, agentId: founder ? founder.id : undefined, tile: world.idx(cx | 0, cy | 0), first: !world.firsts || !world.firsts['settlement'] });
         } else {
           if (match.abandonedTick) { match.abandonedTick = null; world.events.emit('SettlementResettled', { tick: world.tick, settlementId: match.id, name: match.name, tile: world.idx(cx | 0, cy | 0) }); }
@@ -2769,9 +2801,9 @@
 (function (LW) {
   'use strict';
 
-  const TECH_FIRST = (id) => (LW.Tech.D[id] && LW.Tech.D[id].wow) || `First ${LW.Tech.D[id] ? LW.Tech.D[id].name : id}`;
-  const BLD_FIRST = { campfire: 'First Fire Lit', lean_to: 'First Shelter Built', hut: 'First Hut Built', stone_house: 'First Stone House', storage_pit: 'First Store', farm_plot: 'First Farm Plot' };
-  const TIER_FIRST = { camp: 'First Camp', hamlet: 'First Hamlet', village: 'First Village', town: 'First Town', city: 'First City', metropolis: 'First Metropolis' };
+  const TECH_FIRST = (id) => (LW.Tech.D[id] && LW.Tech.D[id].wow) || `Első: ${LW.Tech.D[id] ? LW.Tech.D[id].name.toLowerCase() : id}`;
+  const BLD_FIRST = { campfire: 'Első meggyújtott tűz', lean_to: 'Első megépült fedezék', hut: 'Első megépült kunyhó', stone_house: 'Első kőház', storage_pit: 'Első tároló', farm_plot: 'Első szántóföld' };
+  const TIER_FIRST = { camp: 'Első tábor', hamlet: 'Első tanya', village: 'Első falu', town: 'Első mezőváros', city: 'Első város', metropolis: 'Első nagyváros' };
 
   class History {
     constructor(world) {
@@ -2780,49 +2812,49 @@
       world.firsts = this.firsts; world.history = this;
       world.events.onAny((ev) => this.handle(ev));
     }
-    nameOf(id) { if (id == null) return 'someone'; const a = this.world.agents.get(id) || this.world.deceased.get(id); return a ? a.name : 'someone'; }
+    nameOf(id) { if (id == null) return 'valaki'; const a = this.world.agents.get(id) || this.world.deceased.get(id); return a ? a.name : 'valaki'; }
     /** Returns {text, base, firstKey, firstTitle, god} for an event or null to ignore. */
     describe(ev) {
-      const n = (id) => this.nameOf(id); const W = this.world; const T = LW.Tech.D; const BD = LW.Buildings.DEFS;
+      const n = (id) => this.nameOf(id); const W = this.world; const T = LW.Tech.D; const BD = LW.Buildings.DEFS; const HU = LW.HU;
       switch (ev.type) {
-        case 'StrangerArrived': return { text: `A stranger, ${n(ev.agentId)}, arrived from beyond the edge of the known land.`, base: 0.6, firstKey: 'stranger', firstTitle: 'First Stranger' };
-        case 'AgentBorn': return ev.stranger ? null : ev.genesis ? { text: `${n(ev.agentId)} appeared in the world.`, base: 0.5, firstKey: 'genesis', firstTitle: 'The First Ones' } : { text: `${n(ev.agentId)} was born to ${n(ev.motherId)} and ${n(ev.fatherId)}.`, base: 0.45, firstKey: 'born', firstTitle: 'First Child Born' };
-        case 'AgentDied': return { text: `${n(ev.agentId)} died of ${ev.cause} at age ${Math.floor(ev.age)}.`, base: 0.5 + Math.min(0.3, 1 / Math.max(1, W.population)), firstKey: 'death', firstTitle: 'First Death' };
-        case 'Killing': return { text: `${n(ev.agentId)} killed ${n(ev.otherId)}.`, base: 0.85, firstKey: 'murder', firstTitle: 'First Murder' };
-        case 'CoupleFormed': return ev.stage === 'dating' ? { text: `${n(ev.agentId)} and ${n(ev.otherId)} began seeing each other.`, base: 0.4, firstKey: 'love', firstTitle: 'First Love' } : { text: `${n(ev.agentId)} and ${n(ev.otherId)} became partners.`, base: 0.55, firstKey: 'partners', firstTitle: 'First Union' };
-        case 'CoupleBroke': return { text: `${n(ev.agentId)} left ${n(ev.otherId)} (${ev.reason}).`, base: 0.45, firstKey: 'breakup', firstTitle: 'First Heartbreak' };
-        case 'Pregnancy': return { text: `${n(ev.agentId)} is expecting a child.`, base: 0.3 };
-        case 'DiscoveryMade': return { text: `${n(ev.agentId)} discovered ${T[ev.tech].name}${ev.source === 'accident' ? ' by accident' : ev.source === 'observation' ? ' by observation' : ''}.`, base: T[ev.tech].hidden ? 0.2 : 0.65, firstKey: 'tech:' + ev.tech, firstTitle: TECH_FIRST(ev.tech) };
-        case 'KnowledgeTransferred': return { text: `${n(ev.agentId)} learned ${T[ev.tech].name}${ev.teacherId != null ? ' from ' + n(ev.teacherId) : ''}.`, base: T[ev.tech].hidden ? 0.05 : 0.15 };
-        case 'KnowledgeLost': return { text: `The knowledge of ${T[ev.tech].name} was lost with the death of ${n(ev.agentId)}.`, base: 0.75, firstKey: 'lost', firstTitle: 'First Knowledge Lost' };
-        case 'BuildingStarted': return { text: `${n(ev.agentId)} began building a ${BD[ev.kind].label.toLowerCase()}.`, base: ev.kind === 'campfire' ? 0.05 : 0.18 };
-        case 'BuildingCompleted': return { text: `${n(ev.agentId)} ${ev.kind === 'campfire' ? 'lit a fire' : 'completed a ' + BD[ev.kind].label.toLowerCase()}.`, base: ev.kind === 'campfire' ? 0.12 : 0.45, firstKey: 'building:' + ev.kind, firstTitle: BLD_FIRST[ev.kind] || `First ${BD[ev.kind].label}` };
-        case 'BuildingDestroyed': return ev.kind === 'campfire' ? null : { text: `A ${BD[ev.kind].label.toLowerCase()} was destroyed by ${ev.cause}.`, base: ev.cause === 'decay' ? 0.15 : 0.5 };
-        case 'SettlementFounded': return { text: `The ${ev.tier} of ${ev.name} was founded by ${n(ev.agentId)}.`, base: 0.85, firstKey: 'settlement', firstTitle: 'First Settlement' };
-        case 'SettlementGrew': return { text: `${ev.name} grew into a ${ev.tier}.`, base: 0.75, firstKey: 'tier:' + ev.tier, firstTitle: TIER_FIRST[ev.tier] };
-        case 'SettlementAbandoned': return { text: `${ev.name} was abandoned.`, base: 0.6 };
-        case 'SettlementResettled': return { text: `People live in ${ev.name} again.`, base: 0.5 };
-        case 'ResourceFound': return { text: `${n(ev.agentId)} found ${ev.deposit}.`, base: 0.5, firstKey: 'deposit:' + ev.deposit, firstTitle: `First ${ev.deposit[0].toUpperCase() + ev.deposit.slice(1)} Found` };
-        case 'WeatherChanged': return ev.creator ? null : (ev.state === 'storm' && ev.prev !== 'rain') ? { text: 'A storm sweeps over the land.', base: 0.2 } : (ev.state === 'rain' && ev.prev !== 'storm' && ev.prev !== 'overcast') ? { text: 'Rain begins to fall.', base: 0.08 } : null;
-        case 'WildfireStarted': return { text: `A wildfire started${ev.cause === 'lightning' ? ' from a lightning strike' : ev.cause === 'creator' ? ' from the sky' : ''}.`, base: 0.55, firstKey: 'wildfire', firstTitle: 'First Wildfire' };
-        case 'WildfireEnded': return { text: `The wildfire burned out after scorching ${ev.burned} tiles.`, base: 0.3 };
-        case 'CreatorIntervention': return { text: ev.text, base: 0.6, god: true, firstKey: 'intervention', firstTitle: "The Creator's First Touch" };
+        case 'StrangerArrived': return { text: `Egy idegen, ${n(ev.agentId)}, érkezett az ismert föld peremén túlról.`, base: 0.6, firstKey: 'stranger', firstTitle: 'Első idegen' };
+        case 'AgentBorn': return ev.stranger ? null : ev.genesis ? { text: `${n(ev.agentId)} megjelent a világban.`, base: 0.5, firstKey: 'genesis', firstTitle: 'Az Elsők' } : { text: `Megszületett ${n(ev.agentId)}, ${n(ev.motherId)} és ${n(ev.fatherId)} gyermeke.`, base: 0.45, firstKey: 'born', firstTitle: 'Első gyermek' };
+        case 'AgentDied': return { text: `${n(ev.agentId)} ${Math.floor(ev.age)} évesen meghalt: ${ev.cause}.`, base: 0.5 + Math.min(0.3, 1 / Math.max(1, W.population)), firstKey: 'death', firstTitle: 'Első halál' };
+        case 'Killing': return { text: `${n(ev.agentId)} végzett ${n(ev.otherId)} életével.`, base: 0.85, firstKey: 'murder', firstTitle: 'Első gyilkosság' };
+        case 'CoupleFormed': return ev.stage === 'dating' ? { text: `${n(ev.agentId)} és ${n(ev.otherId)} járni kezdtek.`, base: 0.4, firstKey: 'love', firstTitle: 'Első szerelem' } : { text: `${n(ev.agentId)} és ${n(ev.otherId)} párrá lettek.`, base: 0.55, firstKey: 'partners', firstTitle: 'Első pár' };
+        case 'CoupleBroke': return { text: `${n(ev.agentId)} és ${n(ev.otherId)} szakítottak — ${n(ev.agentId)} lépett ki (${ev.reason}).`, base: 0.45, firstKey: 'breakup', firstTitle: 'Első szakítás' };
+        case 'Pregnancy': return { text: `${n(ev.agentId)} gyermeket vár.`, base: 0.3 };
+        case 'DiscoveryMade': return { text: `${n(ev.agentId)} rájött${ev.source === 'accident' ? ' véletlenül' : ev.source === 'observation' ? ' megfigyelésből' : ''}: ${T[ev.tech].name.toLowerCase()}.`, base: T[ev.tech].hidden ? 0.2 : 0.65, firstKey: 'tech:' + ev.tech, firstTitle: TECH_FIRST(ev.tech) };
+        case 'KnowledgeTransferred': return { text: `${n(ev.agentId)} megtanulta: ${T[ev.tech].name.toLowerCase()}${ev.teacherId != null ? ' (tanította: ' + n(ev.teacherId) + ')' : ''}.`, base: T[ev.tech].hidden ? 0.05 : 0.15 };
+        case 'KnowledgeLost': return { text: `${n(ev.agentId)} halálával elveszett a tudás: ${T[ev.tech].name.toLowerCase()}.`, base: 0.75, firstKey: 'lost', firstTitle: 'Első elveszett tudás' };
+        case 'BuildingStarted': return { text: `${n(ev.agentId)} építeni kezdett: ${BD[ev.kind].label.toLowerCase()}.`, base: ev.kind === 'campfire' ? 0.05 : 0.18 };
+        case 'BuildingCompleted': return { text: `${n(ev.agentId)} ${ev.kind === 'campfire' ? 'tüzet gyújtott' : 'elkészült: ' + BD[ev.kind].label.toLowerCase()}.`, base: ev.kind === 'campfire' ? 0.12 : 0.45, firstKey: 'building:' + ev.kind, firstTitle: BLD_FIRST[ev.kind] || `Első ${BD[ev.kind].label.toLowerCase()}` };
+        case 'BuildingDestroyed': return ev.kind === 'campfire' ? null : { text: `Elpusztult egy ${BD[ev.kind].label.toLowerCase()} (${ev.cause}).`, base: ev.cause === 'elkorhadt' ? 0.15 : 0.5 };
+        case 'SettlementFounded': return { text: `Megalakult ${ev.name} ${HU.tier(ev.tier)}a — alapítója ${n(ev.agentId)}.`, base: 0.85, firstKey: 'settlement', firstTitle: 'Első település' };
+        case 'SettlementGrew': return { text: `${ev.name} ${HU.tierBecame(ev.tier)} nőtt.`, base: 0.75, firstKey: 'tier:' + ev.tier, firstTitle: TIER_FIRST[ev.tier] };
+        case 'SettlementAbandoned': return { text: `${ev.name} elnéptelenedett.`, base: 0.6 };
+        case 'SettlementResettled': return { text: `${ev.name} újra lakott.`, base: 0.5 };
+        case 'ResourceFound': return { text: `${n(ev.agentId)} ${HU.depositItemByName(ev.deposit)} talált.`, base: 0.5, firstKey: 'deposit:' + ev.deposit, firstTitle: `Első ${HU.depositByName(ev.deposit)}lelet` };
+        case 'WeatherChanged': return ev.creator ? null : (ev.state === 'storm' && ev.prev !== 'rain') ? { text: 'Vihar söpör végig a vidéken.', base: 0.2 } : (ev.state === 'rain' && ev.prev !== 'storm' && ev.prev !== 'overcast') ? { text: 'Eleredt az eső.', base: 0.08 } : null;
+        case 'WildfireStarted': return { text: `Erdőtűz tört ki${ev.cause === 'lightning' ? ' egy villámcsapásból' : ev.cause === 'creator' ? ' az égből' : ''}.`, base: 0.55, firstKey: 'wildfire', firstTitle: 'Első erdőtűz' };
+        case 'WildfireEnded': return { text: `Az erdőtűz kialudt; ${ev.burned} mező perzselődött fel.`, base: 0.3 };
+        case 'CreatorIntervention': return { text: ev.text, base: 0.6, god: true, firstKey: 'intervention', firstTitle: 'A Teremtő első érintése' };
         case 'DivineCommandIssued': return { text: ev.text, base: 0.5, god: true };
         case 'DivineCommandInterpreted': return { text: ev.text, base: 0.45, god: true };
-        case 'ManifestationPlaced': return { text: `A ${BD[ev.kind].label.toLowerCase()} appeared.`, base: 0.6, god: true, firstKey: 'manifestation', firstTitle: 'First Manifestation' };
-        case 'ManifestationEnded': return { text: `The ${BD[ev.kind].label.toLowerCase()} ${ev.cause === 'faded' ? 'faded away' : 'was gone'}.`, base: 0.2, god: true };
-        case 'BeliefFormed': return { text: ev.text, base: 0.9, firstKey: 'belief', firstTitle: 'First Belief in the Creator' };
-        case 'ConflictOccurred': return { text: `${n(ev.agentId)} fought ${n(ev.otherId)}; ${n(ev.winnerId)} won.`, base: 0.35, firstKey: 'conflict', firstTitle: 'First Fight' };
-        case 'AgentInjured': return { text: `${n(ev.agentId)} was hurt by ${ev.cause}.`, base: 0.12 + ev.amount * 0.3 };
-        case 'AgentIll': return { text: `${n(ev.agentId)} fell ill.`, base: 0.12 };
-        case 'FriendshipFormed': return { text: `${n(ev.agentId)} and ${n(ev.otherId)} became friends.`, base: 0.25, firstKey: 'friendship', firstTitle: 'First Friendship' };
-        case 'Courtship': return { text: `${n(ev.agentId)} flirted with ${n(ev.otherId)}.`, base: 0.15 };
-        case 'Rejection': return { text: `${n(ev.otherId)} turned ${n(ev.agentId)} down.`, base: 0.12 };
-        case 'Gift': return { text: `${n(ev.agentId)} gave ${n(ev.otherId)} ${LW.ITEMS[ev.item] ? LW.ITEMS[ev.item].label.toLowerCase() : ev.item}.`, base: 0.1 };
-        case 'ItemCrafted': return { text: `${n(ev.agentId)} made a ${LW.ITEMS[ev.item].label.toLowerCase()}.`, base: 0.3, firstKey: 'item:' + ev.item, firstTitle: `First ${LW.ITEMS[ev.item].label}` };
-        case 'Harvest': return { text: `${n(ev.agentId)} harvested ${ev.amount} grain.`, base: 0.35, firstKey: 'harvest', firstTitle: 'First Harvest' };
-        case 'PathFormed': return { text: 'Feet have worn a path into the land.', base: 0.3, firstKey: 'path', firstTitle: 'First Path' };
-        case 'FireWentOut': return { text: 'A fire went out.', base: 0.05 };
+        case 'ManifestationPlaced': return { text: `Megjelent egy ${BD[ev.kind].label.toLowerCase()}.`, base: 0.6, god: true, firstKey: 'manifestation', firstTitle: 'Első megjelenés' };
+        case 'ManifestationEnded': return { text: `A ${BD[ev.kind].label.toLowerCase()} ${ev.cause === 'elhalványult' ? 'elhalványult' : 'eltűnt'}.`, base: 0.2, god: true };
+        case 'BeliefFormed': return { text: ev.text, base: 0.9, firstKey: 'belief', firstTitle: 'Az első hit a Teremtőben' };
+        case 'ConflictOccurred': return { text: `${n(ev.agentId)} és ${n(ev.otherId)} összeverekedett; ${n(ev.winnerId)} győzött.`, base: 0.35, firstKey: 'conflict', firstTitle: 'Első verekedés' };
+        case 'AgentInjured': return { text: `${n(ev.agentId)} megsérült: ${ev.cause}.`, base: 0.12 + ev.amount * 0.3 };
+        case 'AgentIll': return { text: `${n(ev.agentId)} megbetegedett.`, base: 0.12 };
+        case 'FriendshipFormed': return { text: `${n(ev.agentId)} és ${n(ev.otherId)} összebarátkoztak.`, base: 0.25, firstKey: 'friendship', firstTitle: 'Első barátság' };
+        case 'Courtship': return { text: `${n(ev.agentId)} és ${n(ev.otherId)} flörtöltek.`, base: 0.15 };
+        case 'Rejection': return { text: `${n(ev.otherId)} elutasította ${n(ev.agentId)} közeledését.`, base: 0.12 };
+        case 'Gift': return { text: `${n(ev.agentId)} ajándéka ${n(ev.otherId)} részére: ${LW.ITEMS[ev.item] ? LW.ITEMS[ev.item].label.toLowerCase() : ev.item}.`, base: 0.1 };
+        case 'ItemCrafted': return { text: `${n(ev.agentId)} készített: ${LW.ITEMS[ev.item].label.toLowerCase()}.`, base: 0.3, firstKey: 'item:' + ev.item, firstTitle: `Első ${LW.ITEMS[ev.item].label.toLowerCase()}` };
+        case 'Harvest': return { text: `${n(ev.agentId)} aratott: ${ev.amount} gabona.`, base: 0.35, firstKey: 'harvest', firstTitle: 'Első aratás' };
+        case 'PathFormed': return { text: 'A lábak ösvényt tapostak a földbe.', base: 0.3, firstKey: 'path', firstTitle: 'Első ösvény' };
+        case 'FireWentOut': return { text: 'Kialudt egy tűz.', base: 0.05 };
         case 'Conversation': return null;
         default: return null;
       }
@@ -2848,7 +2880,7 @@
       this.yearStats.push({ year: W.year - 1, population: W.population, births: c.births - (prev ? prev.cumBirths : 0), deaths: c.deaths - (prev ? prev.cumDeaths : 0), cumBirths: c.births, cumDeaths: c.deaths, discoveries: c.discoveries, techs: known.size, techLevel: LW.Tech.techLevel(known), settlements: [...W.settlements.values()].filter((s) => !s.abandonedTick).length, largest: largest ? largest.name : null, buildings: W.buildings.size });
       if (this.yearStats.length > 5000) this.yearStats.shift();
       // creator belief emergence
-      if (!this.firsts.belief && W.population >= 4) { let believers = 0; for (const a of W.agents.values()) if (a.beliefs.creator > 0.5) believers++; if (believers / W.population >= 0.6) { const s = largest; W.events.emit('BeliefFormed', { tick: W.tick, text: `The people${s ? ' of ' + s.name : ''} now speak of a Creator who watches from beyond the sky.`, tile: s ? W.idx(s.x | 0, s.y | 0) : undefined }); } }
+      if (!this.firsts.belief && W.population >= 4) { let believers = 0; for (const a of W.agents.values()) if (a.beliefs.creator > 0.5) believers++; if (believers / W.population >= 0.6) { const s = largest; W.events.emit('BeliefFormed', { tick: W.tick, text: `${s ? s.name + ' népe' : 'Az emberek'} már egy Teremtőről beszél${s ? '' : 'nek'}, aki az égen túlról figyeli őket.`, tile: s ? W.idx(s.x | 0, s.y | 0) : undefined }); } }
     }
     snapshotStats() { const W = this.world; const known = LW.Tech.worldKnowledge(W); return { tick: W.tick, population: W.population, births: this.counters.births, deaths: this.counters.deaths, discoveries: this.counters.discoveries, buildings: this.counters.buildings, couples: this.counters.couples, settlements: [...W.settlements.values()].filter((s) => !s.abandonedTick).length, techs: [...known], techLevel: LW.Tech.techLevel(known), chronicleLen: this.chronicle.length }; }
     toJSON() { return { feed: this.feed.slice(-this.world.cfg.history.feedCap), godFeed: this.godFeed, chronicle: this.chronicle, firsts: this.firsts, yearStats: this.yearStats, counters: this.counters }; }
@@ -2868,31 +2900,31 @@
   const A = () => LW.Agents, T = LW.TIME;
 
   const KINDS = {
-    rain:       { label: 'Rain', icon: '☂', desc: 'Rain over an area for 6 hours', target: 'tile' },
-    storm:      { label: 'Storm', icon: '⚡', desc: 'A violent storm with lightning', target: 'tile' },
-    snow:       { label: 'Cold snap', icon: '❄', desc: 'A cold front: snow for a day', target: 'world' },
-    clear:      { label: 'Clear sky', icon: '☼', desc: 'Clear the weather for 12 hours', target: 'world' },
-    lightning:  { label: 'Lightning', icon: '↯', desc: 'Strike a tile', target: 'tile' },
-    fire:       { label: 'Fire', icon: '🔥', desc: 'Set a tile ablaze', target: 'tile' },
-    forest:     { label: 'Forest', icon: '🌲', desc: 'Grow a forest', target: 'tile' },
-    food:       { label: 'Food', icon: '🍒', desc: 'Make the land bloom with food', target: 'tile' },
-    animals:    { label: 'Animals', icon: '🦌', desc: 'Bring game animals', target: 'tile' },
-    resource:   { label: 'Resource', icon: '⛏', desc: 'Reveal or create a deposit', target: 'tile' },
-    disease:    { label: 'Disease', icon: '☠', desc: 'Sicken those nearby', target: 'tile' },
-    healing:    { label: 'Healing', icon: '✚', desc: 'Heal those nearby', target: 'tile' },
-    fertility:  { label: 'Fertility', icon: '❀', desc: 'Bless the land and the people', target: 'tile' },
-    earthquake: { label: 'Earthquake', icon: '⌇', desc: 'Shake the ground; buildings fall', target: 'tile' },
-    meteor:     { label: 'Meteor', icon: '☄', desc: 'A stone from the sky', target: 'tile' },
-    spawn:      { label: 'Create life', icon: '✦', desc: 'A new person appears', target: 'tile' },
-    kill:       { label: 'Take life', icon: '✝', desc: 'End a life', target: 'agent' },
-    create:     { label: 'Create object', icon: '▣', desc: 'Place wood, stone and food', target: 'tile' },
-    destroy:    { label: 'Destroy', icon: '✖', desc: 'Destroy a building', target: 'tile' },
-    light:      { label: 'Pillar of light', icon: '✧', desc: 'Manifest as light', target: 'tile', manifest: true },
-    orb:        { label: 'Orb', icon: '◉', desc: 'Manifest as a floating orb', target: 'tile', manifest: true },
-    monolith:   { label: 'Monolith', icon: '▮', desc: 'Leave a monolith', target: 'tile', manifest: true },
-    avatar:     { label: 'Avatar', icon: '☥', desc: 'Walk among them', target: 'tile', manifest: true },
+    rain:       { label: 'Eső', icon: '☂', desc: 'Eső egy területen 6 órán át', target: 'tile' },
+    storm:      { label: 'Vihar', icon: '⚡', desc: 'Heves vihar villámokkal', target: 'tile' },
+    snow:       { label: 'Hideg', icon: '❄', desc: 'Hidegfront: egy napig havazik', target: 'world' },
+    clear:      { label: 'Derült ég', icon: '☼', desc: 'Kitisztul az ég 12 órára', target: 'world' },
+    lightning:  { label: 'Villám', icon: '↯', desc: 'Lecsap egy mezőre', target: 'tile' },
+    fire:       { label: 'Tűz', icon: '🔥', desc: 'Lángra lobbant egy mezőt', target: 'tile' },
+    forest:     { label: 'Erdő', icon: '🌲', desc: 'Erdőt növeszt', target: 'tile' },
+    food:       { label: 'Étel', icon: '🍒', desc: 'Kivirágoztatja a földet', target: 'tile' },
+    animals:    { label: 'Vadak', icon: '🦌', desc: 'Vadakat hoz a vidékre', target: 'tile' },
+    resource:   { label: 'Lelőhely', icon: '⛏', desc: 'Felfed vagy teremt egy lelőhelyet', target: 'tile' },
+    disease:    { label: 'Járvány', icon: '☠', desc: 'Megbetegíti a közelben lévőket', target: 'tile' },
+    healing:    { label: 'Gyógyítás', icon: '✚', desc: 'Meggyógyítja a közelben lévőket', target: 'tile' },
+    fertility:  { label: 'Termékenység', icon: '❀', desc: 'Megáldja a földet és az embereket', target: 'tile' },
+    earthquake: { label: 'Földrengés', icon: '⌇', desc: 'Megrázza a földet; épületek dőlnek', target: 'tile' },
+    meteor:     { label: 'Meteor', icon: '☄', desc: 'Kő az égből', target: 'tile' },
+    spawn:      { label: 'Élet', icon: '✦', desc: 'Új ember jelenik meg', target: 'tile' },
+    kill:       { label: 'Halál', icon: '✝', desc: 'Egy élet vége', target: 'agent' },
+    create:     { label: 'Ajándék', icon: '▣', desc: 'Fát, követ és ételt helyez le', target: 'tile' },
+    destroy:    { label: 'Rombolás', icon: '✖', desc: 'Lerombol egy épületet', target: 'tile' },
+    light:      { label: 'Fényoszlop', icon: '✧', desc: 'Fényként jelensz meg', target: 'tile', manifest: true },
+    orb:        { label: 'Gömb', icon: '◉', desc: 'Lebegő gömbként jelensz meg', target: 'tile', manifest: true },
+    monolith:   { label: 'Monolit', icon: '▮', desc: 'Monolitot hagysz hátra', target: 'tile', manifest: true },
+    avatar:     { label: 'Megtestesülés', icon: '☥', desc: 'Közöttük jársz', target: 'tile', manifest: true },
   };
-  const COMMANDS = { go: 'GO HERE', build: 'BUILD', follow: 'FOLLOW', protect: 'PROTECT', explore: 'EXPLORE', leave: 'LEAVE', search: 'SEARCH' };
+  const COMMANDS = { go: 'MENJ IDE', build: 'ÉPÍTS', follow: 'KÖVESD', protect: 'VÉDD', explore: 'FEDEZD FEL', leave: 'HAGYD EL', search: 'KUTASS' };
 
   const God = {
     KINDS, COMMANDS,
@@ -2901,26 +2933,26 @@
       let text = '', awe = 0.3, fear = 0, radius = 10; const affected = [];
       const each = (r, fn) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const nx = x + dx, ny = y + dy; if (!world.inBounds(nx, ny) || dx * dx + dy * dy > r * r) continue; fn(world.idx(nx, ny), nx, ny); } };
       switch (kind) {
-        case 'rain': world.weather.setOverride('rain', 0.8, 6, x, y, 12); text = 'You brought rain.'; awe = 0.4; break;
-        case 'storm': world.weather.setOverride('storm', 1, 4); text = 'You summoned a storm.'; awe = 0.5; fear = 0.5; break;
-        case 'snow': world.weather.setOverride('rain', 0.7, 24); world.weather.tempOffset = -14; text = 'You sent a cold front.'; awe = 0.3; fear = 0.4; break;
-        case 'clear': world.weather.setOverride('clear', 0, 12); text = 'You cleared the sky.'; awe = 0.3; break;
-        case 'lightning': if (i < 0) return null; world.weather.lastLightning = world.tick; world.weather.lightningTile = i; LW.Ecology.ignite(world, i, 'creator') || (t.veg[i] = Math.max(t.veg[i], 20), LW.Ecology.ignite(world, i, 'creator')); for (const a of world.agentsNear(x + 0.5, y + 0.5, 1.2)) { affected.push(a); A().damage(world, a, 0.95, 'lightning from a clear sky'); } text = 'You struck the ground with lightning.'; awe = 0.6; fear = 0.7; break;
-        case 'fire': if (i < 0) return null; if (!LW.Ecology.ignite(world, i, 'creator')) { t.veg[i] = Math.max(t.veg[i], 30); LW.Ecology.ignite(world, i, 'creator'); } text = 'You set the land on fire.'; awe = 0.4; fear = 0.6; break;
-        case 'forest': each(3, (j) => { if (world.isWater(j) || t.biome[j] === LW.BIOME.PEAK) return; t.treeCap[j] = Math.max(t.treeCap[j], 180); t.trees[j] = Math.min(255, t.trees[j] + 150); t.vegCap[j] = Math.max(t.vegCap[j], 100); t.veg[j] = Math.min(255, t.veg[j] + 40); if (t.biome[j] === LW.BIOME.GRASSLAND || t.biome[j] === LW.BIOME.SAVANNA) t.biome[j] = LW.BIOME.FOREST; world.dirtyTiles.add(j); }); text = 'You raised a forest.'; awe = 0.6; break;
-        case 'food': each(3, (j) => { if (world.isWater(j)) return; t.vegCap[j] = Math.max(t.vegCap[j], 120); t.veg[j] = Math.min(255, t.veg[j] + 140); world.dirtyTiles.add(j); }); text = 'You made the land bloom.'; awe = 0.5; break;
-        case 'animals': each(4, (j) => { if (world.isWater(j)) return; t.animalCap[j] = Math.max(t.animalCap[j], 120); t.animals[j] = Math.min(255, t.animals[j] + 120); }); text = 'You brought animals to the land.'; awe = 0.4; break;
-        case 'resource': { let revealed = 0; each(6, (j) => { if (t.depType[j] && t.depKnown[j] === 0) { t.depKnown[j] = 1; revealed++; world.dirtyTiles.add(j); } }); if (!revealed && i >= 0 && !world.isWater(i)) { const type = p.deposit || world.rng.pick([LW.DEPOSIT.COPPER, LW.DEPOSIT.IRON, LW.DEPOSIT.FLINT, LW.DEPOSIT.CLAY, LW.DEPOSIT.GOLD]); each(1, (j) => { if (!world.isWater(j)) { t.depType[j] = type; t.depAmt[j] = 150; t.depKnown[j] = 1; world.dirtyTiles.add(j); } }); text = `You laid ${LW.DEPOSIT_NAME[type]} into the earth.`; } else text = `You revealed ${revealed} hidden deposits.`; awe = 0.3; break; }
-        case 'disease': for (const a of world.agentsNear(x + 0.5, y + 0.5, 5)) { affected.push(a); a.injury = Math.min(0.9, a.injury + 0.45); a.health = Math.max(0.05, a.health - 0.25); a.emotions.fear = 1; A().memory(world, a, { type: 'divine', text: 'a sickness fell upon us from nowhere', importance: 0.9, emotion: 'fear', intensity: 0.9, divine: true }); } text = 'You sent a plague.'; awe = 0.2; fear = 0.9; break;
-        case 'healing': for (const a of world.agentsNear(x + 0.5, y + 0.5, 5)) { affected.push(a); a.injury = 0; a.health = 1; a.needs.food = Math.max(a.needs.food, 0.8); a.needs.water = 1; a.emotions.joy = 1; a.emotions.fear = 0; A().memory(world, a, { type: 'divine', text: 'was healed by an unseen hand', importance: 0.95, emotion: 'joy', intensity: 0.95, divine: true }); } text = 'You healed them.'; awe = 0.9; break;
-        case 'fertility': each(5, (j) => { t.fert[j] = Math.min(255, t.fert[j] + 60); }); for (const a of world.agentsNear(x + 0.5, y + 0.5, 6)) { affected.push(a); a.fertilityBoostUntil = world.tick + T.TICKS_PER_DAY * 30; a.emotions.love = Math.min(1, a.emotions.love + 0.3); } text = 'You blessed the land and the people.'; awe = 0.5; break;
-        case 'earthquake': for (const b of world.buildingsNear(x, y, 8)) LW.Buildings.damage(world, b, world.rng.range(0.3, 0.9), 'earthquake'); for (const a of world.agentsNear(x + 0.5, y + 0.5, 14)) { affected.push(a); a.emotions.fear = 1; if (world.rng.chance(0.15)) A().damage(world, a, 0.25, 'the earthquake'); } text = 'You shook the earth.'; awe = 0.3; fear = 0.9; radius = 16; break;
-        case 'meteor': if (i < 0) return null; each(2, (j) => { t.burnt[j] = 200; t.veg[j] = 0; t.trees[j] = 0; if (world.rng.chance(0.5)) { t.depType[j] = world.rng.pick([LW.DEPOSIT.IRON, LW.DEPOSIT.GEMS]); t.depAmt[j] = 120; t.depKnown[j] = 1; } world.dirtyTiles.add(j); const b = world.buildingAt(j); if (b) LW.Buildings.destroy(world, b, 'a falling star'); }); each(4, (j) => { if (!t.burnt[j]) LW.Ecology.ignite(world, j, 'creator'); }); for (const a of world.agentsNear(x + 0.5, y + 0.5, 2.5)) { affected.push(a); A().damage(world, a, 1, 'a falling star'); } text = 'You cast down a stone from the sky.'; awe = 0.8; fear = 0.9; radius = 20; break;
-        case 'spawn': { const ti = i >= 0 && world.isPassable(i) ? i : world.randomNear(x, y, 3); const sex = p.sex || (world.rng.chance(0.5) ? 'f' : 'm'); const a = A().create(world, { name: world.language.person(sex, 0.6), sex, bornTick: world.tick - Math.round(world.rng.range(17, 28) * T.TICKS_PER_YEAR), x: world.xOf(ti) + 0.5, y: world.yOf(ti) + 0.5 }); a.achievements.push('Made by the Creator'); a.beliefs.creator = 0.8; a.inv.berries = 3; A().memory(world, a, { type: 'divine', text: 'came into being; I remember nothing before', importance: 1, emotion: 'excitement', intensity: 0.8, divine: true }); world.events.emit('AgentBorn', { tick: world.tick, agentId: a.id, genesis: true, tile: ti, creator: true }); text = `You created ${a.name}.`; awe = 0.9; break; }
-        case 'kill': { const a = world.agents.get(p.agentId); if (!a) return null; text = `You ended the life of ${a.name}.`; A().die(world, a, 'the will of the Creator'); awe = 0.2; fear = 0.9; break; }
-        case 'create': { if (i < 0) return null; world.ground = world.ground || new Map(); const g = world.ground.get(i) || {}; const items = p.items || { wood: 6, stone: 4, berries: 6 }; for (const k in items) g[k] = (g[k] || 0) + items[k]; world.ground.set(i, g); text = 'You placed gifts on the ground.'; awe = 0.5; break; }
-        case 'destroy': { const b = i >= 0 ? world.buildingAt(i) : null; if (!b) return null; text = `You destroyed a ${LW.Buildings.def(b).label.toLowerCase()}.`; LW.Buildings.destroy(world, b, 'the will of the Creator'); awe = 0.2; fear = 0.8; break; }
-        default: if (K.manifest && i >= 0) { const b = LW.Buildings.create(world, kind, x, y, null); text = `You appeared as ${K.label.toLowerCase()}.`; awe = 0.9; fear = 0.3; }
+        case 'rain': world.weather.setOverride('rain', 0.8, 6, x, y, 12); text = 'Esőt hoztál.'; awe = 0.4; break;
+        case 'storm': world.weather.setOverride('storm', 1, 4); text = 'Vihart idéztél.'; awe = 0.5; fear = 0.5; break;
+        case 'snow': world.weather.setOverride('rain', 0.7, 24); world.weather.tempOffset = -14; text = 'Hidegfrontot küldtél.'; awe = 0.3; fear = 0.4; break;
+        case 'clear': world.weather.setOverride('clear', 0, 12); text = 'Kitisztítottad az eget.'; awe = 0.3; break;
+        case 'lightning': if (i < 0) return null; world.weather.lastLightning = world.tick; world.weather.lightningTile = i; LW.Ecology.ignite(world, i, 'creator') || (t.veg[i] = Math.max(t.veg[i], 20), LW.Ecology.ignite(world, i, 'creator')); for (const a of world.agentsNear(x + 0.5, y + 0.5, 1.2)) { affected.push(a); A().damage(world, a, 0.95, 'villám a derült égből'); } text = 'Villámmal sújtottad a földet.'; awe = 0.6; fear = 0.7; break;
+        case 'fire': if (i < 0) return null; if (!LW.Ecology.ignite(world, i, 'creator')) { t.veg[i] = Math.max(t.veg[i], 30); LW.Ecology.ignite(world, i, 'creator'); } text = 'Lángra lobbantottad a földet.'; awe = 0.4; fear = 0.6; break;
+        case 'forest': each(3, (j) => { if (world.isWater(j) || t.biome[j] === LW.BIOME.PEAK) return; t.treeCap[j] = Math.max(t.treeCap[j], 180); t.trees[j] = Math.min(255, t.trees[j] + 150); t.vegCap[j] = Math.max(t.vegCap[j], 100); t.veg[j] = Math.min(255, t.veg[j] + 40); if (t.biome[j] === LW.BIOME.GRASSLAND || t.biome[j] === LW.BIOME.SAVANNA) t.biome[j] = LW.BIOME.FOREST; world.dirtyTiles.add(j); }); text = 'Erdőt támasztottál.'; awe = 0.6; break;
+        case 'food': each(3, (j) => { if (world.isWater(j)) return; t.vegCap[j] = Math.max(t.vegCap[j], 120); t.veg[j] = Math.min(255, t.veg[j] + 140); world.dirtyTiles.add(j); }); text = 'Kivirágoztattad a földet.'; awe = 0.5; break;
+        case 'animals': each(4, (j) => { if (world.isWater(j)) return; t.animalCap[j] = Math.max(t.animalCap[j], 120); t.animals[j] = Math.min(255, t.animals[j] + 120); }); text = 'Vadakat hoztál a vidékre.'; awe = 0.4; break;
+        case 'resource': { let revealed = 0; each(6, (j) => { if (t.depType[j] && t.depKnown[j] === 0) { t.depKnown[j] = 1; revealed++; world.dirtyTiles.add(j); } }); if (!revealed && i >= 0 && !world.isWater(i)) { const type = p.deposit || world.rng.pick([LW.DEPOSIT.COPPER, LW.DEPOSIT.IRON, LW.DEPOSIT.FLINT, LW.DEPOSIT.CLAY, LW.DEPOSIT.GOLD]); each(1, (j) => { if (!world.isWater(j)) { t.depType[j] = type; t.depAmt[j] = 150; t.depKnown[j] = 1; world.dirtyTiles.add(j); } }); text = `${LW.HU.depositItemByName(LW.DEPOSIT_NAME[type])} rejtettél a földbe.`; text = text[0].toUpperCase() + text.slice(1); } else text = `${revealed} rejtett lelőhelyet fedtél fel.`; awe = 0.3; break; }
+        case 'disease': for (const a of world.agentsNear(x + 0.5, y + 0.5, 5)) { affected.push(a); a.injury = Math.min(0.9, a.injury + 0.45); a.health = Math.max(0.05, a.health - 0.25); a.emotions.fear = 1; A().memory(world, a, { type: 'divine', text: 'a semmiből szakadt ránk a kór', importance: 0.9, emotion: 'fear', intensity: 0.9, divine: true }); } text = 'Járványt küldtél.'; awe = 0.2; fear = 0.9; break;
+        case 'healing': for (const a of world.agentsNear(x + 0.5, y + 0.5, 5)) { affected.push(a); a.injury = 0; a.health = 1; a.needs.food = Math.max(a.needs.food, 0.8); a.needs.water = 1; a.emotions.joy = 1; a.emotions.fear = 0; A().memory(world, a, { type: 'divine', text: 'láthatatlan kéz gyógyított meg', importance: 0.95, emotion: 'joy', intensity: 0.95, divine: true }); } text = 'Meggyógyítottad őket.'; awe = 0.9; break;
+        case 'fertility': each(5, (j) => { t.fert[j] = Math.min(255, t.fert[j] + 60); }); for (const a of world.agentsNear(x + 0.5, y + 0.5, 6)) { affected.push(a); a.fertilityBoostUntil = world.tick + T.TICKS_PER_DAY * 30; a.emotions.love = Math.min(1, a.emotions.love + 0.3); } text = 'Megáldottad a földet és az embereket.'; awe = 0.5; break;
+        case 'earthquake': for (const b of world.buildingsNear(x, y, 8)) LW.Buildings.damage(world, b, world.rng.range(0.3, 0.9), 'földrengés'); for (const a of world.agentsNear(x + 0.5, y + 0.5, 14)) { affected.push(a); a.emotions.fear = 1; if (world.rng.chance(0.15)) A().damage(world, a, 0.25, 'a földrengés'); } text = 'Megráztad a földet.'; awe = 0.3; fear = 0.9; radius = 16; break;
+        case 'meteor': if (i < 0) return null; each(2, (j) => { t.burnt[j] = 200; t.veg[j] = 0; t.trees[j] = 0; if (world.rng.chance(0.5)) { t.depType[j] = world.rng.pick([LW.DEPOSIT.IRON, LW.DEPOSIT.GEMS]); t.depAmt[j] = 120; t.depKnown[j] = 1; } world.dirtyTiles.add(j); const b = world.buildingAt(j); if (b) LW.Buildings.destroy(world, b, 'lezuhanó csillag'); }); each(4, (j) => { if (!t.burnt[j]) LW.Ecology.ignite(world, j, 'creator'); }); for (const a of world.agentsNear(x + 0.5, y + 0.5, 2.5)) { affected.push(a); A().damage(world, a, 1, 'lezuhanó csillag'); } text = 'Követ vetettél le az égből.'; awe = 0.8; fear = 0.9; radius = 20; break;
+        case 'spawn': { const ti = i >= 0 && world.isPassable(i) ? i : world.randomNear(x, y, 3); const sex = p.sex || (world.rng.chance(0.5) ? 'f' : 'm'); const a = A().create(world, { name: world.language.person(sex, 0.6), sex, bornTick: world.tick - Math.round(world.rng.range(17, 28) * T.TICKS_PER_YEAR), x: world.xOf(ti) + 0.5, y: world.yOf(ti) + 0.5 }); a.achievements.push('A Teremtő alkotta'); a.beliefs.creator = 0.8; a.inv.berries = 3; A().memory(world, a, { type: 'divine', text: 'létrejöttem; semmire nem emlékszem azelőttről', importance: 1, emotion: 'excitement', intensity: 0.8, divine: true }); world.events.emit('AgentBorn', { tick: world.tick, agentId: a.id, genesis: true, tile: ti, creator: true }); text = `Megteremtetted őt: ${a.name}.`; awe = 0.9; break; }
+        case 'kill': { const a = world.agents.get(p.agentId); if (!a) return null; text = `Véget vetettél ${a.name} életének.`; A().die(world, a, 'a Teremtő akarata'); awe = 0.2; fear = 0.9; break; }
+        case 'create': { if (i < 0) return null; world.ground = world.ground || new Map(); const g = world.ground.get(i) || {}; const items = p.items || { wood: 6, stone: 4, berries: 6 }; for (const k in items) g[k] = (g[k] || 0) + items[k]; world.ground.set(i, g); text = 'Ajándékokat helyeztél a földre.'; awe = 0.5; break; }
+        case 'destroy': { const b = i >= 0 ? world.buildingAt(i) : null; if (!b) return null; text = `Leromboltál egy épületet: ${LW.Buildings.def(b).label.toLowerCase()}.`; LW.Buildings.destroy(world, b, 'a Teremtő akarata'); awe = 0.2; fear = 0.8; break; }
+        default: if (K.manifest && i >= 0) { const b = LW.Buildings.create(world, kind, x, y, null); text = `Megjelentél: ${K.label.toLowerCase()}.`; awe = 0.9; fear = 0.3; }
       }
       world.stats.interventions++;
       world.events.emit('CreatorIntervention', { tick: world.tick, kind, text, tile: i >= 0 ? i : undefined });
@@ -2930,17 +2962,17 @@
       return text;
     },
     witness(world, a, kind, awe, fear) {
-      const K = KINDS[kind]; const texts = { rain: 'rain fell from a clear sky', storm: 'a storm came out of nothing', snow: 'the cold came in an instant', clear: 'the clouds vanished at once', lightning: 'lightning struck from a clear sky', fire: 'fire sprang from the ground', forest: 'a forest rose in a moment', food: 'the land bloomed before my eyes', animals: 'animals appeared from nowhere', resource: 'the earth showed its hidden stones', disease: 'a sickness came from nowhere', healing: 'the sick were made whole', fertility: 'a warmth passed over the land', earthquake: 'the ground shook', meteor: 'a star fell from the sky', spawn: 'a stranger appeared out of the air', kill: 'someone was struck down by nothing', create: 'gifts appeared on the ground', destroy: 'a home fell apart by itself' };
-      const text = K.manifest ? `saw ${K.label.toLowerCase()} — something not of this world` : (texts[kind] || 'saw something impossible');
+      const K = KINDS[kind]; const texts = { rain: 'derült égből esett az eső', storm: 'a semmiből jött a vihar', snow: 'egy pillanat alatt jött a hideg', clear: 'egyszerre tűntek el a felhők', lightning: 'derült égből csapott le a villám', fire: 'tűz szökött ki a földből', forest: 'egy pillanat alatt nőtt erdő', food: 'a szemem láttára virágzott ki a föld', animals: 'a semmiből jöttek a vadak', resource: 'a föld megmutatta rejtett köveit', disease: 'a semmiből jött a kór', healing: 'a betegek meggyógyultak', fertility: 'melegség járta át a földet', earthquake: 'megrázkódott a föld', meteor: 'csillag hullott az égből', spawn: 'idegen lépett elő a levegőből', kill: 'valakit lesújtott a semmi', create: 'ajándékok jelentek meg a földön', destroy: 'egy otthon magától omlott össze' };
+      const text = K.manifest ? `láttam: ${K.label.toLowerCase()} — valami nem e világból való` : (texts[kind] || 'valami lehetetlent láttam');
       A().memory(world, a, { type: 'divine', text, importance: 0.9, emotion: fear > awe ? 'fear' : 'excitement', intensity: Math.max(awe, fear), divine: true });
       a.emotions.fear = LW.clamp01(a.emotions.fear + fear); a.emotions.excitement = LW.clamp01(a.emotions.excitement + awe);
       a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.25 * (0.4 + a.personality.optimism * 0.4 + a.personality.curiosity * 0.3));
-      a.importance += 0.2; if (!a.achievements.includes('Witness of the Creator')) a.achievements.push('Witness of the Creator');
+      a.importance += 0.2; if (!a.achievements.includes('A Teremtő tanúja')) a.achievements.push('A Teremtő tanúja');
     },
     witnessManifestation(world, a, b) {
-      A().memory(world, a, { type: 'divine', text: `saw the ${LW.Buildings.def(b).label.toLowerCase()}`, importance: 0.85, emotion: 'excitement', intensity: 0.8, divine: true, buildingId: b.id });
+      A().memory(world, a, { type: 'divine', text: `láttam: ${LW.Buildings.def(b).label.toLowerCase()}`, importance: 0.85, emotion: 'excitement', intensity: 0.8, divine: true, buildingId: b.id });
       a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.2 * (0.5 + a.personality.curiosity)); a.emotions.excitement = LW.clamp01(a.emotions.excitement + 0.5); a.emotions.fear = LW.clamp01(a.emotions.fear + 0.15);
-      if (!a.achievements.includes('Witness of the Creator')) a.achievements.push('Witness of the Creator');
+      if (!a.achievements.includes('A Teremtő tanúja')) a.achievements.push('A Teremtő tanúja');
     },
     // ---------------- divine commands
     command(world, a, cmd, p) {
@@ -2948,29 +2980,29 @@
       const label = COMMANDS[cmd] || cmd;
       a.divineRequest = { cmd, tile, targetId, force, tick: world.tick, interpreted: force ? 'obey' : null };
       a.plan = null; a.sleeping = false;
-      world.events.emit('DivineCommandIssued', { tick: world.tick, agentId: a.id, text: `You ${force ? 'compelled' : 'asked'} ${a.name}: ${label}.`, tile });
-      if (!force) { A().memory(world, a, { type: 'divine', text: `a voice with no mouth said: ${label.toLowerCase()}`, importance: 0.9, emotion: 'fear', intensity: 0.6, divine: true }); a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.3); a.emotions.fear = LW.clamp01(a.emotions.fear + 0.2); a.emotions.excitement = LW.clamp01(a.emotions.excitement + 0.3); }
-      else A().memory(world, a, { type: 'divine', text: `my body moved by a will not my own: ${label.toLowerCase()}`, importance: 0.9, emotion: 'fear', intensity: 0.7, divine: true });
+      world.events.emit('DivineCommandIssued', { tick: world.tick, agentId: a.id, text: `${force ? 'Kényszerítetted' : 'Kérted'} őt: ${a.name} — ${label}.`, tile });
+      if (!force) { A().memory(world, a, { type: 'divine', text: `egy száj nélküli hang szólt: ${label.toLowerCase()}`, importance: 0.9, emotion: 'fear', intensity: 0.6, divine: true }); a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.3); a.emotions.fear = LW.clamp01(a.emotions.fear + 0.2); a.emotions.excitement = LW.clamp01(a.emotions.excitement + 0.3); }
+      else A().memory(world, a, { type: 'divine', text: `a testem idegen akaratra mozdult: ${label.toLowerCase()}`, importance: 0.9, emotion: 'fear', intensity: 0.7, divine: true });
       a.importance += 0.5; a.lastDecisionTick = -1000;
     },
     obedience(world, a) { const P = a.personality; return LW.clamp01(0.3 + P.loyalty * 0.35 + a.beliefs.creator * 0.45 + a.emotions.fear * 0.2 + P.optimism * 0.15 - P.dominance * 0.3 - P.riskTolerance * 0.1); },
     scoreRequest(world, a) {
       const r = a.divineRequest; if (!r) return [0, []];
       if (world.tick - r.tick > T.TICKS_PER_DAY * 2) { a.divineRequest = null; return [0, []]; }
-      if (r.force) return [100, ['compelled by the Creator']];
+      if (r.force) return [100, ['a Teremtő kényszeríti']];
       if (!r.interpreted) this.interpret(world, a);
       if (!a.divineRequest) return [0, []];
-      const ob = this.obedience(world, a); return [1.2 + ob * 1.5, [`obedience ${LW.pct(ob)}`, `belief ${LW.pct(a.beliefs.creator)}`, `interpreted: ${a.divineRequest.interpreted}`]];
+      const ob = this.obedience(world, a); return [1.2 + ob * 1.5, [`engedelmesség ${LW.pct(ob)}`, `hit ${LW.pct(a.beliefs.creator)}`, `értelmezés: ${{ obey: 'engedelmeskedik', misinterpret: 'félreértette', fear: 'fél', ignore: 'nem törődik vele' }[a.divineRequest.interpreted] || a.divineRequest.interpreted}`]];
     },
     interpret(world, a) {
       const r = a.divineRequest; const ob = this.obedience(world, a); const rng = world.rng; const label = COMMANDS[r.cmd];
       const roll = rng.f(); let how, text;
-      if (roll < ob * 0.75) { how = 'obey'; text = `${a.name} felt a strange urge (${label}) and obeyed.`; }
-      else if (roll < ob * 0.75 + 0.15) { how = 'misinterpret'; if (r.tile != null) r.tile = world.randomNear(world.xOf(r.tile), world.yOf(r.tile), 9); else r.cmd = 'explore'; text = `${a.name} felt a strange urge but understood it differently.`; }
-      else if (a.emotions.fear > 0.5 || a.personality.bravery < 0.3) { how = 'fear'; text = `${a.name} was terrified by the voice and hid.`; a.divineRequest = null; a.emotions.fear = 1; a.needs.safety = 0; }
-      else { how = 'ignore'; text = `${a.name} shrugged off a strange urge (${label}).`; a.divineRequest = null; }
+      if (roll < ob * 0.75) { how = 'obey'; text = `${a.name} furcsa késztetést érzett (${label}), és engedelmeskedett.`; }
+      else if (roll < ob * 0.75 + 0.15) { how = 'misinterpret'; if (r.tile != null) r.tile = world.randomNear(world.xOf(r.tile), world.yOf(r.tile), 9); else r.cmd = 'explore'; text = `${a.name} furcsa késztetést érzett, de másképp értette.`; }
+      else if (a.emotions.fear > 0.5 || a.personality.bravery < 0.3) { how = 'fear'; text = `${a.name} megrémült a hangtól, és elbújt.`; a.divineRequest = null; a.emotions.fear = 1; a.needs.safety = 0; }
+      else { how = 'ignore'; text = `${a.name} lerázta a furcsa késztetést (${label}).`; a.divineRequest = null; }
       if (a.divineRequest) a.divineRequest.interpreted = how;
-      A().memory(world, a, { type: 'divine', text: how === 'obey' ? 'obeyed the voice' : how === 'ignore' ? 'ignored the voice' : how === 'fear' ? 'hid from the voice' : 'did what I thought the voice wanted', importance: 0.7, emotion: how === 'fear' ? 'fear' : 'excitement', intensity: 0.6, divine: true });
+      A().memory(world, a, { type: 'divine', text: how === 'obey' ? 'engedelmeskedtem a hangnak' : how === 'ignore' ? 'nem törődtem a hanggal' : how === 'fear' ? 'elbújtam a hang elől' : 'azt tettem, amit a hang szerintem akart', importance: 0.7, emotion: how === 'fear' ? 'fear' : 'excitement', intensity: 0.6, divine: true });
       world.events.emit('DivineCommandInterpreted', { tick: world.tick, agentId: a.id, how, text });
     },
     planRequest(world, a) {
@@ -2990,7 +3022,7 @@
     },
   };
   // completion op registered into Actions
-  LW.Actions.OPS.divineDone = function (world, a) { if (a.divineRequest) { A().memory(world, a, { type: 'divine', text: 'did what the voice asked', importance: 0.6, emotion: 'pride', intensity: 0.5, divine: true }); a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.1); a.divineRequest = null; } return 'done'; };
+  LW.Actions.OPS.divineDone = function (world, a) { if (a.divineRequest) { A().memory(world, a, { type: 'divine', text: 'megtettem, amit a hang kért', importance: 0.6, emotion: 'pride', intensity: 0.5, divine: true }); a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.1); a.divineRequest = null; } return 'done'; };
   LW.God = God;
 })(globalThis.LW || (globalThis.LW = {}));
 
@@ -3056,7 +3088,7 @@
       const eff = temp + 2 + (home ? LW.Buildings.def(home).insulation || 0 : Math.min(3, hh.length)) + (fireNear ? 8 : 0) + (a.inv.clothes ? 8 : 0);
       if (eff < 8) { a.health = Math.max(0, a.health - cfg.hypothermiaHealthPerDay * (8 - eff) / 10); a.needs.warmth = 0.2; } else a.needs.warmth = 0.9;
       a.needs.energy = 0.8; a.needs.social = Math.min(1, a.needs.social + 0.2); a.needs.safety = home ? 0.8 : 0.5;
-      if (a.health <= 0) { A().die(w, a, deficit > 0 ? 'starvation' : eff < 8 ? 'cold' : 'illness'); return; }
+      if (a.health <= 0) { A().die(w, a, deficit > 0 ? 'éhezés' : eff < 8 ? 'kihűlés' : 'betegség'); return; }
       // emotions decay
       for (const k in a.emotions) a.emotions[k] *= k === 'grief' ? 0.9 : 0.6;
       // daily biology (aging, illness, pregnancy, development, relationships decay, occupation)
@@ -3172,7 +3204,7 @@
       if (!LW.Time.isNight(w.tick) || a.env?.inside || a.env?.fire) return;
       const i = w.idx(a.x | 0, a.y | 0); const d = w.tiles.danger[i]; if (d < 50) return;
       const group = w.agentsNear(a.x, a.y, 3, a.id).length; if (group >= 2 || w.buildingsNear(a.x | 0, a.y | 0, 3).length) return;
-      if (w.rng.chance((d / 255) * 0.0004 / (1 + group))) { LW.Agents.damage(w, a, w.rng.range(0.15, 0.45), 'a night predator'); a.needs.safety = 0; LW.Agents.memory(w, a, { type: 'attack', text: 'was attacked by a beast in the dark', importance: 0.7, emotion: 'fear', intensity: 0.8 }); }
+      if (w.rng.chance((d / 255) * 0.0004 / (1 + group))) { LW.Agents.damage(w, a, w.rng.range(0.15, 0.45), 'éjszakai ragadozó'); a.needs.safety = 0; LW.Agents.memory(w, a, { type: 'attack', text: 'a sötétben rám támadt egy vad', importance: 0.7, emotion: 'fear', intensity: 0.8 }); }
     }
 
     /** Run as many ticks as the real-time budget allows (called every frame). */
@@ -3207,7 +3239,7 @@
       const stepMacro = () => {
         const n = Math.min(cfg.chunkDays, macroDays - dayI);
         for (let k = 0; k < n; k++) { LW.Macro.day(w); dayI++; doneTicks += T.TICKS_PER_DAY; }
-        if (cb && cb.progress) cb.progress(doneTicks / total, `Simulating ${LW.Time.span(doneTicks)} of ${LW.Time.span(total)}…`);
+        if (cb && cb.progress) cb.progress(doneTicks / total, `Szimulálás: ${LW.Time.span(doneTicks)} / ${LW.Time.span(total)}…`);
         if (dayI < macroDays) schedule(stepMacro); else schedule(stepDetail);
       };
       let dt = 0;
@@ -3218,7 +3250,7 @@
         if (cb && cb.progress) cb.progress(doneTicks / total, `Simulating ${LW.Time.span(doneTicks)} of ${LW.Time.span(total)}…`);
         if (dt < detailTicks) schedule(stepDetail); else finish();
       };
-      if (cb && cb.progress) cb.progress(0, 'Waking the world…');
+      if (cb && cb.progress) cb.progress(0, 'A világ ébred…');
       if (cb && cb.sync) { while (dayI < macroDays) { LW.Macro.day(w); dayI++; } while (dt < detailTicks) { this.tick(); dt++; } finish(); return report; }
       schedule(macroDays > 0 ? stepMacro : stepDetail);
       return report;

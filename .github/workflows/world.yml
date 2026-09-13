@@ -1,0 +1,42 @@
+# The world host: every 30 minutes GitHub runs the simulation for the real time that
+# passed, so the world keeps living while no browser has it open. A browser that is
+# actively simulating holds a lease and the host yields to it.
+name: world host
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: world-host
+  cancel-in-progress: false
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Fetch the world
+        run: |
+          mkdir -p .world
+          if git fetch --depth=1 origin world 2>/dev/null; then git show FETCH_HEAD:world.json.gz > .world/world.json.gz; echo "fetched $(wc -c < .world/world.json.gz) bytes"; else echo "no world branch yet"; fi
+      - name: Simulate the time that passed
+        run: node tools/host.js .world/world.json.gz
+      - name: Save the world
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f .world/changed ]; then
+            cd .world
+            git init -q && git checkout -q --orphan world
+            git add world.json.gz
+            git -c user.name=world-host -c user.email=host@levente.world commit -qm "world host $(date -u +%FT%TZ)"
+            git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" world:world
+            echo "saved"
+          else
+            echo "nothing to save"
+          fi

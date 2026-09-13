@@ -2,6 +2,7 @@
   "engine": [
     "core/rng.js",
     "core/config.js",
+    "core/hu.js",
     "core/util.js",
     "language/names.js",
     "world/generate.js",
@@ -27,6 +28,7 @@
     "headless.js"
   ],
   "client": [
+    "cloud.js",
     "audio/audio.js",
     "render/sprites.js",
     "render/renderer.js",

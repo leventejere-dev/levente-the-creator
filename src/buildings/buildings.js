@@ -7,16 +7,16 @@
   const TPD = LW.TIME.TICKS_PER_DAY;
 
   const DEFS = {
-    campfire:    { label: 'Campfire', cost: { wood: 3 }, ticks: 8, warmth: 14, light: 1, safety: 0.5, radius: 2, fuelTicks: TPD * 2, tech: 'fire_making', lifeDays: 120 },
-    lean_to:     { label: 'Lean-to', cost: { wood: 6, fiber: 2 }, ticks: 40, insulation: 9, safety: 0.3, sleep: 0.5, capacity: 3, storage: 10, dwelling: true, tech: 'shelter_building', lifeDays: 420 },
-    hut:         { label: 'Hut', cost: { wood: 14, fiber: 6, stone: 2 }, ticks: 160, insulation: 14, safety: 0.6, sleep: 0.8, capacity: 5, storage: 40, dwelling: true, tech: 'hut_construction', lifeDays: 2400, light: 0.4 },
-    stone_house: { label: 'Stone house', cost: { stone: 24, wood: 10, clay: 6 }, ticks: 400, insulation: 18, safety: 0.85, sleep: 0.95, capacity: 6, storage: 80, dwelling: true, tech: 'stone_masonry', lifeDays: 9000, light: 0.6 },
-    storage_pit: { label: 'Storage pit', cost: { wood: 4, stone: 2 }, ticks: 40, storage: 60, preserve: 0.5, tech: 'food_drying', lifeDays: 800 },
-    farm_plot:   { label: 'Farm plot', cost: { wood: 2 }, ticks: 60, farm: true, tech: 'seed_planting', lifeDays: 400 },
-    monolith:    { label: 'Monolith', cost: {}, ticks: 0, divine: true, lifeDays: 1e9, light: 0.3 },
-    light:       { label: 'Pillar of light', cost: {}, ticks: 0, divine: true, lifeDays: 3, light: 1.5 },
-    orb:         { label: 'Floating orb', cost: {}, ticks: 0, divine: true, lifeDays: 7, light: 0.8 },
-    avatar:      { label: 'The Creator', cost: {}, ticks: 0, divine: true, lifeDays: 2, light: 1.0 },
+    campfire:    { label: 'Tábortűz', cost: { wood: 3 }, ticks: 8, warmth: 14, light: 1, safety: 0.5, radius: 2, fuelTicks: TPD * 2, tech: 'fire_making', lifeDays: 120 },
+    lean_to:     { label: 'Fedezék', cost: { wood: 6, fiber: 2 }, ticks: 40, insulation: 9, safety: 0.3, sleep: 0.5, capacity: 3, storage: 10, dwelling: true, tech: 'shelter_building', lifeDays: 420 },
+    hut:         { label: 'Kunyhó', cost: { wood: 14, fiber: 6, stone: 2 }, ticks: 160, insulation: 14, safety: 0.6, sleep: 0.8, capacity: 5, storage: 40, dwelling: true, tech: 'hut_construction', lifeDays: 2400, light: 0.4 },
+    stone_house: { label: 'Kőház', cost: { stone: 24, wood: 10, clay: 6 }, ticks: 400, insulation: 18, safety: 0.85, sleep: 0.95, capacity: 6, storage: 80, dwelling: true, tech: 'stone_masonry', lifeDays: 9000, light: 0.6 },
+    storage_pit: { label: 'Tárolóverem', cost: { wood: 4, stone: 2 }, ticks: 40, storage: 60, preserve: 0.5, tech: 'food_drying', lifeDays: 800 },
+    farm_plot:   { label: 'Szántó', cost: { wood: 2 }, ticks: 60, farm: true, tech: 'seed_planting', lifeDays: 400 },
+    monolith:    { label: 'Monolit', cost: {}, ticks: 0, divine: true, lifeDays: 1e9, light: 0.3 },
+    light:       { label: 'Fényoszlop', cost: {}, ticks: 0, divine: true, lifeDays: 3, light: 1.5 },
+    orb:         { label: 'Lebegő gömb', cost: {}, ticks: 0, divine: true, lifeDays: 7, light: 0.8 },
+    avatar:      { label: 'A Teremtő', cost: {}, ticks: 0, divine: true, lifeDays: 2, light: 1.0 },
   };
 
   const Buildings = {
@@ -58,7 +58,7 @@
         if (def.dwelling) for (const cid of a.children) { const c = world.agents.get(cid); if (c && c.home == null && LW.Time.ageYears(c.bornTick, world.tick) < world.cfg.agents.adultAge) this.moveIn(world, b, c); }
         if (b.kind === 'campfire') { b.fuel = def.fuelTicks; b.lit = true; }
         world.events.emit('BuildingCompleted', { tick: world.tick, buildingId: b.id, kind: b.kind, agentId: a.id, tile: world.idx(b.x, b.y), first: !world.firsts || !world.firsts['building:' + b.kind] });
-        LW.Agents.memory(world, a, { type: 'built', text: `built a ${def.label.toLowerCase()}`, importance: 0.6, emotion: 'pride', intensity: 0.6, buildingId: b.id });
+        LW.Agents.memory(world, a, { type: 'built', text: `felépítettem: ${def.label.toLowerCase()}`, importance: 0.6, emotion: 'pride', intensity: 0.6, buildingId: b.id });
         a.emotions.pride = Math.min(1, a.emotions.pride + 0.4);
         return true;
       }
@@ -81,9 +81,9 @@
     },
     destroy(world, b, cause) {
       const def = DEFS[b.kind];
-      for (const rid of b.residents) { const r = world.agents.get(rid); if (r) { r.home = null; LW.Agents.memory(world, r, { type: 'loss', text: `lost home to ${cause}`, importance: 0.7, emotion: 'sadness', intensity: 0.7 }); r.emotions.sadness = Math.min(1, r.emotions.sadness + 0.5); if (cause === 'fire') r.emotions.fear = Math.min(1, r.emotions.fear + 0.5); } }
+      for (const rid of b.residents) { const r = world.agents.get(rid); if (r) { r.home = null; LW.Agents.memory(world, r, { type: 'loss', text: `elvesztettem az otthonom (${cause})`, importance: 0.7, emotion: 'sadness', intensity: 0.7 }); r.emotions.sadness = Math.min(1, r.emotions.sadness + 0.5); if (cause === 'tűz') r.emotions.fear = Math.min(1, r.emotions.fear + 0.5); } }
       // drop stored items on the ground
-      const i = world.idx(b.x, b.y); world.ground = world.ground || new Map(); const g = world.ground.get(i) || {}; for (const k in b.storage) g[k] = (g[k] || 0) + Math.floor(b.storage[k] * (cause === 'fire' ? 0.2 : 0.8)); world.ground.set(i, g);
+      const i = world.idx(b.x, b.y); world.ground = world.ground || new Map(); const g = world.ground.get(i) || {}; for (const k in b.storage) g[k] = (g[k] || 0) + Math.floor(b.storage[k] * (cause === 'tűz' ? 0.2 : 0.8)); world.ground.set(i, g);
       world.removeBuilding(b.id); world.dirtyTiles.add(i);
       world.events.emit(def.divine ? 'ManifestationEnded' : 'BuildingDestroyed', { tick: world.tick, buildingId: b.id, kind: b.kind, cause, tile: i, ownerId: b.ownerId });
     },
@@ -96,8 +96,8 @@
         const def = DEFS[b.kind];
         if (b.kind === 'campfire' && b.lit && b.progress >= 1) { b.fuel--; if (b.fuel <= 0) { b.lit = false; world.dirtyTiles.add(world.idx(b.x, b.y)); world.events.emit('FireWentOut', { tick: world.tick, buildingId: b.id, tile: world.idx(b.x, b.y) }); } }
         if ((b.id % TPD) === s) { // once per day per building
-          if (b.progress >= 1 || def.divine) { b.hp -= 1 / def.lifeDays; if (b.hp <= 0) { this.destroy(world, b, def.divine ? 'faded' : 'decay'); continue; } }
-          else if (world.tick - b.startedTick > TPD * 200) { this.destroy(world, b, 'abandoned'); continue; }
+          if (b.progress >= 1 || def.divine) { b.hp -= 1 / def.lifeDays; if (b.hp <= 0) { this.destroy(world, b, def.divine ? 'elhalványult' : 'elkorhadt'); continue; } }
+          else if (world.tick - b.startedTick > TPD * 200) { this.destroy(world, b, 'félbehagyták'); continue; }
           if (def.farm && b.progress >= 1 && b.planted) {
             const i = world.idx(b.x, b.y), t = world.tiles; const season = LW.Time.season(world.tick);
             const g = 0.014 * (0.3 + 0.7 * t.fert[i] / 255) * (0.3 + 0.7 * t.moist[i] / 255) * [1, 1.1, 0.6, 0][season];

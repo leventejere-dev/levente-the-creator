@@ -62,7 +62,7 @@
       if (!LW.Time.isNight(w.tick) || a.env?.inside || a.env?.fire) return;
       const i = w.idx(a.x | 0, a.y | 0); const d = w.tiles.danger[i]; if (d < 50) return;
       const group = w.agentsNear(a.x, a.y, 3, a.id).length; if (group >= 2 || w.buildingsNear(a.x | 0, a.y | 0, 3).length) return;
-      if (w.rng.chance((d / 255) * 0.0004 / (1 + group))) { LW.Agents.damage(w, a, w.rng.range(0.15, 0.45), 'a night predator'); a.needs.safety = 0; LW.Agents.memory(w, a, { type: 'attack', text: 'was attacked by a beast in the dark', importance: 0.7, emotion: 'fear', intensity: 0.8 }); }
+      if (w.rng.chance((d / 255) * 0.0004 / (1 + group))) { LW.Agents.damage(w, a, w.rng.range(0.15, 0.45), 'éjszakai ragadozó'); a.needs.safety = 0; LW.Agents.memory(w, a, { type: 'attack', text: 'a sötétben rám támadt egy vad', importance: 0.7, emotion: 'fear', intensity: 0.8 }); }
     }
 
     /** Run as many ticks as the real-time budget allows (called every frame). */
@@ -97,7 +97,7 @@
       const stepMacro = () => {
         const n = Math.min(cfg.chunkDays, macroDays - dayI);
         for (let k = 0; k < n; k++) { LW.Macro.day(w); dayI++; doneTicks += T.TICKS_PER_DAY; }
-        if (cb && cb.progress) cb.progress(doneTicks / total, `Simulating ${LW.Time.span(doneTicks)} of ${LW.Time.span(total)}…`);
+        if (cb && cb.progress) cb.progress(doneTicks / total, `Szimulálás: ${LW.Time.span(doneTicks)} / ${LW.Time.span(total)}…`);
         if (dayI < macroDays) schedule(stepMacro); else schedule(stepDetail);
       };
       let dt = 0;
@@ -108,7 +108,7 @@
         if (cb && cb.progress) cb.progress(doneTicks / total, `Simulating ${LW.Time.span(doneTicks)} of ${LW.Time.span(total)}…`);
         if (dt < detailTicks) schedule(stepDetail); else finish();
       };
-      if (cb && cb.progress) cb.progress(0, 'Waking the world…');
+      if (cb && cb.progress) cb.progress(0, 'A világ ébred…');
       if (cb && cb.sync) { while (dayI < macroDays) { LW.Macro.day(w); dayI++; } while (dt < detailTicks) { this.tick(); dt++; } finish(); return report; }
       schedule(macroDays > 0 ? stepMacro : stepDetail);
       return report;

@@ -13,6 +13,22 @@ remembers.
 
 ---
 
+
+## Magyarul, röviden
+
+**Élő világ:** https://leventejere-dev.github.io/levente-the-creator/ — nyisd meg, a *Nézem* gombra elindul az idő,
+és onnantól a világ nélküled is él: amíg nyitva van az oldal, a böngésző szimulál; amikor nincs nyitva, a
+GitHub gépei félóránként továbbviszik (`.github/workflows/world.yml` → `tools/host.js`), a világ állapota pedig a
+repó `world` ágában lakik. Ezért **süti- vagy oldaladat-törlés nem veszíti el**, és bármely gépen ugyanazt a világot
+látod.
+
+- **Megfigyelés** bárhonnan, kulcs nélkül: az oldal percenként frissül a felhőből (Megfigyelő mód).
+- **Teremtőként beavatkozni** csak ott lehet, ahol a menüben megadtad a GitHub-kulcsodat (finomhangolt személyes
+  hozzáférési kulcs, csak ehhez a repóhoz, *Contents: Read and write*). A kulcs csak abban a böngészőben tárolódik.
+- Egyszerre egy gép a Teremtő; a többi megfigyel, és a menüből átveheti a világot.
+
+A felület és minden esemény, emlék, gondolat magyar. A dokumentáció (`docs/`) angol, mert a forráskód nyelve is az.
+
 ## Status
 
 | Phase | Name | Status |

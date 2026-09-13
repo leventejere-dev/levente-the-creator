@@ -58,7 +58,7 @@
       const eff = temp + 2 + (home ? LW.Buildings.def(home).insulation || 0 : Math.min(3, hh.length)) + (fireNear ? 8 : 0) + (a.inv.clothes ? 8 : 0);
       if (eff < 8) { a.health = Math.max(0, a.health - cfg.hypothermiaHealthPerDay * (8 - eff) / 10); a.needs.warmth = 0.2; } else a.needs.warmth = 0.9;
       a.needs.energy = 0.8; a.needs.social = Math.min(1, a.needs.social + 0.2); a.needs.safety = home ? 0.8 : 0.5;
-      if (a.health <= 0) { A().die(w, a, deficit > 0 ? 'starvation' : eff < 8 ? 'cold' : 'illness'); return; }
+      if (a.health <= 0) { A().die(w, a, deficit > 0 ? 'éhezés' : eff < 8 ? 'kihűlés' : 'betegség'); return; }
       // emotions decay
       for (const k in a.emotions) a.emotions[k] *= k === 'grief' ? 0.9 : 0.6;
       // daily biology (aging, illness, pregnancy, development, relationships decay, occupation)

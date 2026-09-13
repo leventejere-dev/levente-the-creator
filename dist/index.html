@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LEVENTE — THE CREATOR</title>
-<meta name="description" content="Önálló, folyamatosan élő, magától fejlődő digitális civilizáció. Build: 2026-09-13 19:29.">
+<meta name="description" content="Önálló, folyamatosan élő, magától fejlődő digitális civilizáció. Build: 2026-09-13 19:34.">
 <style>
 :root {
   --bg: #07080c; --panel: rgba(12, 14, 20, 0.86); --panel2: rgba(20, 23, 32, 0.9); --line: rgba(255, 255, 255, 0.08);
@@ -3693,14 +3693,18 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
     get canWrite() { return !!this.token; },
     headers(json) { const h = { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }; if (this.token) h.Authorization = 'Bearer ' + this.token; if (json) h['Content-Type'] = 'application/json'; return h; },
     /** Latest world text from the cloud ('GZ:...' or raw JSON) with its lease, or null when there is none. */
-    async load() {
+    async load(opts) {
       this.lastLoadMs = Date.now();
+      // anonymous periodic reads go through the CDN (no rate limit, a few minutes stale); the API is used when fresh data matters
+      if (!this.token && opts && opts.cdn) {
+        const r = await fetch(`https://raw.githubusercontent.com/${this.owner}/${this.repo}/${this.branch}/${this.path}?t=${Math.floor(Date.now() / 60000)}`, { cache: 'no-store' });
+        if (r.status === 404) return null; if (!r.ok) throw new Error(`cloud load ${r.status}`); return r.text();
+      }
       const url = `${API}/repos/${this.owner}/${this.repo}/contents/${this.path}?ref=${this.branch}&t=${Date.now()}`;
       const r = await fetch(url, { headers: { ...this.headers(false), Accept: 'application/vnd.github.raw' }, cache: 'no-store' });
       if (r.status === 404) return null;
       if (!r.ok) throw new Error(`cloud load ${r.status}`);
-      const text = await r.text();
-      return text;
+      return r.text();
     },
     /** Peek at the meta of a cloud text without inflating everything (cheap when raw JSON; inflates when gzipped). */
     async parseMeta(text) { const json = text.startsWith('GZ:') ? await LW.Store.inflate(text.slice(3)) : text; const m = /"meta":(\{[^{}]*\})/.exec(json); return { json, meta: m ? JSON.parse(m[1]) : null }; },
@@ -4520,7 +4524,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       this.renderer = new LW.Renderer($('#world'), $('#minimap'), this.sim.world);
       this.ui = new LW.UI(this);
       if (Store.getRaw('lw.muted') === '1') this.audio.muted = true;
-      if (this.observer) { this.sim.paused = true; this.ui.showObserver(opts.reason); this.observerTimer = setInterval(() => this.observerRefresh(), 60000); }
+      if (this.observer) { this.sim.paused = true; this.ui.showObserver(opts.reason); this.observerTimer = setInterval(() => this.observerRefresh(), 90000); }
       else if (restored && this.sim.world.meta.started !== false) this.runCatchUp(this.sim, (rep) => { this.ui.showWelcomeReport(rep); });
       else { this.sim.paused = true; this.sim.world.meta.started = false; this.sim.world.meta.lastRealTimeMs = Date.now(); this.ui.showGenesis(); this.ui.refreshSpeed(); this.save(true); }
       this.loop = this.loop.bind(this); this.last = performance.now(); requestAnimationFrame(this.loop);
@@ -4577,9 +4581,9 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       } catch (e) { console.warn('cloud save', e); } finally { this.pendingCloud = false; }
     }
     async cloudLease() { try { const text = await LW.Cloud.load(); if (!text) return null; const json = await Store.unwrap(text); const m = metaOf(json); return m && m.lease ? m.lease : null; } catch (e) { return null; } }
-    becomeObserver(reason) { this.observer = true; this.sim.paused = true; this.ui.showObserver(reason); if (!this.observerTimer) this.observerTimer = setInterval(() => this.observerRefresh(), 60000); }
+    becomeObserver(reason) { this.observer = true; this.sim.paused = true; this.ui.showObserver(reason); if (!this.observerTimer) this.observerTimer = setInterval(() => this.observerRefresh(), 90000); }
     async observerRefresh() {
-      try { const text = await LW.Cloud.load(); if (!text) return; const json = await Store.unwrap(text); const meta = metaOf(json); if (meta && meta.lastSimulatedTick === this.sim.world.tick) return; const sim = LW.Persistence.fromJSON(json); sim.paused = true; this.sim = sim; this.renderer.setWorld(sim.world); this.ui.attachWorld(sim.world); this.ui.refreshCloud(); } catch (e) { console.warn('observer refresh', e); }
+      try { const text = await LW.Cloud.load({ cdn: true }); if (!text) return; const json = await Store.unwrap(text); const meta = metaOf(json); if (meta && meta.lastSimulatedTick === this.sim.world.tick) return; const sim = LW.Persistence.fromJSON(json); sim.paused = true; this.sim = sim; this.renderer.setWorld(sim.world); this.ui.attachWorld(sim.world); this.ui.refreshCloud(); } catch (e) { console.warn('observer refresh', e); }
     }
     /** Take the world over on this device (needs a key): the other device notices at its next cloud save. */
     async takeOver() {

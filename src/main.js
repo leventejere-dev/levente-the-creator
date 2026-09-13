@@ -30,7 +30,7 @@
       this.renderer = new LW.Renderer($('#world'), $('#minimap'), this.sim.world);
       this.ui = new LW.UI(this);
       if (Store.getRaw('lw.muted') === '1') this.audio.muted = true;
-      if (this.observer) { this.sim.paused = true; this.ui.showObserver(opts.reason); this.observerTimer = setInterval(() => this.observerRefresh(), 60000); }
+      if (this.observer) { this.sim.paused = true; this.ui.showObserver(opts.reason); this.observerTimer = setInterval(() => this.observerRefresh(), 90000); }
       else if (restored && this.sim.world.meta.started !== false) this.runCatchUp(this.sim, (rep) => { this.ui.showWelcomeReport(rep); });
       else { this.sim.paused = true; this.sim.world.meta.started = false; this.sim.world.meta.lastRealTimeMs = Date.now(); this.ui.showGenesis(); this.ui.refreshSpeed(); this.save(true); }
       this.loop = this.loop.bind(this); this.last = performance.now(); requestAnimationFrame(this.loop);
@@ -87,9 +87,9 @@
       } catch (e) { console.warn('cloud save', e); } finally { this.pendingCloud = false; }
     }
     async cloudLease() { try { const text = await LW.Cloud.load(); if (!text) return null; const json = await Store.unwrap(text); const m = metaOf(json); return m && m.lease ? m.lease : null; } catch (e) { return null; } }
-    becomeObserver(reason) { this.observer = true; this.sim.paused = true; this.ui.showObserver(reason); if (!this.observerTimer) this.observerTimer = setInterval(() => this.observerRefresh(), 60000); }
+    becomeObserver(reason) { this.observer = true; this.sim.paused = true; this.ui.showObserver(reason); if (!this.observerTimer) this.observerTimer = setInterval(() => this.observerRefresh(), 90000); }
     async observerRefresh() {
-      try { const text = await LW.Cloud.load(); if (!text) return; const json = await Store.unwrap(text); const meta = metaOf(json); if (meta && meta.lastSimulatedTick === this.sim.world.tick) return; const sim = LW.Persistence.fromJSON(json); sim.paused = true; this.sim = sim; this.renderer.setWorld(sim.world); this.ui.attachWorld(sim.world); this.ui.refreshCloud(); } catch (e) { console.warn('observer refresh', e); }
+      try { const text = await LW.Cloud.load({ cdn: true }); if (!text) return; const json = await Store.unwrap(text); const meta = metaOf(json); if (meta && meta.lastSimulatedTick === this.sim.world.tick) return; const sim = LW.Persistence.fromJSON(json); sim.paused = true; this.sim = sim; this.renderer.setWorld(sim.world); this.ui.attachWorld(sim.world); this.ui.refreshCloud(); } catch (e) { console.warn('observer refresh', e); }
     }
     /** Take the world over on this device (needs a key): the other device notices at its next cloud save. */
     async takeOver() {

@@ -19,14 +19,18 @@
     get canWrite() { return !!this.token; },
     headers(json) { const h = { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }; if (this.token) h.Authorization = 'Bearer ' + this.token; if (json) h['Content-Type'] = 'application/json'; return h; },
     /** Latest world text from the cloud ('GZ:...' or raw JSON) with its lease, or null when there is none. */
-    async load() {
+    async load(opts) {
       this.lastLoadMs = Date.now();
+      // anonymous periodic reads go through the CDN (no rate limit, a few minutes stale); the API is used when fresh data matters
+      if (!this.token && opts && opts.cdn) {
+        const r = await fetch(`https://raw.githubusercontent.com/${this.owner}/${this.repo}/${this.branch}/${this.path}?t=${Math.floor(Date.now() / 60000)}`, { cache: 'no-store' });
+        if (r.status === 404) return null; if (!r.ok) throw new Error(`cloud load ${r.status}`); return r.text();
+      }
       const url = `${API}/repos/${this.owner}/${this.repo}/contents/${this.path}?ref=${this.branch}&t=${Date.now()}`;
       const r = await fetch(url, { headers: { ...this.headers(false), Accept: 'application/vnd.github.raw' }, cache: 'no-store' });
       if (r.status === 404) return null;
       if (!r.ok) throw new Error(`cloud load ${r.status}`);
-      const text = await r.text();
-      return text;
+      return r.text();
     },
     /** Peek at the meta of a cloud text without inflating everything (cheap when raw JSON; inflates when gzipped). */
     async parseMeta(text) { const json = text.startsWith('GZ:') ? await LW.Store.inflate(text.slice(3)) : text; const m = /"meta":(\{[^{}]*\})/.exec(json); return { json, meta: m ? JSON.parse(m[1]) : null }; },

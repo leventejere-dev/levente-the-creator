@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LEVENTE — THE CREATOR</title>
-<meta name="description" content="An autonomous, persistent, emergent digital civilization. Built 2026-09-13 18:55.">
+<meta name="description" content="An autonomous, persistent, emergent digital civilization. Built 2026-09-13 19:00.">
 <style>
 :root {
   --bg: #07080c; --panel: rgba(12, 14, 20, 0.86); --panel2: rgba(20, 23, 32, 0.9); --line: rgba(255, 255, 255, 0.08);
@@ -381,7 +381,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
     catchup: { detailWindowTicks: 192, maxYears: 500, chunkDays: 30 },
     persistence: { autosaveSeconds: 30, snapshotSlots: 3, key: 'lw.world.v1' },
     lod: { microCap: 300, mesoCap: 3000 },
-    audio: { masterVolume: 0.5 },
+    audio: { masterVolume: 0.35 },
     debug: { why: true, overlay: false },
   };
 
@@ -3660,10 +3660,8 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       const rain = c.createBiquadFilter(); rain.type = 'bandpass'; rain.frequency.value = 3200; rain.Q.value = 0.6; const rainG = c.createGain(); rainG.gain.value = 0; src.connect(rain); rain.connect(rainG); rainG.connect(this.master);
       // fire crackle
       const fire = c.createBiquadFilter(); fire.type = 'bandpass'; fire.frequency.value = 900; fire.Q.value = 1.2; const fireG = c.createGain(); fireG.gain.value = 0; src.connect(fire); fire.connect(fireG); fireG.connect(this.master);
-      // night crickets: soft high tone with tremolo
-      const cr = c.createOscillator(); cr.type = 'triangle'; cr.frequency.value = 4200; const crG = c.createGain(); crG.gain.value = 0; const lfo = c.createOscillator(); lfo.frequency.value = 9; const lfoG = c.createGain(); lfoG.gain.value = 0.5; lfo.connect(lfoG); lfoG.connect(crG.gain); cr.connect(crG); crG.connect(this.master); cr.start(); lfo.start();
       src.start();
-      this.amb = { windG, rainG, fireG, crG, wind };
+      this.amb = { windG, rainG, fireG, wind }; this.nightLevel = 0;
     }
     /** Called each frame with the environment near the camera. */
     ambient(env) {
@@ -3671,9 +3669,11 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       this.amb.windG.gain.setTargetAtTime(0.05 + env.wind * 0.35, t, 0.5); this.amb.wind.frequency.setTargetAtTime(250 + env.wind * 500, t, 0.5);
       this.amb.rainG.gain.setTargetAtTime(env.rain * 0.5, t, 0.4);
       this.amb.fireG.gain.setTargetAtTime(env.fire * 0.25, t, 0.4);
-      this.amb.crG.gain.setTargetAtTime(env.night * (1 - env.rain) * 0.012 * (env.warm ? 1 : 0.2), t, 1.0);
+      this.nightLevel = env.night * (1 - env.rain) * (env.warm ? 1 : 0.15);
+      if (this.nightLevel > 0.5 && Math.random() < 0.004) this._chirp(this.nightLevel); // a lone cricket now and then, very quiet
       if (env.fire > 0 && Math.random() < 0.08) this._crackle(env.fire);
     }
+    _chirp(v) { const c = this.ctx; const f = 1800 + Math.random() * 600; for (let k = 0; k < 3; k++) { const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = c.createGain(); const t0 = c.currentTime + k * 0.09; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.006 * v, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.07); o.connect(g); g.connect(this.master); o.start(t0); o.stop(t0 + 0.08); } }
     _crackle(v) { const c = this.ctx; const o = c.createOscillator(); o.type = 'square'; o.frequency.value = 1500 + Math.random() * 2500; const g = c.createGain(); g.gain.value = 0.015 * v; g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.03); o.connect(g); g.connect(this.master); o.start(); o.stop(c.currentTime + 0.04); }
     _tone(freq, dur, type = 'sine', vol = 0.15, delay = 0, slide) { const c = this.ctx; const t0 = c.currentTime + delay; const o = c.createOscillator(); o.type = type; o.frequency.setValueAtTime(freq, t0); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t0 + dur); const g = c.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur); o.connect(g); g.connect(this.master); o.start(t0); o.stop(t0 + dur + 0.05); }
     _burst(dur, vol, freq, q = 0.7, delay = 0) { const c = this.ctx; const t0 = c.currentTime + delay; const s = c.createBufferSource(); s.buffer = this._noise(Math.min(4, dur + 0.2)); const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(freq, t0); f.frequency.exponentialRampToValueAtTime(Math.max(60, freq * 0.15), t0 + dur); f.Q.value = q; const g = c.createGain(); g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur); s.connect(f); f.connect(g); g.connect(this.master); s.start(t0); s.stop(t0 + dur + 0.1); }

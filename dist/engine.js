@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 18:55 */
+/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 19:00 */
 
 /* ===== core/rng.js ===== */
 /* LEVENTE — THE CREATOR · core/rng.js
@@ -180,7 +180,7 @@
     catchup: { detailWindowTicks: 192, maxYears: 500, chunkDays: 30 },
     persistence: { autosaveSeconds: 30, snapshotSlots: 3, key: 'lw.world.v1' },
     lod: { microCap: 300, mesoCap: 3000 },
-    audio: { masterVolume: 0.5 },
+    audio: { masterVolume: 0.35 },
     debug: { why: true, overlay: false },
   };
 

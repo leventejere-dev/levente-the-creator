@@ -25,14 +25,30 @@
     return ctx;
   }
   function nearestFire(world, a, maxD) { let best = null, bd = maxD; for (const b of world.buildings.values()) { if (b.kind !== 'campfire' || !b.lit || b.progress < 1) continue; const d = LW.dist(a.x, a.y, b.x, b.y); if (d < bd) { bd = d; best = b; } } return best; }
+  /** Legközelebbi kész épület egy fajtából vagy tulajdonságból (pl. 'furnace' = kemence/olvasztó/kovács). */
+  function nearestBuilding(world, a, what, maxD) { let best = null, bd = maxD || 24; const DEFS = Bld().DEFS; for (const b of world.buildings.values()) { if (b.progress < 1) continue; const def = DEFS[b.kind]; if (!(b.kind === what || (def && def[what]))) continue; const d = LW.dist(a.x, a.y, b.x, b.y); if (d < bd) { bd = d; best = b; } } return best; }
+  function needsBuilding(nearby) { return nearby && nearby !== 'fire' && nearby !== 'water'; }
+  function bestDwelling(a) { const DEFS = Bld().DEFS; let best = null, bt = 0; for (const k in DEFS) { const d = DEFS[k]; if (!d.dwelling || !d.tier || (d.tech && !a.knowledge.techs.has(d.tech))) continue; if (d.tier > bt) { bt = d.tier; best = k; } } return best; }
   let _tileNearAgent = null;
   function tileNear(world, i) { return A().tileNear(world, _tileNearAgent, i); }
   /** Steps that acquire `need` = {item: qty} from the world using the agent's knowledge. Returns null if impossible. */
-  function acquireSteps(world, a, need, ctx) {
-    const steps = [];
+  function acquireSteps(world, a, need, ctx, depth) {
+    const steps = []; depth = depth || 0;
     for (const item in need) {
       const q = need[item]; const src = LW.Tech.SOURCE[item];
-      if (!src) return null;
+      if (!src || src === 'store') { const ps = LW.Tree.publicStore(world, a, item, 20); if (ps && ps.storage[item] >= Math.min(q, 2)) { steps.push({ op: 'moveTo', i: world.idx(ps.x, ps.y), near: 1.5 }); steps.push({ op: 'take', bid: ps.id, item, n: q }); continue; } } // a közös raktárból
+      if (!src) { // nincs a világban: talán meg lehet csinálni (recept-lánc, legfeljebb 2 mélységig)
+        const R = LW.Tech.RECIPES[item]; if (!R || depth >= 2 || !a.knowledge.techs.has(R.tech)) return null;
+        let inp = R.inp; if (R.inpAny) inp = R.inpAny.find((o) => count(missingFor(a, o)) === 0) || R.inpAny[0];
+        const m = missingFor(a, inp); const sub = count(m) ? acquireSteps(world, a, m, ctx, depth + 1) : []; if (!sub) return null;
+        steps.push(...sub);
+        if (R.nearby === 'fire') { if (!ctx.fire) return null; steps.push({ op: 'moveTo', i: world.idx(ctx.fire.x, ctx.fire.y), near: 1 }); }
+        else if (needsBuilding(R.nearby)) { const nb = nearestBuilding(world, a, R.nearby, 30); if (!nb) return null; steps.push({ op: 'moveTo', i: world.idx(nb.x, nb.y), near: 1.5 }); }
+        const times = Math.max(1, Math.ceil(q / (R.out[item] || 1))); for (let k = 0; k < Math.min(times, 3); k++) steps.push({ op: 'craft', recipe: item, needed: true });
+        continue;
+      }
+      if (src === 'store') { const home = a.home != null ? world.buildings.get(a.home) : null; if (!home || !home.storage || (home.storage[item] || 0) < q) return null; steps.push({ op: 'moveTo', i: world.idx(home.x, home.y), near: 1 }); steps.push({ op: 'take', bid: home.id, item, n: q }); continue; }
+      if (src.startsWith('deposit:')) { const dt = LW.DEPOSIT[src.slice(8).toUpperCase()]; let best = null, bd = 1e9; for (const p of a.knowledge.places.values()) { if (p.k !== 'deposit' || p.q !== dt) continue; const d = LW.dist(a.x, a.y, world.xOf(p.i), world.yOf(p.i)); if (d < bd) { bd = d; best = p; } } if (!best || !a.knowledge.techs.has('digging')) return null; if (dt === LW.DEPOSIT.OIL && !a.knowledge.techs.has('oil_drilling')) return null; const tg = tileNear(world, best.i); if (tg == null) return null; steps.push({ op: 'moveTo', i: tg, near: 1 }); steps.push({ op: 'dig', i: best.i, n: 8, item, needed: true }); if (q > 2) steps.push({ op: 'dig', i: best.i, n: 8, item, needed: true }); continue; }
       let poi = null, op = 'gather';
       if (src === 'food') poi = A().nearestPoi(world, a, 'food', 20);
       else if (src === 'fiber') { poi = A().nearestPoi(world, a, 'food', 12) || A().nearestPoi(world, a, 'wood', 12); }
@@ -166,8 +182,8 @@
     buildShelter: {
       applicable: (c, a) => c.adult && (a.knowledge.techs.has('shelter_building') || a.knowledge.techs.has('hut_construction')) && !(a.partner != null && c.world.agents.get(a.partner)?.home != null && !c.home),
       score: (c, a) => {
-        const kind = a.knowledge.techs.has('stone_masonry') ? 'stone_house' : a.knowledge.techs.has('hut_construction') ? 'hut' : 'lean_to';
-        const tier = { lean_to: 1, hut: 2, stone_house: 3 }; const cur = c.home ? tier[c.home.kind] || 0 : 0;
+        const kind = bestDwelling(a) || 'lean_to'; const DEFS = Bld().DEFS;
+        const cur = c.home ? DEFS[c.home.kind].tier || 0 : 0; const tier = { [kind]: DEFS[kind].tier || 1 };
         if (cur >= tier[kind]) return [0, ['az otthon elég jó']];
         let s = cur === 0 ? 1.15 : 0.55; const f = [cur === 0 ? 'nincs otthona' : `jobb otthon: ${LW.Buildings.DEFS[kind].label.toLowerCase()}`];
         if (N(a).warmth < 0.7) { s += 0.35; f.push('hideg'); } if (c.rain > 0.2 && !c.fx.inside) { s += 0.3; f.push('eső'); } if (c.season === 2) { s += 0.35; f.push('ősz'); } if (c.season === 3) s += 0.2;
@@ -175,6 +191,11 @@
         a._buildKind = kind; return [s, f];
       },
       plan: (c, a) => buildPlan(c, a, a._buildKind || 'lean_to'),
+    },
+    buildPublic: {
+      applicable: (c, a) => c.adult && !c.night && a.knowledge.techs.size >= 3,
+      score: (c, a) => { let best = 0, which = null; const DEFS = Bld().DEFS; for (const k in DEFS) { if (!DEFS[k].public) continue; const w = LW.Society.wants(c.world, a, k); if (w > best) { best = w; which = k; } } a._pubKind = which; if (!which) return [0, []]; return [best * (0.45 + P(a).ambition * 0.4 + P(a).discipline * 0.25) * (c.season === 3 ? 0.6 : 1), [`a közösségnek kellene: ${DEFS[which].label.toLowerCase()}`]]; },
+      plan: (c, a) => a._pubKind ? buildPlan(c, a, a._pubKind) : null,
     },
     helpBuild: {
       applicable: (c, a) => c.adult && !!findHouseholdSite(c, a),
@@ -209,6 +230,10 @@
         if (a.knowledge.techs.has('pottery') && !a.inv.pot) want.push(['pot', 0.35]);
         if (a.knowledge.techs.has('cooking') && (a.inv.meat_raw || a.inv.fish_raw) && c.fire) want.push([a.inv.meat_raw ? 'meat_cooked' : 'fish_cooked', 0.5 + u(N(a).food) * 0.6]);
         if (a.knowledge.techs.has('food_drying') && c.fire && ((a.inv.meat_raw || 0) >= 2 || (a.inv.fish_raw || 0) >= 2 || (a.inv.berries || 0) >= 6)) want.push(['dried_food', 0.45 + (c.season === 2 ? 0.3 : 0)]);
+        // jobb szerszám, ha tudja, hogyan (balta, vadászfegyver, eke, csákány, ruha)
+        for (const rid in LW.Tech.RECIPES) { const R = LW.Tech.RECIPES[rid]; const out = Object.keys(R.out)[0]; const it = LW.ITEMS[out]; if (!it || !it.slot || !a.knowledge.techs.has(R.tech)) continue; if (LW.Tree.bestTool(a, it.slot) >= it.tier) continue; if (needsBuilding(R.nearby) && !nearestBuilding(c.world, a, R.nearby, 30)) continue; if (R.nearby === 'fire' && !c.fire) continue; want.push([rid, 0.4 + (it.slot === 'hunt' ? u(N(a).food) * 0.3 : 0) + (it.slot === 'clothes' ? u(N(a).warmth) * 0.5 : 0) + P(a).ambition * 0.15]); }
+        if (a.knowledge.techs.has('baking') && (a.inv.flour || 0) >= 1 && c.fire) want.push(['bread', 0.5 + u(N(a).food) * 0.5]);
+        if (a.knowledge.techs.has('milling') && ((a.inv.grain || 0) >= 3 || (c.home && c.home.storage && (c.home.storage.grain || 0) >= 3))) want.push(['flour', 0.4 + u(N(a).food) * 0.4]);
         for (const [r, s] of want) if (s > best) { best = s; which = r; }
         a._craft = which; if (which) f.push(`kellene: ${LW.ITEMS[which] ? LW.ITEMS[which].label.toLowerCase() : which}`);
         return [best * (0.6 + P(a).discipline * 0.4) * (c.night ? 0.5 : 1), f];
@@ -218,6 +243,7 @@
         let need = R.inp; if (R.inpAny) need = R.inpAny.find((o) => count(missingFor(a, o)) === 0) || R.inpAny[0];
         const m = missingFor(a, need); const acq = count(m) ? acquireSteps(c.world, a, m, c) : []; if (!acq) return null;
         const steps = [...acq]; if (R.nearby === 'fire') { if (!c.fire) return null; steps.push({ op: 'moveTo', i: c.world.idx(c.fire.x, c.fire.y), near: 1 }); }
+        else if (needsBuilding(R.nearby)) { const nb = nearestBuilding(c.world, a, R.nearby, 30); if (!nb) return null; steps.push({ op: 'moveTo', i: c.world.idx(nb.x, nb.y), near: 1.5 }); }
         steps.push({ op: 'craft', recipe: rid }); return { steps, tag: R.tag };
       },
     },
@@ -226,7 +252,7 @@
       score: (c, a) => {
         const el = LW.Tech.eligible(c.world, a); if (!el.length) return [0, ['nincs mit kipróbálni']];
         let best = 0, which = null;
-        for (const id of el) { const d = LW.Tech.D[id]; const need = d.need ? u(N(a)[d.need] ?? 1) : 0; const prog = a.knowledge.progress[id] || 0; const m = LW.Tech.missingItems(a, d); const feasible = count(m) === 0 || acquireSteps(c.world, a, m, c); if (!feasible) continue; if (d.nearby === 'fire' && !c.fire) continue; if (d.nearby === 'water' && !c.water) continue; const s = (0.25 + P(a).curiosity * 0.5) * (0.4 + P(a).creativity * 0.6) * (1 - d.difficulty * 0.5) + need * 0.7 + prog * 0.4 + u(N(a).curiosity) * 0.35 + (count(m) === 0 ? 0.15 : 0); if (s > best) { best = s; which = id; } }
+        for (const id of el) { const d = LW.Tech.D[id]; const need = d.need ? u(N(a)[d.need] ?? 1) : 0; const prog = a.knowledge.progress[id] || 0; const m = LW.Tech.missingItems(a, d); const feasible = count(m) === 0 || acquireSteps(c.world, a, m, c); if (!feasible) continue; if (d.nearby === 'fire' && !c.fire) continue; if (d.nearby === 'water' && !c.water) continue; if (needsBuilding(d.nearby) && !nearestBuilding(c.world, a, d.nearby, 30)) continue; const s = (0.25 + P(a).curiosity * 0.5) * (0.4 + P(a).creativity * 0.6) * (1 - d.difficulty * 0.5) + need * 0.7 + prog * 0.4 + u(N(a).curiosity) * 0.35 + (count(m) === 0 ? 0.15 : 0); if (s > best) { best = s; which = id; } }
         a._exp = which; return [best * (c.night ? 0.4 : 1), which ? [`próba: ${LW.Tech.D[which].name.toLowerCase()}`, `kíváncsiság ${LW.pct(P(a).curiosity)}`, `kreativitás ${LW.pct(P(a).creativity)}`] : []];
       },
       plan: (c, a) => {
@@ -234,6 +260,7 @@
         const steps = [...acq];
         if (d.nearby === 'fire' && c.fire) steps.push({ op: 'moveTo', i: c.world.idx(c.fire.x, c.fire.y), near: 1 });
         if (d.nearby === 'water' && c.water) { const t = tileNear(c.world, c.water.i); if (t != null) steps.push({ op: 'moveTo', i: t }); }
+        if (needsBuilding(d.nearby)) { const nb = nearestBuilding(c.world, a, d.nearby, 30); if (!nb) return null; steps.push({ op: 'moveTo', i: c.world.idx(nb.x, nb.y), near: 1.5 }); }
         steps.push({ op: 'experiment', tech: id, n: Math.round(8 + d.difficulty * 32) });
         return { steps, tag: 'experiment:' + id, tech: id };
       },
@@ -282,9 +309,9 @@
 
   function nearestGround(world, a, maxD) { let best = null, bd = maxD; for (const [i, g] of world.ground) { let any = false; for (const k in g) if (g[k] > 0) { any = true; break; } if (!any) continue; const d = LW.dist(a.x, a.y, world.xOf(i) + 0.5, world.yOf(i) + 0.5); if (d < bd) { bd = d; best = i; } } return best; }
   function nearestGroundFood(world, a, maxD) { let best = null, bd = maxD; for (const [i, g] of world.ground) { let any = false; for (const k in g) if (g[k] > 0 && LW.ITEMS[k] && LW.ITEMS[k].food) { any = true; break; } if (!any) continue; const d = LW.dist(a.x, a.y, world.xOf(i) + 0.5, world.yOf(i) + 0.5); if (d < bd) { bd = d; best = i; } } return best; }
-  function findHouseholdSite(c, a) { for (const b of c.world.buildings.values()) { if (b.progress >= 1) continue; const def = Bld().def(b); if (def.divine) continue; if (b.ownerId === a.id) continue; const owner = c.world.agents.get(b.ownerId); if (!owner) continue; if (a.partner === owner.id || c.household.includes(owner)) if (LW.dist(a.x, a.y, b.x, b.y) < 40) return b; } return null; }
+  function findHouseholdSite(c, a) { for (const b of c.world.buildings.values()) { if (b.progress >= 1) continue; const def = Bld().def(b); if (def.divine) continue; if (b.ownerId === a.id) continue; if (def.public && LW.dist(a.x, a.y, b.x, b.y) < 18 && (c.world.tick + a.id) % 3 === 0) return b; const owner = c.world.agents.get(b.ownerId); if (!owner) continue; if (a.partner === owner.id || c.household.includes(owner)) if (LW.dist(a.x, a.y, b.x, b.y) < 40) return b; } return null; }
   function buildPlan(c, a, kind) {
-    let site = [...c.world.buildings.values()].find((b) => b.kind === kind && b.ownerId === a.id && b.progress < 1);
+    const pubk = !!Bld().DEFS[kind].public; let site = [...c.world.buildings.values()].find((b) => b.kind === kind && b.progress < 1 && (b.ownerId === a.id || (pubk && LW.dist(a.x, a.y, b.x, b.y) < 20)));
     if (!site) { const i = Bld().findSite(c.world, a, kind); if (i < 0) return null; return { steps: [{ op: 'moveTo', i, near: 1 }, { op: 'buildNew', kind, i }], tag: 'build:' + kind, kind }; }
     return buildPlanFor(c, a, site);
   }
@@ -322,7 +349,7 @@
         try { if (!g.applicable(ctx, a)) continue; } catch (e) { continue; }
         let [s, factors] = g.score(ctx, a); if (!(s > 0)) continue;
         if (a.failStreak && a.failStreak.goal === id && a.failStreak.count >= 3 && world.tick - a.failStreak.tick < 32) { s *= 0.3; factors = [...factors, `sorra kudarc (×${a.failStreak.count})`]; }
-        if (a.nudge && a.nudge.goal === id && world.tick < a.nudge.until) { s = s * 1.4 + 0.25; factors = [...factors, 'a hang sugallata']; } // a Teremtő szava: erősebb késztetés, nem parancs
+        if (a.nudge && a.nudge.goal === id && world.tick < a.nudge.until) { if (a.nudge.strong) { s = s * 3 + 1.2; factors = [...factors, 'a Teremtő szava']; } else { s = s * 1.4 + 0.25; factors = [...factors, 'a hang sugallata']; } } // a Teremtő szava: parancs (teljes engedelmesség) vagy sugallat
         s += world.rng.gauss(0, sigma);
         cand.push({ id, s, factors });
       }

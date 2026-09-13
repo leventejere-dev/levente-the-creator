@@ -22,6 +22,7 @@
         if (t.trees[i] >= 15) A.rememberPlace(world, a, 'wood', i, t.trees[i]); else if (A.knowsPlace(a, 'wood', i)) A.forgetPlace(a, 'wood', i);
         if (t.stone[i] >= 20) { A.rememberPlace(world, a, 'stone', i, t.stone[i]); if (t.stone[i] >= 70 && (b === B.HILLS || b === B.MOUNTAIN || b === B.BEACH) && !t.depType[i]) A.rememberPlace(world, a, 'flint', i, t.stone[i] >> 1); }
         if (t.animals[i] >= 25) A.rememberPlace(world, a, 'animals', i, t.animals[i]); else if (A.knowsPlace(a, 'animals', i)) A.forgetPlace(a, 'animals', i);
+        if (t.depType[i] && !t.depKnown[i] && Math.abs(dx) <= 1 && Math.abs(dy) <= 1 && world.rng.chance(0.02 * (0.5 + a.personality.curiosity) * (a.knowledge.techs.has('digging') ? 3 : 1))) { t.depKnown[i] = 1; world.dirtyTiles.add(i); } // közelről feltűnik a furcsa kő
         if (t.depType[i] && t.depKnown[i] >= 1) {
           const dt = t.depType[i];
           if (dt === DEP.FLINT) A.rememberPlace(world, a, 'flint', i, Math.min(255, t.depAmt[i]));

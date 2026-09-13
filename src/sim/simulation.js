@@ -13,6 +13,7 @@
       LW.Ecology.init(world);
       if (!world.history) new LW.History(world);
       world.ground = world.ground || new Map();
+      world.reindexBuildings();
       LW.Speech.init(world);
       world.rebuildBuckets();
     }
@@ -55,7 +56,7 @@
       }
       LW.Buildings.step(w);
       if (w.tick % T.TICKS_PER_HOUR === 0) { const h = LW.Time.hour(w.tick); for (const a of w.agents.values()) if (a.id % 24 === h) LW.Memory.consolidate(w, a); }
-      if (w.tick % T.TICKS_PER_DAY === 0) { LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w); for (const [i, g] of w.ground) { LW.Agents.spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); } }
+      if (w.tick % T.TICKS_PER_DAY === 0) { LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w); LW.Society.daily(w); for (const [i, g] of w.ground) { LW.Agents.spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); } }
       if (w.tick % T.TICKS_PER_YEAR === 0) w.history.yearEnd();
       w.meta.lastSimulatedTick = w.tick;
       const dt = now() - t0; this.perf.tickUs = this.perf.tickUs * 0.98 + dt * 1000 * 0.02; if (dt * 1000 > this.perf.tickMaxUs) this.perf.tickMaxUs = dt * 1000; this.perf._acc++;

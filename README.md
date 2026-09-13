@@ -36,6 +36,15 @@ szerint fogadják meg, és **magyarul felelnek** az emlékeikből, érzéseikbő
 fel is olvassa (*hang* kapcsoló). Ha a menüben megadsz egy **ingyenes Google Gemini-kulcsot** (aistudio.google.com/apikey),
 természetesebben fogalmaznak — a modell csak fogalmaz, hogy mi történik, azt a világ dönti el.
 
+**A lehetőségtér.** A világ „természettörvényei” most a tűztől a világszimulációig érnek: 105 felfedezés (réz, bronz,
+vas, írás, pénz, út, iskola, egyetem, nyomda, tudományos módszer, gőzgép, gyár, villany, orvoslás, repülés, atom,
+tranzisztor, számítógép, hálózat, genetika, űrrepülés, gépi tanulás, mesterséges intelligencia, fúzió, világszimuláció),
+35-féle épület (kút, magtár, kemence, olvasztó, kovács, műhely, szentély, templom, levéltár, könyvtár, iskola, egyetem,
+piac, malom, csatorna, téglaház, városi ház, nyomda, labor, gyár, erőmű, kórház, számítóközpont, adatközpont, Világmag),
+anyagláncok, közös raktárak, vezetők, írott tudás, amely túléli a tudót. **Semmi sincs megírva, hogy mikor** — ők
+találják meg (kísérlet, véletlen, tanítás, olvasás), a maguk sorrendjében, vagy soha. „Parancs” bekapcsolva a szavad
+parancs: megteszik, amit mondasz.
+
 A felület és minden esemény, emlék, gondolat magyar. A dokumentáció (`docs/`) angol, mert a forráskód nyelve is az.
 
 ## Status
@@ -45,12 +54,10 @@ A felület és minden esemény, emlék, gondolat magyar. A dokumentáció (`docs
 | 0 | Architecture & models | ✅ `docs/` |
 | 1 | **Genesis MVP** | ✅ playable — `dist/levente-world.html` |
 | 1½ | **Speech** — emergent languages, the shared chat with the Creator (text + voice), free Gemini phrasing | ✅ |
-| 2 | Civilization (villages, jobs, trade, culture, religion, server) | planned |
-| 3 | States (cities, politics, currency, companies, wars) | planned |
-| 4 | Industrial | planned |
-| 5 | Digital | planned |
-| 6 | AI Age | planned |
+| 2–6 | **The possibility space** — 105 discoveries from fire to world simulation, 35 building kinds (some multi-tile), materials chains (charcoal → copper → bronze → iron → steel → machine parts → chips), records that outlive the knower, leaders, shrines/temples, markets, schools/universities/labs, hospitals, factories, power plants, computer centres, the *Világmag* — all discoverable, none scripted | ✅ engine + content |
+| 3 | States: politics, currency in depth, companies, wars | next |
 | 7 | Unknown Future (procedural post-contemporary tech) | planned |
+| — | Growing / infinite map | next |
 
 ## Run it
 

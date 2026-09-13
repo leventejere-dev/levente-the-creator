@@ -15,12 +15,17 @@
   const decArr = (o) => { const u8 = b64decode(o.d); const buf = u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength); return o.t === 'Float32Array' ? new Float32Array(buf) : o.t === 'Uint16Array' ? new Uint16Array(buf) : new Uint8Array(buf); };
 
   const TRANSIENT = new Set(['plan', 'why', 'env', 'threat', 'engagedWith', 'lastSaid']);
-  function serializeAgent(a) {
+  function serializeAgent(a, tick) {
     const o = {};
     for (const k in a) { if (TRANSIENT.has(k) || k[0] === '_') continue; o[k] = a[k]; }
     o.knowledge = { techs: [...a.knowledge.techs], places: [...a.knowledge.places.values()], progress: a.knowledge.progress };
-    o.memory = { episodic: a.memory.episodic, emotional: a.memory.emotional, social: [...a.memory.social] };
-    o.relationships = [...a.relationships];
+    // csak a számottevő kapcsolatok maradnak a mentésben (nagy népességnél a többi négyzetesen nőne)
+    const keep = (r) => r.status !== 'stranger' || r.familiarity >= 0.15 || r.friendship >= 0.1 || r.romance > 0 || r.resentment >= 0.1 || (r.fear || 0) >= 0.2 || (r.trust || 0) >= 0.2 || r.attraction >= 0.5;
+    let rels = [...a.relationships].filter(([, r]) => keep(r));
+    if (rels.length > 120) { rels.sort((x, y) => (y[1].familiarity + y[1].friendship + y[1].romance + y[1].resentment) - (x[1].familiarity + x[1].friendship + x[1].romance + x[1].resentment)); rels = rels.slice(0, 120); }
+    const kept = new Set(rels.map(([id]) => id));
+    o.memory = { episodic: a.memory.episodic, emotional: a.memory.emotional, social: [...a.memory.social].filter(([id, s]) => kept.has(id) || (s.lastSeen >= 0 && tick - s.lastSeen < 96 * 30)).slice(0, 160) };
+    o.relationships = rels;
     if (a.pregnancy) o.pregnancy = { by: a.pregnancy.by, since: a.pregnancy.since, fatherGenes: a.pregnancy.fatherGenes };
     return o;
   }
@@ -44,7 +49,7 @@
         meta: w.meta, cfg: w.cfg, rng: w.rng.getState(),
         world: { w: w.w, h: w.h, tick: w.tick, seed: w.seed, name: w.name, genesis: w.genesis, shape: w.shape, climateMean: w.climateMean, windDir: w.windDir, tiles, nextIds: w.nextIds, stats: w.stats, burning: [...w.burning], fireStats: w.fireStats, ground: [...w.ground] },
         weather: w.weather.toJSON(), language: w.language.toJSON(),
-        agents: [...w.agents.values()].map(serializeAgent), deceased: [...w.deceased.values()],
+        agents: [...w.agents.values()].map((a) => serializeAgent(a, w.tick)), deceased: [...w.deceased.values()],
         buildings: [...w.buildings.values()], settlements: [...w.settlements.values()], landmarks: w.landmarks,
         history: w.history.toJSON(), speech: LW.Speech.toJSON(w),
       };
@@ -72,7 +77,7 @@
       return sim;
     },
     migrate(state) { if (!state || typeof state.v !== 'number') throw new Error('Not a world save'); return state; },
-    toJSON(sim) { return JSON.stringify(this.serialize(sim)); },
+    toJSON(sim) { return JSON.stringify(this.serialize(sim), (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 10000) / 10000 : v)); },
     fromJSON(str) { return this.restore(JSON.parse(str)); },
   };
   function mergeCfg(base, over) { if (!over) return JSON.parse(JSON.stringify(base)); const out = JSON.parse(JSON.stringify(base)); for (const k in over) { if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k]) && out[k] && typeof out[k] === 'object') Object.assign(out[k], over[k]); else out[k] = over[k]; } return out; }

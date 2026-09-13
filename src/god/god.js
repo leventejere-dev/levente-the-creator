@@ -90,7 +90,7 @@
       a.plan = null; a.sleeping = false;
       world.events.emit('DivineCommandIssued', { tick: world.tick, agentId: a.id, text: `${force ? 'Kényszerítetted' : 'Kérted'} őt: ${a.name} — ${label}.`, tile });
       if (!force) { A().memory(world, a, { type: 'divine', text: `egy száj nélküli hang szólt: ${label.toLowerCase()}`, importance: 0.9, emotion: 'fear', intensity: 0.6, divine: true }); a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.3); a.emotions.fear = LW.clamp01(a.emotions.fear + 0.2); a.emotions.excitement = LW.clamp01(a.emotions.excitement + 0.3); a.beliefs.trust = LW.clamp((a.beliefs.trust || 0) - 0.03, -1, 1); }
-      else { A().memory(world, a, { type: 'divine', text: `a testem idegen akaratra mozdult: ${label.toLowerCase()}`, importance: 0.9, emotion: 'fear', intensity: 0.7, divine: true }); a.beliefs.trust = LW.clamp((a.beliefs.trust || 0) - 0.25, -1, 1); }
+      else { const full = world.creatorSettings && world.creatorSettings.obedience === 'full'; A().memory(world, a, { type: 'divine', text: full ? `a hang kérte, és megtettem: ${label.toLowerCase()}` : `a testem idegen akaratra mozdult: ${label.toLowerCase()}`, importance: 0.8, emotion: full ? 'excitement' : 'fear', intensity: 0.6, divine: true }); a.beliefs.trust = LW.clamp((a.beliefs.trust || 0) - (full ? 0.03 : 0.25), -1, 1); a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.2); }
       a.importance += 0.5; a.lastDecisionTick = -1000;
     },
     obedience(world, a) { const P = a.personality; return LW.clamp01(0.3 + P.loyalty * 0.35 + a.beliefs.creator * 0.45 + a.emotions.fear * 0.2 + P.optimism * 0.15 - P.dominance * 0.3 - P.riskTolerance * 0.1); },

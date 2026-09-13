@@ -45,7 +45,7 @@
       if (hidden.length && world.rng.chance(0.3)) LW.Tech.learn(world, listener, world.rng.pick(hidden), 'taught', teller);
       if (!cand.length) return;
       const id = world.rng.pick(cand); const d = LW.Tech.D[id]; const cfg = world.cfg.social;
-      const p = cfg.conversationTransferBase * (0.5 + teller.personality.sociability) * (0.5 + listener.personality.intelligence) * (0.5 + r.friendship) * (1 - d.difficulty * 0.5) * (0.5 + 0.5 * LW.Speech.intelligibility(teller, listener));
+      const p = cfg.conversationTransferBase * (0.5 + teller.personality.sociability) * (0.5 + listener.personality.intelligence) * (0.5 + r.friendship) * (1 - d.difficulty * 0.5) * (0.5 + 0.5 * LW.Speech.intelligibility(teller, listener)) * LW.Tech.mult(world, teller, 'teach') * (1 + LW.Tree.buildingBonus(world, teller.x, teller.y, 'teach', 14));
       if (world.rng.chance(p)) LW.Tech.learn(world, listener, id, 'taught', teller);
       else listener.knowledge.progress[id] = Math.min(0.95, (listener.knowledge.progress[id] || 0) + world.cfg.tech.hintProgress);
     },

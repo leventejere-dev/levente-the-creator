@@ -121,7 +121,7 @@
   }
   function tests() {
     const out = $('#headless'); out.classList.remove('hidden'); const lines = ['LEVENTE — THE CREATOR · szimulációs invariánsok']; const log = (s) => { lines.push(s); out.textContent = lines.join('\n'); }; out.textContent = lines.join('\n');
-    setTimeout(() => { const r = LW.Invariants.suite(log); log(`\n${r.passed} passed · ${r.failed} failed`); window.__tests = r; }, 30);
+    setTimeout(() => { const r = LW.Invariants.suite(log); log(`\n${r.passed} sikeres · ${r.failed} hibás`); window.__tests = r; }, 30);
   }
 
   /** Decide what to load: local cache vs cloud; whether this device is the Creator or an observer. */

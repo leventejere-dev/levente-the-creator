@@ -80,9 +80,12 @@
     // ---- registries
     addAgent(a) { this.agents.set(a.id, a); return a; }
     removeAgent(id) { this.agents.delete(id); }
-    addBuilding(b) { this.buildings.set(b.id, b); this.tiles.shade[this.idx(b.x, b.y)] = 1; return b; }
-    removeBuilding(id) { const b = this.buildings.get(id); if (!b) return; this.buildings.delete(id); if (!this.buildingAt(this.idx(b.x, b.y))) this.tiles.shade[this.idx(b.x, b.y)] = 0; }
-    buildingAt(i) { for (const b of this.buildings.values()) if (this.idx(b.x, b.y) === i) return b; return null; }
+    /** Az épület által lefedett mezők (alapterület: b.w × b.h, a bal felső sarok a horgony). */
+    buildingTiles(b) { const out = []; const w = b.w || 1, h = b.h || 1; for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) { const x = b.x + dx, y = b.y + dy; if (this.inBounds(x, y)) out.push(this.idx(x, y)); } return out; }
+    addBuilding(b) { this.buildings.set(b.id, b); if (!this.btile) this.btile = new Map(); for (const i of this.buildingTiles(b)) { this.btile.set(i, b.id); this.tiles.shade[i] = 1; } return b; }
+    removeBuilding(id) { const b = this.buildings.get(id); if (!b) return; this.buildings.delete(id); if (this.btile) for (const i of this.buildingTiles(b)) { if (this.btile.get(i) === id) { this.btile.delete(i); this.tiles.shade[i] = 0; } } }
+    buildingAt(i) { if (!this.btile) this.reindexBuildings(); const id = this.btile.get(i); return id != null ? (this.buildings.get(id) || null) : null; }
+    reindexBuildings() { this.btile = new Map(); for (const b of this.buildings.values()) for (const i of this.buildingTiles(b)) this.btile.set(i, b.id); }
     buildingsNear(x, y, r) { const out = []; for (const b of this.buildings.values()) if (Math.abs(b.x - x) <= r && Math.abs(b.y - y) <= r) out.push(b); return out; }
 
     // ---- spatial hash for agents (rebuilt each tick)

@@ -34,7 +34,8 @@
     init(world) {
       if (!world.langs) world.langs = new Map();
       if (!world.creatorLexicon) world.creatorLexicon = {};
-      if (!world.creatorSettings) world.creatorSettings = { divineEar: true };
+      if (!world.creatorSettings) world.creatorSettings = { divineEar: true, obedience: 'full' };
+      if (world.creatorSettings.obedience == null) world.creatorSettings.obedience = 'full';
       if (!world.chatLog) world.chatLog = [];
       if (!world.speechLog) world.speechLog = [];
       if (!world.langs.size) { const L = world.language; this.newLang(world, { cons: L.cons, vows: L.vows, patterns: L.patterns, founderId: null }); }

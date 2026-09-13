@@ -170,11 +170,11 @@
     // ---- 7. deposits (veins)
     const nDep = Math.max(8, Math.round(n * cfg.depositDensity));
     const land = []; for (let i = 0; i < n; i++) if (!isWater(t.biome[i])) land.push(i);
-    const placeVein = (start, type) => {
+    const placeVein = (start, type, surface) => {
       let i = start; const len = rng.int(3, type === D.CLAY || type === D.FLINT ? 18 : 30);
       for (let k = 0; k < len; k++) {
         if (isWater(t.biome[i])) break;
-        if (!t.depType[i]) { t.depType[i] = type; t.depAmt[i] = rng.int(20, 200); t.depKnown[i] = k === 0 ? (rng.chance(0.3) ? 1 : 0) : (rng.chance(0.05) ? 1 : 0); }
+        if (!t.depType[i]) { t.depType[i] = type; t.depAmt[i] = rng.int(20, 200); t.depKnown[i] = k === 0 ? ((surface || rng.chance(0.3)) ? 1 : 0) : (rng.chance(0.05) ? 1 : 0); }
         const x = i % w, y = (i / w) | 0; const nx = LW.clamp(x + rng.int(-1, 1), 0, w - 1), ny = LW.clamp(y + rng.int(-1, 1), 0, h - 1); i = idx(nx, ny);
       }
     };
@@ -188,6 +188,9 @@
       return rng.weighted([D.CLAY, D.FLINT, D.COAL, D.IRON, D.COPPER], [30, 30, 15, 15, 10]);
     };
     for (let k = 0; k < nDep; k++) { const i = rng.pick(land); placeVein(i, typeFor(t.biome[i], i)); }
+    // a fejlődés nyersanyagai valahol mindig ott vannak a földben (ha kevés jutott, még néhány ér)
+    const hilly = land.filter((i) => t.biome[i] === B.HILLS || t.biome[i] === B.MOUNTAIN);
+    for (const [type, min] of [[D.COPPER, 3], [D.TIN, 2], [D.IRON, 3], [D.COAL, 3], [D.GOLD, 1], [D.OIL, 1], [D.GEMS, 1], [D.SALT, 2]]) { let have = 0; for (const i of land) if (t.depType[i] === type) have++; for (let k = Math.ceil(have / 12); k < min; k++) placeVein(rng.pick(hilly.length ? hilly : land), type, true); }
 
     // ---- 8. genesis site (progressively relaxed constraints)
     let best = -1, bestScore = -1;

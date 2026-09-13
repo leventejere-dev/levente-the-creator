@@ -181,3 +181,26 @@ Discoveries after the AI age are **procedurally generated** from a grammar:
 high-tier techs and effects drawn from parametrised templates (energy output,
 productivity, lifespan, transport speed, information capacity). Names come from the
 civilization's own language. The engine treats them like any other discovery.
+
+## The possibility space (`src/tech/tree.js`, `src/society/society.js`)
+
+The tree is data, not history: 105 discoveries in 13 eras (primitive → neolithic → copper → bronze → iron → classical →
+medieval → renaissance → industrial → modern → digital → AI → beyond). Each entry has prerequisites, materials
+(`items`/`itemsAny`), a required place (`nearby`: fire, water, or a building kind/property such as `furnace`, `workshop`,
+`lab`, `university`, `data_center`), a minimum nearby population (`minPop` — big things need many people), a skill gate,
+difficulty, `boosts` from related knowledge, and what it unlocks: recipes, buildings and generic effects (`fx`: food,
+hunt, wood, stone, mine, farm, build, craft, speed, discovery, teach, warmth, health, preserve). Tools carry a `slot`
+and `tier` (axe/hunt/plow/mine/clothes) and feed the same effect system.
+
+Materials form chains (wood → charcoal; ore + charcoal → copper/iron in a furnace; copper + tin → bronze; iron + coal →
+steel in a forge; clay → brick in a kiln; fiber → paper in a workshop; iron → machine parts; copper → electric parts;
+glass + copper + electric parts → chips in a lab; oil → fuel/plastic in a factory). In the detailed simulation people
+acquire inputs recursively (deposits by digging, stores by taking, crafted goods by crafting near the right building);
+in the day-scale simulation skilled people produce materials into communal stores (workshop, forge, market, factory…)
+and the community builds public buildings when it wants them (`Society.wants`: need, population, no duplicate nearby).
+
+Era label = highest milestone known (copper smelting, bronze alloy, iron smelting, architecture/mathematics, universities,
+printing/scientific method, steam engine, electrification, computer, AI, world simulation). Worlds always contain at
+least a few surface-visible veins of copper, tin, iron, coal, gold, salt, oil and gems, so every world *can* get there;
+whether it does is up to its people. A calibration run with a 12× discovery multiplier crosses the whole tree in ~47
+years from 8 people; at the real rate it takes centuries per era, growing faster as populations and institutions grow.

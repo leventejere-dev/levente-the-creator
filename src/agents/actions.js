@@ -59,13 +59,13 @@
     gather(world, a, st, plan) {
       if (!near(world, a, st.i, 1.8)) return FAIL;
       const t = world.tiles; const i = st.i; st.t = (st.t || 0) + 1; st.acc = st.acc || 0; st.got = st.got || 0;
-      const sk = a.skills.gathering; const lore = a.knowledge.techs.has('foraging_lore') ? 1.3 : 1;
+      const sk = a.skills.gathering; const lore = a.knowledge.techs.has('foraging_lore') ? 1.3 : 1; const fxm = LW.Tech.fx(world, a);
       let rate = 0, field = null, cost = 1, item = st.item;
-      if (item === 'berries') { field = 'veg'; cost = 6; rate = (0.9 + sk) * lore * (a.inv.basket ? 1.3 : 1); }
-      else if (item === 'roots') { field = 'veg'; cost = 10; rate = (0.6 + sk * 0.8) * lore * (a.knowledge.techs.has('digging') ? 1.5 : 1); }
+      if (item === 'berries') { field = 'veg'; cost = 6; rate = (0.9 + sk) * lore * (a.inv.basket ? 1.3 : 1) * (1 + fxm.food); }
+      else if (item === 'roots') { field = 'veg'; cost = 10; rate = (0.6 + sk * 0.8) * lore * (a.knowledge.techs.has('digging') ? 1.5 : 1) * (1 + fxm.food); }
       else if (item === 'fiber') { field = t.veg[i] >= 10 ? 'veg' : 'trees'; cost = 2; rate = 0.8 + sk * 0.6; }
-      else if (item === 'wood') { field = 'trees'; cost = 6; rate = (0.45 + sk * 0.4) * (a.inv.handaxe ? 2.2 : 1) * (a.knowledge.techs.has('woodworking') ? 1.3 : 1); }
-      else if (item === 'stone') { field = 'stone'; cost = 5; rate = 0.5 + sk * 0.4; }
+      else if (item === 'wood') { field = 'trees'; cost = 6; rate = (0.45 + sk * 0.4) * (a.inv.handaxe || LW.Tree.bestTool(a, 'axe') >= 1 ? 2.2 : 1) * (a.knowledge.techs.has('woodworking') ? 1.3 : 1) * (1 + fxm.wood); }
+      else if (item === 'stone') { field = 'stone'; cost = 5; rate = (0.5 + sk * 0.4) * (1 + fxm.stone); }
       else if (item === 'flint') { if (t.depType[i] === LW.DEPOSIT.FLINT && t.depAmt[i] > 0) { field = 'depAmt'; cost = 1; rate = 0.5 + sk * 0.3; } else if (t.stone[i] > 0) { field = 'stone'; cost = 10; rate = 0.3 + sk * 0.3; } else return FAIL; }
       else if (item === 'clay') { if (t.depType[i] === LW.DEPOSIT.CLAY && t.depAmt[i] > 0) { field = 'depAmt'; cost = 1; rate = (a.knowledge.techs.has('digging') ? 0.5 : 0.2) + sk * 0.3; } else if (t.biome[i] === LW.BIOME.MARSH) { field = null; rate = 0.15 + sk * 0.2; } else return FAIL; }
       else return FAIL;
@@ -87,7 +87,7 @@
     },
     hunt(world, a, st) {
       if (!near(world, a, st.i, 2.5)) return FAIL; const t = world.tiles; st.t = (st.t || 0) + 1; st.got = st.got || 0;
-      const p = 0.12 * (0.5 + a.skills.hunting) * (a.inv.spear ? 1.5 : 0.4) * (0.2 + t.animals[st.i] / 255) * (LW.Time.isNight(world.tick) ? 0.5 : 1);
+      const p = 0.12 * (0.5 + a.skills.hunting) * (LW.Tree.bestTool(a, 'hunt') >= 1 ? 1.5 : 0.4) * (1 + LW.Tech.fx(world, a).hunt) * (0.2 + t.animals[st.i] / 255) * (LW.Time.isNight(world.tick) ? 0.5 : 1);
       if (world.rng.chance(p)) { t.animals[st.i] = Math.max(0, t.animals[st.i] - 30); A().makeRoom(world, a, 2.4); const q = A().addItem(world, a, 'meat_raw', 2); st.got += q; if (world.rng.chance(0.5)) A().addItem(world, a, 'hide', 1); a.counters.hunted = (a.counters.hunted || 0) + 1; A().practice(a, 'hunting', 3); a.emotions.excitement = Math.min(1, a.emotions.excitement + 0.3); A().memory(world, a, { type: 'hunt', text: 'elejtettem egy vadat', importance: 0.35, emotion: 'excitement', intensity: 0.4 }); }
       else if (world.rng.chance(0.006)) A().damage(world, a, 0.15, 'sebzett vad');
       if (st.got >= st.n) return DONE; if (t.animals[st.i] < 15) { A().forgetPlace(a, 'animals', st.i); return st.got ? DONE : FAIL; }
@@ -95,7 +95,7 @@
     },
     fish(world, a, st) {
       if (!near(world, a, st.i, 3.0)) return FAIL; const t = world.tiles; st.t = (st.t || 0) + 1; st.got = st.got || 0;
-      const p = 0.35 * (0.5 + a.skills.hunting) * (0.3 + t.fish[st.i] / 255) * (a.inv.spear ? 1.3 : 1) * (a.inv.basket ? 1.2 : 1);
+      const p = 0.35 * (0.5 + a.skills.hunting) * (0.3 + t.fish[st.i] / 255) * (a.inv.spear ? 1.3 : 1) * (a.inv.basket ? 1.2 : 1) * (1 + LW.Tech.fx(world, a).food * 0.5);
       if (world.rng.chance(p)) { t.fish[st.i] = Math.max(0, t.fish[st.i] - 15); A().makeRoom(world, a, 0.8); st.got += A().addItem(world, a, 'fish_raw', 1); a.counters.fished = (a.counters.fished || 0) + 1; A().practice(a, 'hunting', 2); }
       if (st.got >= st.n) return DONE; if (t.fish[st.i] < 20) { A().forgetPlace(a, 'fish', st.i); return st.got ? DONE : FAIL; }
       return st.t >= 28 ? (st.got ? DONE : FAIL) : RUN;
@@ -147,11 +147,12 @@
       const R = LW.Tech.RECIPES[st.recipe]; if (!R) return FAIL;
       if (!st.started) {
         if (R.nearby === 'fire') { const f = world.buildingsNear(a.x | 0, a.y | 0, 2).find((b) => b.kind === 'campfire' && b.lit); if (!f) return FAIL; }
+        else if (R.nearby && R.nearby !== 'water') { const DEFS = Bld().DEFS; const nb = world.buildingsNear(a.x | 0, a.y | 0, 3).find((b) => b.progress >= 1 && (b.kind === R.nearby || DEFS[b.kind][R.nearby])); if (!nb) return FAIL; }
         let inp = R.inp; if (R.inpAny) inp = R.inpAny.find((o) => { for (const k in o) if ((a.inv[k] || 0) < o[k]) return false; return true; }); if (!inp) return FAIL;
         for (const k in inp) if ((a.inv[k] || 0) < inp[k]) return FAIL;
         for (const k in inp) A().removeItem(a, k, inp[k]); st.started = true; st.t = 0;
       }
-      st.t++; if (st.t < Math.max(1, Math.round(R.ticks * (1 - a.skills.crafting * 0.4)))) return RUN;
+      st.t++; if (st.t < Math.max(1, Math.round(R.ticks * (1 - a.skills.crafting * 0.4) / (1 + LW.Tech.fx(world, a).craft + LW.Tree.buildingBonus(world, a.x, a.y, 'craft', 4))))) return RUN;
       for (const k in R.out) { const add = A().addItem(world, a, k, R.out[k]); if (add < R.out[k]) { world.ground = world.ground || new Map(); const i = world.idx(a.x | 0, a.y | 0); const g = world.ground.get(i) || {}; g[k] = (g[k] || 0) + (R.out[k] - add); world.ground.set(i, g); } }
       A().practice(a, 'crafting', 3); a.counters.crafted = (a.counters.crafted || 0) + 1;
       if (LW.ITEMS[Object.keys(R.out)[0]].tool) { A().memory(world, a, { type: 'craft', text: `készítettem: ${LW.ITEMS[Object.keys(R.out)[0]].label.toLowerCase()}`, importance: 0.4, emotion: 'pride', intensity: 0.4 }); world.events.emit('ItemCrafted', { tick: world.tick, agentId: a.id, item: Object.keys(R.out)[0], first: !world.firsts || !world.firsts['item:' + Object.keys(R.out)[0]] }); }
@@ -170,7 +171,7 @@
       if (!near(world, a, st.i, 1.8)) return FAIL; st.t = (st.t || 0) + 1; if (st.t < st.n) return RUN;
       const t = world.tiles, i = st.i, dt = t.depType[i]; A().practice(a, 'gathering', 2);
       if (dt && t.depAmt[i] > 0) {
-        const item = LW.DEPOSIT_ITEM[dt]; if (item) { const q = Math.min(t.depAmt[i], world.rng.int(1, 3)); const add = A().addItem(world, a, item, q); t.depAmt[i] -= add; if (t.depKnown[i] < 2) { t.depKnown[i] = 2; world.dirtyTiles.add(i); } const name = LW.DEPOSIT_NAME[dt]; if (['copper', 'tin', 'iron', 'coal', 'gold'].includes(name) && !a.knowledge.techs.has('ore_lore_' + name)) { LW.Tech.learn(world, a, 'ore_lore_' + name, 'observation'); world.events.emit('ResourceFound', { tick: world.tick, agentId: a.id, tile: i, deposit: name, first: !world.firsts || !world.firsts['deposit:' + name] }); A().memory(world, a, { type: 'find', text: `kiástam: ${LW.ITEMS[item].label.toLowerCase()}`, importance: 0.6, emotion: 'excitement', intensity: 0.5 }); } if (dt === LW.DEPOSIT.CLAY) LW.Tech.observe(world, a, 'clay'); }
+        const item = dt === LW.DEPOSIT.OIL && !a.knowledge.techs.has('oil_drilling') ? null : LW.DEPOSIT_ITEM[dt]; if (item) { const q = Math.min(t.depAmt[i], Math.round(world.rng.int(1, 3) * (1 + LW.Tech.fx(world, a).mine))); const add = A().addItem(world, a, item, q); t.depAmt[i] -= add; if (t.depKnown[i] < 2) { t.depKnown[i] = 2; world.dirtyTiles.add(i); } const name = LW.DEPOSIT_NAME[dt]; if (['copper', 'tin', 'iron', 'coal', 'gold'].includes(name) && !a.knowledge.techs.has('ore_lore_' + name)) { LW.Tech.learn(world, a, 'ore_lore_' + name, 'observation'); world.events.emit('ResourceFound', { tick: world.tick, agentId: a.id, tile: i, deposit: name, first: !world.firsts || !world.firsts['deposit:' + name] }); A().memory(world, a, { type: 'find', text: `kiástam: ${LW.ITEMS[item].label.toLowerCase()}`, importance: 0.6, emotion: 'excitement', intensity: 0.5 }); } if (dt === LW.DEPOSIT.CLAY) LW.Tech.observe(world, a, 'clay'); }
         if (t.depAmt[i] <= 0) { t.depType[i] = 0; A().forgetPlace(a, 'deposit', i); A().forgetPlace(a, 'clay', i); }
       } else { if (world.rng.chance(0.3)) A().addItem(world, a, 'stone', 1); if (t.biome[i] === LW.BIOME.MARSH && world.rng.chance(0.6)) { A().addItem(world, a, 'clay', 2); LW.Tech.observe(world, a, 'clay'); } }
       return DONE;
@@ -193,7 +194,8 @@
       if (!Object.keys(g).length) world.ground.delete(st.i); return DONE;
     },
     plant(world, a, st) { const b = world.buildings.get(st.bid); if (!b || b.progress < 1 || !near(world, a, world.idx(b.x, b.y), 1.8)) return FAIL; let seeds = 2; for (const k of ['roots', 'berries']) { while (seeds > 0 && (a.inv[k] || 0) > 0) { A().removeItem(a, k, 1); seeds--; } } if (seeds > 0) return FAIL; b.planted = true; b.crop = 0; A().practice(a, 'farming', 3); a.counters.farmed = (a.counters.farmed || 0) + 1; return DONE; },
-    harvest(world, a, st) { const b = world.buildings.get(st.bid); if (!b || !b.planted || b.crop < 1 || !near(world, a, world.idx(b.x, b.y), 1.8)) return FAIL; const i = world.idx(b.x, b.y); const q = Math.round(6 + world.tiles.fert[i] / 255 * 8); const add = A().addItem(world, a, 'grain', q); if (add < q) { world.ground = world.ground || new Map(); const g = world.ground.get(i) || {}; g.grain = (g.grain || 0) + (q - add); world.ground.set(i, g); } b.planted = false; b.crop = 0; world.tiles.fert[i] = Math.max(20, world.tiles.fert[i] - 12); A().practice(a, 'farming', 4); a.counters.farmed = (a.counters.farmed || 0) + 2; world.events.emit('Harvest', { tick: world.tick, agentId: a.id, amount: q, tile: i, first: !world.firsts || !world.firsts['harvest'] }); return DONE; },
+    take(world, a, st) { const b = world.buildings.get(st.bid); if (!b || !b.storage || !near(world, a, world.idx(b.x, b.y), 1.8)) return FAIL; const have = b.storage[st.item] || 0; if (have <= 0) return FAIL; const q = Math.min(have, st.n || 1); const add = A().addItem(world, a, st.item, q); b.storage[st.item] -= add; if (b.storage[st.item] <= 0) delete b.storage[st.item]; return add > 0 ? DONE : FAIL; },
+    harvest(world, a, st) { const b = world.buildings.get(st.bid); if (!b || !b.planted || b.crop < 1 || !near(world, a, world.idx(b.x, b.y), 1.8)) return FAIL; const def = Bld().def(b); const i = world.idx(b.x, b.y); const q = Math.round((def.yieldBase || 6) + world.tiles.fert[i] / 255 * 8) * (1 + LW.Tech.fx(world, a).farm) | 0; const cropItem = def.cropItem || 'grain'; const add = A().addItem(world, a, cropItem, q); if (add < q) { world.ground = world.ground || new Map(); const g = world.ground.get(i) || {}; g[cropItem] = (g[cropItem] || 0) + (q - add); world.ground.set(i, g); } b.planted = !!def.perennial; b.crop = 0; if (!def.perennial) world.tiles.fert[i] = Math.max(20, world.tiles.fert[i] - 12); A().practice(a, 'farming', 4); a.counters.farmed = (a.counters.farmed || 0) + 2; world.events.emit('Harvest', { tick: world.tick, agentId: a.id, amount: q, tile: i, first: !world.firsts || !world.firsts['harvest'] }); return DONE; },
   };
 
   const Actions = {

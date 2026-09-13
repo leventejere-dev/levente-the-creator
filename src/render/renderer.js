@@ -20,7 +20,7 @@
     bakeTile(i) {
       const w = this.world; const x = w.xOf(i), y = w.yOf(i); const px = x * PX, py = y * PX;
       LW.Sprites.tile(this.tctx, w, i, px, py);
-      const b = w.buildingAt(i); if (b) LW.Sprites.building(this.tctx, b, px, py, w.tick);
+      const b = w.buildingAt(i); if (b) { if (b.w > 1 || b.h > 1) { for (const j of w.buildingTiles(b)) if (j !== i) LW.Sprites.tile(this.tctx, w, j, w.xOf(j) * PX, w.yOf(j) * PX); } LW.Sprites.building(this.tctx, b, b.x * PX, b.y * PX, w.tick); }
     }
     bakeMinimapBase() {
       if (!this.minimap) return; const w = this.world; const mm = document.createElement('canvas'); mm.width = w.w; mm.height = w.h; const c = mm.getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(this.terrain, 0, 0, w.w, w.h); this.minimapBase = mm;

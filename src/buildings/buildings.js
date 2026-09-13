@@ -23,7 +23,8 @@
     DEFS,
     /** Start a construction site. Divine kinds are completed instantly. */
     create(world, kind, x, y, ownerId) {
-      const def = DEFS[kind]; const b = { id: world.nextIds.building++, kind, x: x | 0, y: y | 0, ownerId: ownerId ?? null, residents: [], progress: def.ticks === 0 ? 1 : 0, delivered: {}, hp: 1, storage: {}, startedTick: world.tick, builtTick: def.ticks === 0 ? world.tick : -1, settlementId: null };
+      const def = DEFS[kind]; const b = { id: world.nextIds.building++, kind, x: x | 0, y: y | 0, w: def.size ? def.size[0] : 1, h: def.size ? def.size[1] : 1, ownerId: ownerId ?? null, residents: [], progress: def.ticks === 0 ? 1 : 0, delivered: {}, hp: 1, storage: {}, startedTick: world.tick, builtTick: def.ticks === 0 ? world.tick : -1, settlementId: null };
+      if (def.records) b.records = [];
       if (kind === 'campfire') { b.fuel = def.fuelTicks; b.lit = true; }
       if (def.farm) { b.crop = 0; b.planted = false; }
       world.addBuilding(b);
@@ -42,7 +43,7 @@
     /** One tick of construction work by agent a. Returns true when completed on this call. */
     work(world, b, a) {
       const def = DEFS[b.kind]; if (b.progress >= 1) return false;
-      const skill = a.skills.building || 0; const rate = (1 / def.ticks) * (0.6 + 0.8 * skill) * (a.needs.energy < 0.2 ? 0.5 : 1);
+      const skill = a.skills.building || 0; const rate = (1 / def.ticks) * (0.6 + 0.8 * skill) * (a.needs.energy < 0.2 ? 0.5 : 1) * LW.Tech.mult(world, a, 'build');
       b.progress = Math.min(1, b.progress + rate);
       LW.Agents.practice(a, 'building', 1);
       if (b.progress >= 1) { this.complete(world, b, a); return true; }
@@ -52,8 +53,10 @@
     complete(world, b, a) {
       const def = DEFS[b.kind];
       {
-        b.progress = 1; b.builtTick = world.tick; world.stats.buildingsBuilt++; world.dirtyTiles.add(world.idx(b.x, b.y));
-        if (def.dwelling && a.home == null) this.moveIn(world, b, a);
+        b.progress = 1; b.builtTick = world.tick; world.stats.buildingsBuilt++; for (const ti of world.buildingTiles(b)) world.dirtyTiles.add(ti);
+        if (def.water) for (const o of world.agentsNear(b.x + 0.5, b.y + 0.5, 14)) LW.Agents.rememberPlace(world, o, 'water', world.idx(b.x, b.y), 255);
+        if (def.perennial) { b.planted = true; b.crop = 0; }
+        if (def.dwelling) { const cur = a.home != null ? world.buildings.get(a.home) : null; if (!cur) this.moveIn(world, b, a); else if ((DEFS[cur.kind].tier || 0) < (def.tier || 0)) { const movers = [a.id, ...cur.residents.filter((id) => id !== a.id)]; for (const rid of movers) { const r = world.agents.get(rid); if (!r) continue; if (b.residents.length >= (def.capacity || 1)) break; this.moveOut(world, r); this.moveIn(world, b, r); } } } // jobb otthon: az egész háztartás átköltözik
         if (def.dwelling && a.partner != null) { const p = world.agents.get(a.partner); if (p && p.home == null) this.moveIn(world, b, p); }
         if (def.dwelling) for (const cid of a.children) { const c = world.agents.get(cid); if (c && c.home == null && LW.Time.ageYears(c.bornTick, world.tick) < world.cfg.agents.adultAge) this.moveIn(world, b, c); }
         if (b.kind === 'campfire') { b.fuel = def.fuelTicks; b.lit = true; }
@@ -100,7 +103,8 @@
           else if (world.tick - b.startedTick > TPD * 200) { this.destroy(world, b, 'félbehagyták'); continue; }
           if (def.farm && b.progress >= 1 && b.planted) {
             const i = world.idx(b.x, b.y), t = world.tiles; const season = LW.Time.season(world.tick);
-            const g = 0.014 * (0.3 + 0.7 * t.fert[i] / 255) * (0.3 + 0.7 * t.moist[i] / 255) * [1, 1.1, 0.6, 0][season];
+            const irr = world.buildingsNear(b.x, b.y, 10).some((o) => o.progress >= 1 && DEFS[o.kind].irrigation) ? 1.4 : 1;
+            const g = (def.cropDays ? 1 / def.cropDays : 0.014) * (0.3 + 0.7 * t.fert[i] / 255) * Math.max(0.3 + 0.7 * t.moist[i] / 255, irr > 1 ? 0.9 : 0) * [1, 1.1, 0.6, 0][season] * irr;
             b.crop = Math.min(1, b.crop + g);
             if (season === 3 && world.tileTemp(i) < -2 && world.rng.chance(0.1)) { b.crop *= 0.5; }
           }
@@ -138,10 +142,11 @@
       const water = LW.Agents.nearestPoi(world, a, 'water');
       let best = -1, bs = -1e9;
       for (let k = 0; k < 40; k++) {
-        const r = kind === 'campfire' ? 2 : 4; const x = LW.clamp(ax + world.rng.int(-r, r), 1, world.w - 2), y = LW.clamp(ay + world.rng.int(-r, r), 1, world.h - 2);
-        const i = world.idx(x, y); const bio = world.tiles.biome[i];
-        if (!world.isPassable(i) || bio === LW.BIOME.RIVER || bio === LW.BIOME.MARSH || bio === LW.BIOME.MOUNTAIN || world.buildingAt(i)) continue;
-        if (world.tiles.trees[i] > 120 && kind !== 'campfire') continue;
+        const def = DEFS[kind]; const sw = def.size ? def.size[0] : 1, sh = def.size ? def.size[1] : 1;
+        const r = kind === 'campfire' ? 2 : def.public ? 6 : 4; const x = LW.clamp(ax + world.rng.int(-r, r), 1, world.w - 1 - sw), y = LW.clamp(ay + world.rng.int(-r, r), 1, world.h - 1 - sh);
+        const i = world.idx(x, y); let ok = true;
+        for (let dy = 0; dy < sh && ok; dy++) for (let dx = 0; dx < sw; dx++) { const j = world.idx(x + dx, y + dy); const bio = world.tiles.biome[j]; if (!world.isPassable(j) || bio === LW.BIOME.RIVER || bio === LW.BIOME.MARSH || bio === LW.BIOME.MOUNTAIN || world.buildingAt(j) || (world.tiles.trees[j] > 120 && kind !== 'campfire')) { ok = false; break; } }
+        if (!ok) continue;
         let s = -world.moveCost(i);
         if (water) s -= LW.dist(x, y, water.x, water.y) * 0.15;
         if (anchor) s -= LW.dist(x, y, ax, ay) * 0.2;

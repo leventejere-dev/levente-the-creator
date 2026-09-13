@@ -22,6 +22,7 @@
     [/\b(kiserletezz|probalj ki|talalj fel|kiserlet|ujat)\b/, 'experiment'], [/\b(beszelj|beszelgess|beszeljetek|barat|baratkozz)\b/, 'socialize'], [/\b(udvarolj|keress parat|szeresd|szerelem|part)\b/, 'flirt'], [/\b(vess|ultess|muveld|gabona|foldet)\b/, 'farm'],
     [/\b(kunyho|haz|otthon|fedezek|menedek)\b/, 'buildShelter'], [/\b(fedezd fel|fedezzetek|nezz korul|nezz szet|jarj|vandorolj|fedez)\b/, 'explore'], [/\b(ass|asd|asatok|foldben)\b/, 'dig'],
   ];
+  const GOAL_HU1 = { stockpile: 'gyűjtök', eat: 'eszem', drink: 'iszom', sleep: 'alszom', makeFire: 'tüzet gyújtok', teach: 'tanítok', craft: 'készítek valamit', experiment: 'kísérletezem', socialize: 'beszélgetek', flirt: 'párt keresek', farm: 'földet művelek', buildShelter: 'otthont építek', explore: 'felfedezek', dig: 'ások' };
   const GOAL_HU = { stockpile: 'gyűjtsön', eat: 'egyen', drink: 'igyon', sleep: 'aludjon', makeFire: 'tüzet gyújtson', teach: 'tanítson', craft: 'készítsen valamit', experiment: 'kísérletezzen', socialize: 'beszélgessen', flirt: 'párt keressen', farm: 'földet műveljen', buildShelter: 'otthont építsen', explore: 'felfedezzen', dig: 'ásson' };
 
   const Dialogue = {
@@ -56,7 +57,8 @@
       return it;
     },
     placeWords(s) {
-      if (has(s, /\b(folyo|viz|to |tohoz|tenger|part|patak|vizhez|folyohoz|itat)\b/)) return 'water';
+      if (has(s, /\b(tenger|tengerhez|tengerpart|ocean|a partra)\b/)) return 'sea';
+      if (has(s, /\b(folyo|viz|to |tohoz|part|patak|vizhez|folyohoz|itat)\b/)) return 'water';
       if (has(s, /\b(erdo|erdobe|fak|fakhoz|liget)\b/)) return 'forest';
       if (has(s, /\b(hegy|domb|hegyre|dombra|csucs|szikla|hegyekbe)\b/)) return 'hill';
       if (has(s, /\b(haza|otthon|otthonodba|kunyhodba|hazadba)\b/)) return 'home';
@@ -70,6 +72,7 @@
       const scan = (r, ok) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const x = ax + dx, y = ay + dy; if (!W.inBounds(x, y)) continue; const i = W.idx(x, y); if (!ok(i)) continue; const d = dx * dx + dy * dy; if (d < bd && d > 1) { bd = d; best = i; } } return best; };
       switch (place) {
         case 'water': { let near = -1, nd = 1e9; for (const p of a.knowledge.places.values()) if (p.k === 'water') { const d = LW.dist(ax, ay, W.xOf(p.i), W.yOf(p.i)); if (d < nd) { nd = d; near = p.i; } } if (near < 0) { scan(25, (i) => LW.isFreshBiome(t.biome[i])); near = best; } if (near < 0) return null; const sh = LW.Agents.tileNear(W, a, near); return sh != null && sh >= 0 ? sh : W.randomNear(W.xOf(near), W.yOf(near), 1); }
+        case 'sea': { scan(60, (i) => t.biome[i] === LW.BIOME.OCEAN); if (best < 0) return null; const sh = LW.Agents.tileNear(W, a, best); return sh != null && sh >= 0 ? sh : W.randomNear(W.xOf(best), W.yOf(best), 2); }
         case 'forest': return scan(30, (i) => t.trees[i] > 80 && W.isPassable(i));
         case 'hill': return scan(40, (i) => (t.biome[i] === LW.BIOME.HILLS || t.biome[i] === LW.BIOME.MOUNTAIN) && W.isPassable(i));
         case 'home': { const h = a.home != null ? W.buildings.get(a.home) : null; return h ? W.idx(h.x, h.y) : null; }
@@ -85,7 +88,7 @@
       const first = !a.memory.episodic.some((m) => m.divine); const P = a.personality;
       if (first) { a.emotions.fear = clamp(a.emotions.fear + 0.35 * (1 - P.bravery), 0, 1); a.emotions.excitement = clamp(a.emotions.excitement + 0.4 * P.curiosity, 0, 1); a.beliefs.creator = clamp(a.beliefs.creator + 0.3, 0, 1); }
       else a.beliefs.creator = clamp(a.beliefs.creator + 0.08, 0, 1);
-      let dTrust = it.tone * 0.18 + (it.kind === 'ask' ? 0.03 : 0) + (it.force ? -0.12 : 0) - (opts && opts.broadcast ? 0.02 : 0);
+      let dTrust = it.tone * 0.18 + (it.kind === 'ask' ? 0.03 : 0) + (it.force ? (it.tone > 0 ? 0 : -0.04) : 0) - (opts && opts.broadcast ? 0.02 : 0);
       if (it.tone > 0) dTrust *= 0.6 + P.optimism * 0.6; if (it.tone < 0) dTrust *= 0.6 + (1 - P.patience) * 0.6;
       a.beliefs.trust = clamp((a.beliefs.trust || 0) + dTrust, -1, 1);
       if (it.tone < -0.3) { a.emotions.fear = clamp(a.emotions.fear + 0.3, 0, 1); a.emotions.anger = clamp(a.emotions.anger + 0.2 * P.dominance, 0, 1); }
@@ -98,6 +101,7 @@
     /** A hang egy emberhez szól. Visszaad: { reply, utt, how, it, att } — az egyik reply/utt üres. */
     respond(world, a, text, opts) {
       opts = opts || {}; const it = opts.intent || this.parse(world, text); const rng = world.rng;
+      const full = world.creatorSettings && world.creatorSettings.obedience === 'full'; if (full) { it.force = true; opts.allowForce = true; } // a Teremtő szava parancs
       if (!a.vocab) a.vocab = {}; if (a.beliefs.trust == null) a.beliefs.trust = 0;
       const stage = LW.Agents.stage(world, a); const infant = stage === 'infant';
       const asleep = a.sleeping;
@@ -109,7 +113,7 @@
         if (it.cmd === 'follow' || it.cmd === 'protect') { targetId = it.personId != null && it.personId !== a.id ? it.personId : null; if (targetId == null) { it.cmd = null; } }
         if (it.cmd) { if (it.cmd === 'go' && tile == null) it.cmd = 'explore'; const forced = !!(it.force && opts.allowForce); LW.God.command(world, a, it.cmd, { tile, targetId, force: forced }); how = forced ? 'forced' : LW.God.interpret(world, a); }
       }
-      if (it.nudge && !infant) { a.nudge = { goal: it.nudge, until: world.tick + T.TICKS_PER_DAY, text: excerpt(text) }; nudged = it.nudge; if (it.nudge === 'sleep' || it.nudge === 'eat' || it.nudge === 'drink') a.lastDecisionTick = -1000; LW.Memory.add(world, a, { type: 'divine', text: `a hang azt akarta, hogy ${GOAL_HU[it.nudge] || it.nudge}`, importance: 0.5, emotion: 'excitement', intensity: 0.4, divine: true }); }
+      if (it.nudge && !infant) { a.nudge = { goal: it.nudge, until: world.tick + T.TICKS_PER_DAY * (full ? 3 : 1), text: excerpt(text), strong: !!full }; nudged = it.nudge; if (full) { a.lastDecisionTick = -1000; if (a.plan && !a.plan.done) a.plan.done = true; } else if (it.nudge === 'sleep' || it.nudge === 'eat' || it.nudge === 'drink') a.lastDecisionTick = -1000; LW.Memory.add(world, a, { type: 'divine', text: `a hang azt akarta, hogy ${GOAL_HU[it.nudge] || it.nudge}`, importance: 0.5, emotion: 'excitement', intensity: 0.4, divine: true }); }
       const att = this.attitude(a);
       const res = { it, att, how, nudged, reply: '', utt: null, asleep };
       if (asleep && rng.chance(0.6)) { res.reply = ''; res.asleep = true; return res; } // alszik: hallja ugyan, de csak álmában
@@ -139,11 +143,11 @@
         else if (how === 'misinterpret') S.push(pick(['Azt hiszem, értem, mit akarsz.', 'Valami ilyesmit kérsz… megpróbálom.']));
         else if (how === 'fear') S.push(pick(['Félek tőled. Elbújok.', 'Ne! Hagyj!', 'Miért pont én?']));
         else if (how === 'ignore') S.push(pick([`Nem. Most más a dolgom: ${this.doing(world, a)}.`, 'Nem teszem meg. Nem parancsolsz nekem.', 'Majd ha én is úgy akarom.']));
-        else if (how === 'forced') S.push(pick(['A testem mozdul, nem én.', 'Nem én akarom. Mégis megyek.']));
+        else if (how === 'forced') S.push(att === 'hostile' ? pick(['A testem mozdul, nem én.', 'Nem én akarom. Mégis megyek.']) : att === 'devout' || att === 'warm' ? pick(['Ahogy kívánod. Megyek.', 'Igen. Máris.', 'Meglesz, ahogy mondtad.']) : pick(['Rendben. Megteszem.', 'Jó, megyek.', 'Ha ezt akarod, teszem.']));
         else S.push(pick(['Ezt nem tudom megtenni.', 'Nem tudom, hogyan.']));
       } else if (nudged) {
         const g = GOAL_HU[nudged] || nudged;
-        S.push(att === 'hostile' || att === 'wary' ? pick([`Hogy ${g}? Majd meglátom.`, 'Ne mondd meg, mit tegyek.']) : pick([`Hogy ${g}… igen, erre gondolok.`, `Jó ötlet, hogy ${g}. Talán.`, 'Erre már én is gondoltam.']));
+        S.push(world.creatorSettings && world.creatorSettings.obedience === 'full' ? pick([`Rendben, ${GOAL_HU1[nudged] || g}.`, `Ahogy mondod: ${GOAL_HU1[nudged] || g}.`, 'Meglesz.', 'Máris hozzálátok.']) : att === 'hostile' || att === 'wary' ? pick([`Hogy ${g}? Majd meglátom.`, 'Ne mondd meg, mit tegyek.']) : pick([`Hogy ${g}… igen, erre gondolok.`, `Jó ötlet, hogy ${g}. Talán.`, 'Erre már én is gondoltam.']));
       }
       // kérdés
       if (it.kind === 'ask') S.push(...this.answer(world, a, it, att));

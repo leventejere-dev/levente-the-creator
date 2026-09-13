@@ -16,7 +16,7 @@
     shelter_building: { name: 'Fedezéképítés', era: 'primitive', prereq: [], items: { wood: 4, fiber: 2 }, difficulty: 0.45, need: 'warmth', skill: 'building', buildings: ['lean_to'], wow: 'Első fedezék', desc: 'Egymásnak támasztott ágak kizárják az esőt és a szelet.' },
     fiber_twisting: { name: 'Kötélfonás', era: 'primitive', prereq: [], items: { fiber: 3 }, difficulty: 0.4, skill: 'crafting', minSkill: 0.1, desc: 'A sodort növényi rost kötelet ad.' },
     basket_weaving: { name: 'Kosárfonás', era: 'primitive', prereq: ['fiber_twisting'], items: { fiber: 6 }, difficulty: 0.55, need: 'food', skill: 'crafting', minSkill: 0.2, recipes: ['basket'], wow: 'Első kosár', desc: 'Többet vihetsz, többet gyűjthetsz.' },
-    spear_making: { name: 'Lándzsakészítés', era: 'primitive', prereq: ['stone_knapping'], items: { wood: 1, flint: 1, fiber: 1 }, difficulty: 0.5, need: 'food', skill: 'crafting', minSkill: 0.2, recipes: ['spear'], wow: 'Első lándzsa', desc: 'Éles kő egy nyélen. Megkezdődhet a vadászat.' },
+    spear_making: { name: 'Lándzsakészítés', era: 'primitive', prereq: ['stone_knapping'], items: { wood: 1, flint: 1, fiber: 1 }, difficulty: 0.5, need: 'food', skill: 'crafting', minSkill: 0.2, recipes: ['spear'], wow: 'Első lándzsakészítés', desc: 'Éles kő egy nyélen. Megkezdődhet a vadászat.' },
     fishing: { name: 'Halászat', era: 'primitive', prereq: [], items: { wood: 1, fiber: 1 }, nearby: 'water', difficulty: 0.5, need: 'food', skill: 'hunting', minSkill: 0.05, wow: 'Első fogás', desc: 'A víz tele van étellel annak, aki megtanulja kivenni.' },
     woodworking: { name: 'Famegmunkálás', era: 'primitive', prereq: ['stone_knapping'], items: { wood: 4 }, difficulty: 0.55, skill: 'crafting', minSkill: 0.3, desc: 'Fa formázása kőszerszámmal.' },
     hut_construction: { name: 'Kunyhóépítés', era: 'primitive', prereq: ['shelter_building', 'woodworking', 'fiber_twisting'], items: { wood: 6, fiber: 2 }, difficulty: 0.75, need: 'warmth', skill: 'building', minSkill: 0.35, buildings: ['hut'], wow: 'Első kunyhó', desc: 'Igazi otthon: falak, tető, hely a holminak.' },
@@ -55,10 +55,11 @@
     knows(a, id) { return a.knowledge.techs.has(id); },
     /** Discoveries an agent could try right now (prereqs known, not yet known, not hidden). */
     eligible(world, a) {
-      const out = [];
+      const out = []; let pop = null;
       for (const id in D) {
         const d = D[id]; if (d.hidden || a.knowledge.techs.has(id)) continue;
         if (d.prereq && !d.prereq.every((p) => a.knowledge.techs.has(p))) continue;
+        if (d.minPop) { if (pop == null) pop = world.agentsNear(a.x, a.y, 24, a.id).length + 1; if (pop < d.minPop) continue; } // a nagy dolgokhoz sok ember kell
         if (d.minSkill && (a.skills[d.skill] || 0) + (a.knowledge.progress[id] || 0) * 0.3 < d.minSkill) continue; // experience must come first
         out.push(id);
       }
@@ -82,7 +83,8 @@
       const need = d.need ? (1 - (a.needs[d.need] ?? 1)) : 0;
       const prog = a.knowledge.progress[d.id] || 0;
       let difficulty = d.difficulty; if (d.boosts) for (const k in d.boosts) if (a.knowledge.techs.has(k)) difficulty -= d.boosts[k];
-      return LW.clamp01(cfg.experimentBase * (1 - Math.max(0.05, difficulty)) * (0.5 + p.intelligence) * (0.5 + p.creativity) * (1 + 0.6 * skill) * (1 + need) * (1 + 1.5 * prog));
+      const era = LW.Tree ? LW.Tree.eraOf(d.id) : 0; const inst = LW.Tree ? LW.Tree.buildingBonus(world, a.x, a.y, 'discovery', 16) : 0;
+      return LW.clamp01(cfg.experimentBase * (1 - Math.max(0.05, difficulty)) * (0.5 + p.intelligence) * (0.5 + p.creativity) * (1 + 0.6 * skill) * (1 + need) * (1 + 1.5 * prog) * (1 + (LW.Tech.fx ? LW.Tech.fx(world, a).discovery : 0)) * (1 + inst) * (era >= 5 ? 1.6 : 1));
     },
     attempt(world, a, id) {
       const d = D[id]; if (!d || a.knowledge.techs.has(id)) return false;
@@ -121,7 +123,7 @@
       a.knowledge.techs.add(id); delete a.knowledge.progress[id];
       const first = !world.firsts || !world.firsts['tech:' + id];
       const ev = { tick: world.tick, agentId: a.id, tech: id, source, teacherId: teacher ? teacher.id : undefined, first, tile: world.idx(a.x | 0, a.y | 0) };
-      if (source === 'taught' || source === 'observed_practice' || source === 'inherited') world.events.emit('KnowledgeTransferred', ev);
+      if (source === 'taught' || source === 'observed_practice' || source === 'inherited' || source === 'read') world.events.emit('KnowledgeTransferred', ev);
       else { world.stats.discoveries++; world.events.emit('DiscoveryMade', ev); }
       if (!d.hidden && source !== 'taught') { LW.Agents.memory(world, a, { type: 'discovery', text: `rájöttem: ${d.name.toLowerCase()}`, importance: first ? 0.95 : 0.7, emotion: 'pride', intensity: first ? 0.9 : 0.6, tech: id }); a.emotions.pride = Math.min(1, a.emotions.pride + 0.6); a.emotions.joy = Math.min(1, a.emotions.joy + 0.4); a.needs.curiosity = 1; }
     },
@@ -145,6 +147,7 @@
     },
     checkLost(world, id, lastHolder) {
       for (const o of world.agents.values()) if (o.knowledge.techs.has(id)) return;
+      for (const b of world.buildings.values()) if (b.records && b.progress >= 1 && b.records.includes(id)) return; // leírva megmarad
       if (world.firsts && world.firsts['tech:' + id]) world.events.emit('KnowledgeLost', { tick: world.tick, tech: id, agentId: lastHolder ? lastHolder.id : undefined });
     },
   };

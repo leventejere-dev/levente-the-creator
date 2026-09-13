@@ -13,10 +13,12 @@
       this.ear = h('input', { type: 'checkbox', id: 'chat-ear', title: 'Isteni fül: minden nem titkos szót értesz. Kikapcsolva a szavakat hallgatózással kell megtanulnod.' });
       this.ear.addEventListener('change', () => { this.world.creatorSettings.divineEar = this.ear.checked; this.app.save(true); this.rerender(); });
       this.llmState = h('span', { class: 'tiny', id: 'chat-llm' });
+      this.obey = h('input', { type: 'checkbox', id: 'chat-obey', title: 'Teljes engedelmesség: amit mondasz, megteszik — ha kell, mindent félretéve. Kikapcsolva a maguk feje szerint döntenek (engedelmeskednek, félreértik, félnek, vagy nem törődnek vele).' });
+      this.obey.addEventListener('change', () => { this.world.creatorSettings.obedience = this.obey.checked ? 'full' : 'free'; this.ui.cmdMode = this.obey.checked ? 'force' : 'message'; this.ui.refreshGodBar(); this.app.save(true); this.ui.toast(this.obey.checked ? 'Teljes engedelmesség' : 'Szabad akarat', this.obey.checked ? 'A szavad parancs: megteszik, amit mondasz.' : 'A maguk feje szerint döntenek arról, amit kérsz.', true); });
       LW.Voice.init();
       this.speak = h('input', { type: 'checkbox', id: 'chat-speak', title: 'Hang: az emberek szavai és válaszai hallhatók (a böngésző beszédszintézisével)' }); this.speak.checked = LW.Voice.ttsSupported && LW.Voice.speakOn;
       this.speak.addEventListener('change', () => { LW.Voice.setSpeak(this.speak.checked); if (this.speak.checked) LW.Voice.speak('Hallasz engem, Teremtő?', { priority: true }); });
-      box.appendChild(h('div', { class: 'chat-head' }, this.sel, h('label', { class: 'tiny', title: 'Isteni fül' }, this.ear, ' isteni fül'), h('label', { class: 'tiny', title: 'Hang' }, this.speak, ' hang'), this.llmState));
+      box.appendChild(h('div', { class: 'chat-head' }, this.sel, h('label', { class: 'tiny', title: 'Isteni fül' }, this.ear, ' isteni fül'), h('label', { class: 'tiny', title: 'Hang' }, this.speak, ' hang'), h('label', { class: 'tiny', title: 'Engedelmesség' }, this.obey, ' parancs'), this.llmState));
       this.stream = h('div', { class: 'chat-stream', id: 'chat-stream' }); box.appendChild(this.stream);
       this.input = h('textarea', { rows: 2, placeholder: 'Szólj hozzájuk… (Enter: küldés, Shift+Enter: új sor)' });
       this.input.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey) { e.preventDefault(); this.send(); } });
@@ -24,7 +26,7 @@
       this.mic = h('button', { class: 'mic', title: 'Szólj hozzájuk mikrofonon — isteni hangként. Kattints, beszélj, a mondat végén magától elküldi.', onclick: () => this.toggleMic() }, 'Mikrofon');
       if (!LW.Voice.sttSupported) { this.mic.disabled = true; this.mic.title = 'Ebben a böngészőben nincs beszédfelismerés (Chrome-ban működik).'; }
       box.appendChild(h('div', { class: 'chat-input' }, this.input, this.mic, this.btn));
-      box.appendChild(h('p', { class: 'tiny chat-hint' }, 'Kérhetsz (menj a folyóhoz, építs, fedezd fel, kövesd X-et), kérdezhetsz (hogy vagy? mit csinálsz? mit jelent az, hogy…?), vagy csak beszélhetsz. Ők a maguk feje szerint döntenek — és a saját nyelvükön beszélnek egymással.'));
+      box.appendChild(h('p', { class: 'tiny chat-hint' }, 'Kérhetsz (menj a folyóhoz, építs, fedezd fel, kövesd X-et, gyűjts, vadássz, kísérletezz), kérdezhetsz (hogy vagy? mit csinálsz? mit jelent az, hogy…?), vagy csak beszélhetsz. „Parancs” bekapcsolva megteszik; kikapcsolva a maguk feje szerint döntenek. Egymással a saját nyelvükön beszélnek.'));
     }
     attachWorld(world) {
       this.world = world; this.stream.innerHTML = ''; this.queue = [];
@@ -35,6 +37,7 @@
       items.sort((x, y) => x.t - y.t || x.ms - y.ms);
       for (const it of items) { if (it.chat) this.renderChat(it.chat); else this.renderUtt(it.utt, false); }
       this.ear.checked = !!(world.creatorSettings && world.creatorSettings.divineEar);
+      this.obey.checked = !!(world.creatorSettings && world.creatorSettings.obedience === 'full'); this.ui.cmdMode = this.obey.checked ? 'force' : 'message';
       this.refreshTargets(true); this.refreshState(); this.scrollEnd();
     }
     refreshTargets(force) {
@@ -101,7 +104,7 @@
           if (!r.replies.length) { const s2 = D.log(w, { who: 'sys', sys: true, text: 'Senki nem felelt.' }); this.renderChat(s2); }
         } else {
           const a = w.agents.get(+target); if (!a) { this.renderChat(D.log(w, { who: 'sys', sys: true, text: 'Ő már nincs köztünk.' })); return; }
-          const res = D.respond(w, a, text, { allowForce: this.ui.cmdMode === 'force' });
+          const res = D.respond(w, a, text, { allowForce: this.ui.cmdMode === 'force' || this.obey.checked });
           w.events.emit('CreatorSpoke', { tick: w.tick, agentId: a.id, text: `A hang ${a.name} nevét szólította: „${excerpt(text)}”` });
           await this.deliver(a, res, text);
         }

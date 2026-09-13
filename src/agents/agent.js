@@ -88,6 +88,7 @@
       const st = this.stage(world, a); let s = world.cfg.agents.baseSpeed;
       if (st === 'infant') s *= 0.35; else if (st === 'child') s *= 0.8; else if (st === 'elder') s *= 0.75;
       s *= 0.6 + 0.4 * a.health; if (a.needs.energy < 0.15) s *= 0.6; if (a.pregnancy && (world.tick - a.pregnancy.since) > TPD * 180) s *= 0.8;
+      s *= LW.Tech.mult(world, a, 'speed');
       return s;
     },
 
@@ -177,7 +178,7 @@
       if (a.sleeping) { const q = fx.inside ? LW.Buildings.def(fx.inside).sleep : (fx.fire ? 0.45 : 0.3); a.needs.energy = Math.min(1, a.needs.energy + 3.0 * (0.5 + q) * dt); }
       else a.needs.energy = Math.max(0, a.needs.energy - cfg.needDrainPerDay.energy * dt);
       // warmth
-      const clothing = a.inv.clothes ? LW.ITEMS.clothes.warmth : 0;
+      let clothing = 0; for (const k in a.inv) { const it = LW.ITEMS[k]; if (it && it.warmth && a.inv[k] > 0 && it.warmth > clothing) clothing = it.warmth; } clothing += LW.Tech.fx(world, a).warmth;
       const cover = fx.inside ? 0 : Math.min(0.6, world.tiles.trees[i] / 255 * 0.7); // tree cover blunts rain and wind
       const huddle = fx.inside ? 0 : Math.min(4, world.agentsNear(a.x, a.y, 1.5, a.id).length * 2);
       const activity = a.sleeping ? 0 : 3;
@@ -226,7 +227,7 @@
       const age = this.age(world, a); const lon = a.genes.physiology.longevity;
       if (age > lon - 10 && rng.chance(0.00025 * Math.exp((age - lon) / 5))) { this.die(world, a, 'öregség'); return; }
       // baseline illness
-      if (rng.chance(0.0006 * (1 - a.genes.physiology.immunity * 0.7) * (a.needs.food < 0.3 ? 2 : 1))) { a.injury = Math.min(0.8, a.injury + 0.3); a.emotions.stress += 0.2; this.memory(world, a, { type: 'illness', text: 'megbetegedtem', importance: 0.4, emotion: 'fear', intensity: 0.4 }); world.events.emit('AgentIll', { tick: world.tick, agentId: a.id }); }
+      if (rng.chance(0.0006 * (1 - a.genes.physiology.immunity * 0.7) * (a.needs.food < 0.3 ? 2 : 1) * (1 - 0.6 * Math.min(1, LW.Tech.fx(world, a).health)))) { a.injury = Math.min(0.8, a.injury + 0.3); a.emotions.stress += 0.2; this.memory(world, a, { type: 'illness', text: 'megbetegedtem', importance: 0.4, emotion: 'fear', intensity: 0.4 }); world.events.emit('AgentIll', { tick: world.tick, agentId: a.id }); }
       // predators at night handled per tick; here: pregnancy & development
       if (a.pregnancy) { if (world.tick - a.pregnancy.since >= cfg.gestationDays * TPD) this.birth(world, a); else if (a.health < 0.3 && rng.chance(0.03)) { a.pregnancy = null; a.emotions.grief = Math.min(1, a.emotions.grief + 0.5); this.memory(world, a, { type: 'loss', text: 'elvesztettem a meg nem született gyermekem', importance: 0.8, emotion: 'grief', intensity: 0.8 }); } }
       const st = this.stage(world, a);

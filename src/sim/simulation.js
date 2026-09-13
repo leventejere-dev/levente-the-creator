@@ -13,6 +13,7 @@
       LW.Ecology.init(world);
       if (!world.history) new LW.History(world);
       world.ground = world.ground || new Map();
+      LW.Speech.init(world);
       world.rebuildBuckets();
     }
 
@@ -48,12 +49,13 @@
           if (((w.tick + a.id) & 1) === 0) LW.Perception.scan(w, a);
           if (LW.Brain.shouldDecide(w, a)) { LW.Brain.decide(w, a); a.lastDecisionTick = w.tick; }
           LW.Actions.step(w, a);
+          if (((w.tick + a.id) & 3) === 0) LW.Social.ambient(w, a);
           this.nightHazards(w, a);
         } catch (e) { w.onError(e, a, null); a.plan = null; }
       }
       LW.Buildings.step(w);
       if (w.tick % T.TICKS_PER_HOUR === 0) { const h = LW.Time.hour(w.tick); for (const a of w.agents.values()) if (a.id % 24 === h) LW.Memory.consolidate(w, a); }
-      if (w.tick % T.TICKS_PER_DAY === 0) { LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); for (const [i, g] of w.ground) { LW.Agents.spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); } }
+      if (w.tick % T.TICKS_PER_DAY === 0) { LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w); for (const [i, g] of w.ground) { LW.Agents.spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); } }
       if (w.tick % T.TICKS_PER_YEAR === 0) w.history.yearEnd();
       w.meta.lastSimulatedTick = w.tick;
       const dt = now() - t0; this.perf.tickUs = this.perf.tickUs * 0.98 + dt * 1000 * 0.02; if (dt * 1000 > this.perf.tickMaxUs) this.perf.tickMaxUs = dt * 1000; this.perf._acc++;
@@ -105,7 +107,7 @@
         const n = Math.min(300, detailTicks - dt);
         for (let k = 0; k < n; k++) this.tick();
         dt += n; doneTicks += n;
-        if (cb && cb.progress) cb.progress(doneTicks / total, `Simulating ${LW.Time.span(doneTicks)} of ${LW.Time.span(total)}…`);
+        if (cb && cb.progress) cb.progress(doneTicks / total, `Szimulálás: ${LW.Time.span(doneTicks)} / ${LW.Time.span(total)}…`);
         if (dt < detailTicks) schedule(stepDetail); else finish();
       };
       if (cb && cb.progress) cb.progress(0, 'A világ ébred…');

@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · tests/invariants.js — automated simulation invariants (ROADMAP.md §4) */
+/* LEVENTE — THE CREATOR · tests/invariants.js — automated szimulációs invariánsok (ROADMAP.md §4) */
 (function (LW) {
   'use strict';
 
@@ -44,23 +44,23 @@
     },
     /** Full suite. Returns {passed, failed, results[]} */
     suite(log = () => {}) {
-      const results = []; const push = (name, ok, info) => { results.push({ name, ok, info }); log(`${ok ? 'PASS' : 'FAIL'} ${name}${info ? ' — ' + info : ''}`); };
+      const results = []; const push = (name, ok, info) => { results.push({ name, ok, info }); log(`${ok ? 'OK' : 'HIBA'} ${name}${info ? ' — ' + info : ''}`); };
       try {
         const { sim, metrics } = LW.runHeadless({ seed: 777, years: 3, mode: 'detail', checkInvariants: true, log: () => {} });
-        push('3 detailed years without exception', metrics.simErrors.length === 0, metrics.simErrors.length ? metrics.simErrors[0].msg.slice(0, 200) : '');
-        push('invariants hold during detailed run', metrics.errors === 0, metrics.invariantFailures.length ? JSON.stringify(metrics.invariantFailures[0].res.slice(0, 3)) : '');
-        const rt = this.roundTrip(sim); push('save → load → save identical', rt.ok, `${(rt.size / 1024).toFixed(0)} KB`);
-        rt.sim2.runTicks(200); push('restored world keeps running', rt.sim2.errors.length === 0 && this.check(rt.sim2.world).length === 0);
+        push('3 részletes év kivétel nélkül', metrics.simErrors.length === 0, metrics.simErrors.length ? metrics.simErrors[0].msg.slice(0, 200) : '');
+        push('az invariánsok igazak a részletes futásban', metrics.errors === 0, metrics.invariantFailures.length ? JSON.stringify(metrics.invariantFailures[0].res.slice(0, 3)) : '');
+        const rt = this.roundTrip(sim); push('mentés → betöltés → mentés azonos', rt.ok, `${(rt.size / 1024).toFixed(0)} KB`);
+        rt.sim2.runTicks(200); push('a visszatöltött világ tovább fut', rt.sim2.errors.length === 0 && this.check(rt.sim2.world).length === 0);
         const m2 = LW.runHeadless({ seed: 777, years: 40, mode: 'macro', checkInvariants: true, log: () => {} }).metrics;
-        push('40 macro years without exception', m2.simErrors.length === 0, m2.simErrors.length ? m2.simErrors[0].msg.slice(0, 200) : '');
-        push('invariants hold during macro run', m2.errors === 0, m2.invariantFailures.length ? JSON.stringify(m2.invariantFailures[0].res.slice(0, 3)) : '');
-        const det = this.determinism(4242, 3000); push('same seed → identical world', det.ok);
+        push('40 makró-év kivétel nélkül', m2.simErrors.length === 0, m2.simErrors.length ? m2.simErrors[0].msg.slice(0, 200) : '');
+        push('az invariánsok igazak a makró-futásban', m2.errors === 0, m2.invariantFailures.length ? JSON.stringify(m2.invariantFailures[0].res.slice(0, 3)) : '');
+        const det = this.determinism(4242, 3000); push('ugyanaz a seed → ugyanaz a világ', det.ok);
         // tech prerequisites respected
         let prereqOk = true; for (const a of sim.world.agents.values()) for (const tId of a.knowledge.techs) { const d = LW.Tech.D[tId]; if (d.prereq) for (const p of d.prereq) if (!a.knowledge.techs.has(p) && !d.hidden) prereqOk = false; }
-        push('technology prerequisites respected', prereqOk);
+        push('a technológiai előfeltételek teljesülnek', prereqOk);
         // catch-up consistency: N days of catch-up advance the tick count exactly
-        const s3 = LW.Simulation.newWorld(99, JSON.parse(JSON.stringify(LW.CONFIG)), 0); s3.world.meta.lastRealTimeMs = 0; const r = s3.catchUp(5 * 3600 * 1000, { sync: true }); push('catch-up advances the exact owed ticks', r.worldTicks === r.owedTicks, `${r.worldTicks} ticks (${LW.Time.span(r.worldTicks)})`);
-      } catch (e) { push('suite crashed', false, String(e && e.stack || e)); }
+        const s3 = LW.Simulation.newWorld(99, JSON.parse(JSON.stringify(LW.CONFIG)), 0); s3.world.meta.lastRealTimeMs = 0; const r = s3.catchUp(5 * 3600 * 1000, { sync: true }); push('a felzárkózás pontosan a hiányzó tickeket lépi', r.worldTicks === r.owedTicks, `${r.worldTicks} ticks (${LW.Time.span(r.worldTicks)})`);
+      } catch (e) { push('a tesztsor összeomlott', false, String(e && e.stack || e)); }
       return { passed: results.filter((r) => r.ok).length, failed: results.filter((r) => !r.ok).length, results };
     },
   };

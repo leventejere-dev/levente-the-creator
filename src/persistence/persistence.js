@@ -14,7 +14,7 @@
   const encArr = (arr) => ({ t: arr.constructor.name, d: b64encode(new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength)) });
   const decArr = (o) => { const u8 = b64decode(o.d); const buf = u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength); return o.t === 'Float32Array' ? new Float32Array(buf) : o.t === 'Uint16Array' ? new Uint16Array(buf) : new Uint8Array(buf); };
 
-  const TRANSIENT = new Set(['plan', 'why', 'env', 'threat', 'engagedWith']);
+  const TRANSIENT = new Set(['plan', 'why', 'env', 'threat', 'engagedWith', 'lastSaid']);
   function serializeAgent(a) {
     const o = {};
     for (const k in a) { if (TRANSIENT.has(k) || k[0] === '_') continue; o[k] = a[k]; }
@@ -31,6 +31,7 @@
     a.relationships = new Map(o.relationships || []);
     a.plan = null; a.why = null; a.env = null; a.threat = null; if (a.engagedUntil == null) a.engagedUntil = 0; if (a.lastDecisionTick == null) a.lastDecisionTick = -1000;
     if (!a.palette) a.palette = LW.Genetics.palette(a.genes.appearance);
+    if (!a.vocab) a.vocab = {}; if (a.beliefs && a.beliefs.trust == null) a.beliefs.trust = 0; if (!a.chatHistory) a.chatHistory = [];
     return a;
   }
 
@@ -45,7 +46,7 @@
         weather: w.weather.toJSON(), language: w.language.toJSON(),
         agents: [...w.agents.values()].map(serializeAgent), deceased: [...w.deceased.values()],
         buildings: [...w.buildings.values()], settlements: [...w.settlements.values()], landmarks: w.landmarks,
-        history: w.history.toJSON(),
+        history: w.history.toJSON(), speech: LW.Speech.toJSON(w),
       };
     },
     restore(state) {
@@ -65,6 +66,7 @@
       for (const st of state.settlements) w.settlements.set(st.id, st);
       w.landmarks = state.landmarks || [];
       LW.History.fromJSON(w, state.history);
+      LW.Speech.fromJSON(w, state.speech);
       const sim = new LW.Simulation(w);
       sim.setPreset(state.meta.speedPreset || w.cfg.time.defaultPreset);
       return sim;

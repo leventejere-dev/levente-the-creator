@@ -82,7 +82,7 @@
         this.sim.world.meta.lease = { sessionId: LW.Cloud.sessionId, at: Date.now() };
         const fresh = LW.Persistence.toJSON(this.sim);
         const text = Store.canGzip ? 'GZ:' + await Store.deflate(fresh) : fresh;
-        await LW.Cloud.save(text, `world ${this.sim.world.name} · year ${this.sim.world.year}`);
+        await LW.Cloud.save(text, `${this.sim.world.name} · ${this.sim.world.year}. év`);
         this.ui.refreshCloud();
       } catch (e) { console.warn('cloud save', e); } finally { this.pendingCloud = false; }
     }
@@ -116,11 +116,11 @@
   function headless() {
     const out = $('#headless'); out.classList.remove('hidden'); const lines = []; const log = (s) => { lines.push(s); out.textContent = lines.join('\n'); };
     const years = +q.get('headless') || 5; const seed = q.has('seed') ? (+q.get('seed') >>> 0) : 12345; const mode = q.get('mode') || 'mixed';
-    log(`LEVENTE — THE CREATOR · headless run · seed ${seed} · ${years} years · ${mode}`);
-    setTimeout(() => { const { metrics } = LW.runHeadless({ seed, years, mode, log, checkInvariants: true }); log(`\n${metrics.ms} ms · errors ${metrics.errors} · sim errors ${metrics.simErrors.length}`); log('\nFIRSTS'); for (const k in metrics.firsts) log(`  Y${metrics.firsts[k].year} ${metrics.firsts[k].title}`); log('\nCHRONICLE (last 80)'); for (const c of metrics.chronicle.slice(-80)) log('  ' + c); log('\nEVENTS ' + JSON.stringify(metrics.eventsByClass)); window.__metrics = metrics; }, 30);
+    log(`LEVENTE — THE CREATOR · fej nélküli futás · seed ${seed} · ${years} év · ${mode}`);
+    setTimeout(() => { const { metrics } = LW.runHeadless({ seed, years, mode, log, checkInvariants: true }); log(`\n${metrics.ms} ms · errors ${metrics.errors} · sim errors ${metrics.simErrors.length}`); log('\nFIRSTS'); for (const k in metrics.firsts) log(`  ${metrics.firsts[k].year}. év ${metrics.firsts[k].title}`); log('\nCHRONICLE (last 80)'); for (const c of metrics.chronicle.slice(-80)) log('  ' + c); log('\nEVENTS ' + JSON.stringify(metrics.eventsByClass)); window.__metrics = metrics; }, 30);
   }
   function tests() {
-    const out = $('#headless'); out.classList.remove('hidden'); const lines = ['LEVENTE — THE CREATOR · simulation invariants']; const log = (s) => { lines.push(s); out.textContent = lines.join('\n'); }; out.textContent = lines.join('\n');
+    const out = $('#headless'); out.classList.remove('hidden'); const lines = ['LEVENTE — THE CREATOR · szimulációs invariánsok']; const log = (s) => { lines.push(s); out.textContent = lines.join('\n'); }; out.textContent = lines.join('\n');
     setTimeout(() => { const r = LW.Invariants.suite(log); log(`\n${r.passed} passed · ${r.failed} failed`); window.__tests = r; }, 30);
   }
 

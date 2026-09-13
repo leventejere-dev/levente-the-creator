@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 19:29 */
+/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 20:27 */
 
 /* ===== core/rng.js ===== */
 /* LEVENTE — THE CREATOR · core/rng.js
@@ -62,7 +62,7 @@
       for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(this.next() * (i + 1)); const t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
       return arr;
     }
-    getState() { return [this.a, this.b, this.c, this.d]; }
+    getState() { return [this.a >>> 0, this.b >>> 0, this.c >>> 0, this.d >>> 0]; }
     setState(s) { this.a = s[0] >>> 0; this.b = s[1] >>> 0; this.c = s[2] >>> 0; this.d = s[3] >>> 0; }
     /** derive an independent child generator (for world-gen sub-steps) */
     fork(label) { return new Rng((hash32(label) ^ this.int(0, 0x7fffffff)) >>> 0); }
@@ -151,7 +151,7 @@
       emotionalCap: 12,
       poiCap: 200,
       carryCapacity: 12,
-      needDrainPerDay: { food: 0.75, water: 0.8, energy: 1.2, social: 0.35, affection: 0.12, curiosity: 0.2 },
+      needDrainPerDay: { food: 0.75, water: 0.8, energy: 1.2, social: 0.55, affection: 0.12, curiosity: 0.2 },
       starvationHealthPerDay: 0.06,
       dehydrationHealthPerDay: 0.2,
       hypothermiaHealthPerDay: 0.08,
@@ -264,7 +264,7 @@
     tier: { camp: 'tábor', hamlet: 'tanya', village: 'falu', town: 'mezőváros', city: 'város', metropolis: 'nagyváros' },
     tierBecame: { camp: 'táborrá', hamlet: 'tanyává', village: 'faluvá', town: 'mezővárossá', city: 'várossá', metropolis: 'nagyvárossá' },
     shape: { continent: 'Egy kontinens', archipelago: 'Egy szigetvilág', twin: 'Két földrész világa' },
-    eventType: { AgentBorn: 'Születés', AgentDied: 'Halál', Killing: 'Gyilkosság', CoupleFormed: 'Szerelem', CoupleBroke: 'Szakítás', Pregnancy: 'Terhesség', DiscoveryMade: 'Felfedezés', KnowledgeLost: 'Elveszett tudás', BuildingCompleted: 'Építés', BuildingDestroyed: 'Pusztulás', SettlementFounded: 'Település', SettlementGrew: 'Növekedés', SettlementAbandoned: 'Elnéptelenedés', SettlementResettled: 'Újranépesedés', ResourceFound: 'Lelet', WildfireStarted: 'Erdőtűz', BeliefFormed: 'Hit', ConflictOccurred: 'Összecsapás', StrangerArrived: 'Idegen', Harvest: 'Aratás', WeatherChanged: 'Időjárás' },
+    eventType: { AgentBorn: 'Születés', AgentDied: 'Halál', Killing: 'Gyilkosság', CoupleFormed: 'Szerelem', CoupleBroke: 'Szakítás', Pregnancy: 'Terhesség', DiscoveryMade: 'Felfedezés', KnowledgeLost: 'Elveszett tudás', BuildingCompleted: 'Építés', BuildingDestroyed: 'Pusztulás', SettlementFounded: 'Település', SettlementGrew: 'Növekedés', SettlementAbandoned: 'Elnéptelenedés', SettlementResettled: 'Újranépesedés', ResourceFound: 'Lelet', WildfireStarted: 'Erdőtűz', BeliefFormed: 'Hit', ConflictOccurred: 'Összecsapás', StrangerArrived: 'Idegen', Harvest: 'Aratás', WeatherChanged: 'Időjárás', WordCoined: 'Szó', LanguageNamed: 'Nyelv', LanguageSplit: 'Nyelvszakadás', SecretTongue: 'Titkos nyelv', CreatorSpoke: 'A hang', CreatorAnswered: 'Válasz' },
   };
   const HU = {
     ...M,
@@ -1506,7 +1506,7 @@
       if (listener.memory.episodic.some((x) => x.source === 'told' && x.text === m.text && x.tick === m.tick)) return null;
       const rng = world.rng; let text = m.text, intensity = m.intensity, importance = m.importance * 0.8;
       let distorted = false;
-      if (rng.chance((1 - teller.personality.intelligence) * 0.3 + teller.personality.humor * 0.1)) { distorted = true; intensity = LW.clamp01(intensity * (1 + rng.range(0.1, 0.6))); importance = LW.clamp01(importance * 1.1); text = text + ' (as told)'; }
+      if (rng.chance((1 - teller.personality.intelligence) * 0.3 + teller.personality.humor * 0.1)) { distorted = true; intensity = LW.clamp01(intensity * (1 + rng.range(0.1, 0.6))); importance = LW.clamp01(importance * 1.1); text = text + ' (így mesélték)'; }
       const copy = { ...m, text, intensity, importance, confidence: m.confidence * 0.8, source: 'told', teller: teller.id, tick: m.tick, distorted };
       listener.memory.episodic.push(copy);
       if (copy.divine) { listener.beliefs.creator = LW.clamp01(listener.beliefs.creator + 0.15 * copy.confidence * (0.5 + listener.personality.optimism) * (0.5 + teller.personality.sociability)); }
@@ -1629,7 +1629,8 @@
         knowledge: { techs: new Set(), places: new Map(), progress: {} },
         memory: { episodic: [], emotional: [], social: new Map() },
         relationships: new Map(),
-        beliefs: { creator: 0, world: {} },
+        beliefs: { creator: 0, trust: 0, world: {} },
+        vocab: {}, langId: opts.langId ?? (opts.parents && opts.parents[0] != null && world.agents.get(opts.parents[0]) ? world.agents.get(opts.parents[0]).langId : (world.langs && world.langs.size ? LW.Speech.firstLang(world).id : 1)), chatHistory: [],
         inv: {}, home: null, partner: null, parents: opts.parents || [null, null], children: [],
         x: opts.x, y: opts.y, facing: 1,
         plan: null, lastDecisionTick: -1000 + (rng.int(0, 7)), engagedUntil: 0, divineRequest: null,
@@ -2122,9 +2123,14 @@
       plan: (c, a) => a._follow ? { steps: [{ op: 'follow', target: a._follow.id, n: 12 }], target: a._follow.id } : null,
     },
     socialize: {
-      applicable: (c, a) => !c.infant && c.nearby.length > 0 && N(a).social < 0.85,
-      score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { if (A().stage(c.world, o) === 'infant' || o.sleeping) continue; const r = a.relationships.get(o.id); if (r && c.tick - r.last < 20) continue; const aff = r ? 0.3 + r.friendship * 0.7 + (r.status === 'family' ? 0.3 : 0) + (a.partner === o.id ? 0.4 : 0) - r.resentment : 0.35; const d = LW.dist(a.x, a.y, o.x, o.y); const s = u(N(a).social) * 0.95 * (0.5 + P(a).sociability) * Math.max(0.1, aff) * (1 - d / 25); if (s > best) { best = s; who = o; } } a._socialTarget = who; return [best + (E(a).loneliness * 0.3), who ? [`magány ${LW.pct(1 - N(a).social)}`, `vele: ${who.name}`] : []]; },
-      plan: (c, a) => a._socialTarget ? { steps: [{ op: 'moveTo', i: c.world.idx(a._socialTarget.x | 0, a._socialTarget.y | 0), near: 1 }, { op: 'interact', target: a._socialTarget.id, kind: 'converse', n: 4 }], target: a._socialTarget.id } : null,
+      applicable: (c, a) => !c.infant && N(a).social < 0.85 && (c.nearby.length > 0 || N(a).social < 0.5),
+      score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { if (A().stage(c.world, o) === 'infant' || o.sleeping) continue; const r = a.relationships.get(o.id); if (r && c.tick - r.last < 20) continue; const aff = r ? 0.3 + r.friendship * 0.7 + (r.status === 'family' ? 0.3 : 0) + (a.partner === o.id ? 0.4 : 0) - r.resentment : 0.35; const d = LW.dist(a.x, a.y, o.x, o.y); const s = u(N(a).social) * 0.95 * (0.5 + P(a).sociability) * Math.max(0.1, aff) * (1 - d / 25); if (s > best) { best = s; who = o; } } a._socialTarget = who; a._socialSeek = null;
+        if (!who && N(a).social < 0.5) { // senki sincs a közelben: elindul oda, ahol utoljára látott valakit, akit ismer
+          let seek = null, bs = 0; for (const [id, m] of a.memory.social) { if (m.lastTile < 0 || !c.world.agents.has(id) || c.tick - m.lastSeen > LW.TIME.TICKS_PER_DAY * 30) continue; const o = c.world.agents.get(id); const r = a.relationships.get(id); const aff = r ? 0.3 + r.friendship * 0.7 + (a.partner === id ? 0.5 : 0) - r.resentment : 0.3; const d = LW.dist(a.x, a.y, c.world.xOf(m.lastTile), c.world.yOf(m.lastTile)); if (d < 2 || d > 60) continue; const s = aff * (1 - d / 80); if (s > bs) { bs = s; seek = { id, tile: m.lastTile, name: o.name }; } }
+          if (seek) { a._socialSeek = seek; return [u(N(a).social) * 0.8 * (0.5 + P(a).sociability) * Math.max(0.3, bs * 2) + E(a).loneliness * 0.3, [`magány ${LW.pct(1 - N(a).social)}`, `keresi: ${seek.name}`]]; }
+        }
+        return [best + (E(a).loneliness * 0.3), who ? [`magány ${LW.pct(1 - N(a).social)}`, `vele: ${who.name}`] : []]; },
+      plan: (c, a) => a._socialTarget ? { steps: [{ op: 'moveTo', i: c.world.idx(a._socialTarget.x | 0, a._socialTarget.y | 0), near: 1 }, { op: 'interact', target: a._socialTarget.id, kind: 'converse', n: 4 }], target: a._socialTarget.id } : a._socialSeek ? { steps: [{ op: 'moveTo', i: a._socialSeek.tile, near: 2 }], tag: 'seek:people' } : null,
     },
     flirt: {
       applicable: (c, a) => c.adult && c.nearby.length > 0,
@@ -2319,6 +2325,7 @@
         try { if (!g.applicable(ctx, a)) continue; } catch (e) { continue; }
         let [s, factors] = g.score(ctx, a); if (!(s > 0)) continue;
         if (a.failStreak && a.failStreak.goal === id && a.failStreak.count >= 3 && world.tick - a.failStreak.tick < 32) { s *= 0.3; factors = [...factors, `sorra kudarc (×${a.failStreak.count})`]; }
+        if (a.nudge && a.nudge.goal === id && world.tick < a.nudge.until) { s = s * 1.4 + 0.25; factors = [...factors, 'a hang sugallata']; } // a Teremtő szava: erősebb késztetés, nem parancs
         s += world.rng.gauss(0, sigma);
         cand.push({ id, s, factors });
       }
@@ -2612,7 +2619,9 @@
       a.counters.talks++; t.counters.talks++;
       if (!wasFriend && ra.friendship >= 0.3 && ra.status === 'stranger') { ra.status = 'acquaintance'; }
       if (ra.friendship >= 0.3 && rt.friendship >= 0.3 && ra.status !== 'family' && ra.status !== 'partner' && ra.status !== 'dating' && !ra.friendEvent) { ra.friendEvent = true; rt.friendEvent = true; world.events.emit('FriendshipFormed', { tick: world.tick, agentId: a.id, otherId: t.id, first: !world.firsts || !world.firsts['friendship'] }); }
-      // knowledge transfer, either direction
+      // szavak: aki beszél, szót talál vagy mutogat; a másik tanul, néha visszaszól
+      LW.Speech.say(world, a, t); if (world.rng.chance(0.6)) LW.Speech.say(world, t, a);
+      // knowledge transfer, either direction (a közös nyelv segít)
       this.transfer(world, a, t, ra); this.transfer(world, t, a, rt);
       // where things are: people tell each other about places
       for (const [x, y] of [[a, t], [t, a]]) { const pl = [...x.knowledge.places.values()]; for (let k = 0; k < 3 && pl.length; k++) { const p = world.rng.pick(pl); if (p.k !== 'fire') A().rememberPlace(world, y, p.k, p.i, p.q); } }
@@ -2630,7 +2639,7 @@
       if (hidden.length && world.rng.chance(0.3)) LW.Tech.learn(world, listener, world.rng.pick(hidden), 'taught', teller);
       if (!cand.length) return;
       const id = world.rng.pick(cand); const d = LW.Tech.D[id]; const cfg = world.cfg.social;
-      const p = cfg.conversationTransferBase * (0.5 + teller.personality.sociability) * (0.5 + listener.personality.intelligence) * (0.5 + r.friendship) * (1 - d.difficulty * 0.5);
+      const p = cfg.conversationTransferBase * (0.5 + teller.personality.sociability) * (0.5 + listener.personality.intelligence) * (0.5 + r.friendship) * (1 - d.difficulty * 0.5) * (0.5 + 0.5 * LW.Speech.intelligibility(teller, listener));
       if (world.rng.chance(p)) LW.Tech.learn(world, listener, id, 'taught', teller);
       else listener.knowledge.progress[id] = Math.min(0.95, (listener.knowledge.progress[id] || 0) + world.cfg.tech.hintProgress);
     },
@@ -2722,6 +2731,19 @@
       world.events.emit('Gift', { tick: world.tick, agentId: a.id, otherId: t.id, item, n, importance: 0.1 });
       if (LW.ITEMS[item] && LW.ITEMS[item].food && A().stage(world, t) !== 'infant' && t.needs.food < 0.6) A().eat(world, t, item);
     },
+    /** Rövid szóváltás: aki egymás mellett dolgozik, ül a tűznél, az beszél is — terv nélkül, gyakran. */
+    ambient(world, a) {
+      if (a.sleeping || a.engagedUntil > world.tick || LW.Agents.stage(world, a) === 'infant') return;
+      const near = world.agentsNear(a.x, a.y, 1.8, a.id); if (!near.length) return;
+      const t = near[world.rng.int(0, near.length - 1)]; if (t.sleeping || t.engagedUntil > world.tick || LW.Agents.stage(world, t) === 'infant') return;
+      const ra = R().ensure(world, a, t), rt = R().ensure(world, t, a);
+      if (world.tick - (ra.lastChat || -1000) < 12) return;
+      if (!world.rng.chance(0.25 * (0.4 + a.personality.sociability) * (ra.resentment > 0.6 ? 0.2 : 1))) return;
+      ra.lastChat = world.tick; rt.lastChat = world.tick; ra.familiarity = b01(ra.familiarity + 0.01); rt.familiarity = b01(rt.familiarity + 0.01); ra.friendship = b01(ra.friendship + 0.003); rt.friendship = b01(rt.friendship + 0.003);
+      a.needs.social = b01(a.needs.social + 0.06); t.needs.social = b01(t.needs.social + 0.05); a.emotions.loneliness *= 0.9; t.emotions.loneliness *= 0.9;
+      a.facing = t.x > a.x ? 1 : 0; t.facing = a.x > t.x ? 1 : 0;
+      LW.Speech.say(world, a, t); if (world.rng.chance(0.5)) LW.Speech.say(world, t, a);
+    },
     /** Daily: breakups, dating time-outs. */
     daily(world, a) {
       if (a.partner != null) {
@@ -2796,6 +2818,233 @@
 })(globalThis.LW || (globalThis.LW = {}));
 
 
+/* ===== language/speech.js ===== */
+/* LEVENTE — THE CREATOR · language/speech.js
+ * Kialakuló nyelvek. Senki nem kap szavakat: aki mondani akar valamit és nincs rá szava,
+ * kitalál egyet; a hallgató megtanulja (néha elrontja); a csoportok szava lassan eltér,
+ * és ha két település már nem érti egymást, két nyelv lesz belőle. Aki neheztel a
+ * Teremtőre, titkos szavakat sugdos, hogy a hang ne értse. A Teremtő a saját szótárát
+ * hallgatózással építi (isteni füllel minden nem titkos szót ért). (spec §60–§61)
+ */
+(function (LW) {
+  'use strict';
+  const T = LW.TIME;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  // fogalom → magyar jelentés (a szavak ezekre a fogalmakra születnek)
+  const CONCEPTS = {
+    i: 'én', you: 'te', we: 'mi', they: 'ők', person: 'ember', child: 'gyerek', mother: 'anya', father: 'apa', friend: 'barát', partner: 'pár', love: 'szeretet', stranger: 'idegen', enemy: 'ellenség', name: 'név',
+    water: 'víz', food: 'étel', berries: 'bogyó', roots: 'gyökér', meat: 'hús', fish: 'hal', wood: 'fa', stone: 'kő', flint: 'kova', fire: 'tűz', home: 'otthon', tool: 'szerszám', spear: 'lándzsa', hide: 'bőr', clay: 'agyag', grain: 'gabona', salt: 'só',
+    river: 'folyó', lake: 'tó', sea: 'tenger', forest: 'erdő', hill: 'domb', mountain: 'hegy', rain: 'eső', storm: 'vihar', snow: 'hó', cold: 'hideg', warm: 'meleg', night: 'éjszaka', day: 'nappal', sun: 'nap', moon: 'hold', wind: 'szél', animal: 'állat', beast: 'vad', danger: 'veszély',
+    go: 'menni', come: 'jönni', give: 'adni', take: 'venni', eat: 'enni', drink: 'inni', sleep: 'aludni', build: 'építeni', make: 'csinálni', hunt: 'vadászni', gather: 'gyűjteni', look: 'nézni', know: 'tudni', teach: 'tanítani', help: 'segíteni', fight: 'harcolni', speak: 'beszélni', want: 'akarni',
+    good: 'jó', bad: 'rossz', big: 'nagy', small: 'kicsi', many: 'sok', none: 'semmi', yes: 'igen', no: 'nem', here: 'itt', there: 'ott', far: 'messze', near: 'közel', new: 'új', old: 'régi',
+    death: 'halál', birth: 'születés', spirit: 'szellem', creator: 'teremtő', sky: 'ég', voice: 'hang', secret: 'titok',
+  };
+  const ROLE = {}; for (const c of ['i', 'you', 'we', 'they', 'person', 'child', 'mother', 'father', 'friend', 'partner', 'stranger', 'enemy']) ROLE[c] = 'S'; for (const c of ['go', 'come', 'give', 'take', 'eat', 'drink', 'sleep', 'build', 'make', 'hunt', 'gather', 'look', 'know', 'teach', 'help', 'fight', 'speak', 'want']) ROLE[c] = 'V';
+  const GOAL_CONCEPTS = {
+    eat: ['i', 'eat', 'food'], drink: ['i', 'drink', 'water'], sleep: ['i', 'sleep', 'night'], getWarm: ['cold', 'fire', 'warm'], careForChild: ['child', 'give', 'food'], shareFood: ['you', 'take', 'food'], followParent: ['mother', 'go'], socialize: ['you', 'friend', 'good'], flirt: ['you', 'good', 'love'], mate: ['love', 'you'], stockpile: ['gather', 'food', 'many', 'cold'], buildShelter: ['we', 'build', 'home'], helpBuild: ['help', 'build', 'home'], makeFire: ['make', 'fire'], tendFire: ['fire', 'wood'], craft: ['make', 'tool', 'stone'], experiment: ['make', 'new', 'know'], dig: ['stone', 'take', 'here'], farm: ['grain', 'make', 'many'], explore: ['go', 'far', 'there', 'look'], fight: ['bad', 'enemy', 'fight'], teach: ['know', 'teach', 'you'], pickup: ['take', 'here'], mourn: ['death', 'bad'], rest: ['sleep', 'here'], flee: ['danger', 'go', 'beast'], divine: ['voice', 'sky', 'creator'],
+  };
+  const STARTER = ['i', 'you', 'water', 'food', 'go', 'good', 'danger', 'fire', 'no', 'here'];
+  const CONS_POOL = ['m', 'n', 'l', 'r', 'k', 't', 's', 'v', 'd', 'th', 'sh', 'h', 'b', 'g', 'z', 'f', 'p', 'y', 'w', 'ch', 'kh', 'ny', 'rr'];
+  const VOW_POOL = ['a', 'e', 'i', 'o', 'u', 'ae', 'ia', 'ei', 'ou', 'y'];
+
+  const Speech = {
+    CONCEPTS, GOAL_CONCEPTS,
+    gloss(c) { return CONCEPTS[c] || c; },
+    /** Régi mentések és új világok: nyelvi állapot biztosítása. */
+    init(world) {
+      if (!world.langs) world.langs = new Map();
+      if (!world.creatorLexicon) world.creatorLexicon = {};
+      if (!world.creatorSettings) world.creatorSettings = { divineEar: true };
+      if (!world.chatLog) world.chatLog = [];
+      if (!world.speechLog) world.speechLog = [];
+      if (!world.langs.size) { const L = world.language; this.newLang(world, { cons: L.cons, vows: L.vows, patterns: L.patterns, founderId: null }); }
+      if (world.nextIds.lang == null) world.nextIds.lang = Math.max(1, ...[...world.langs.keys()]) + 1;
+      for (const a of world.agents.values()) { if (!a.vocab) a.vocab = {}; if (a.langId == null || !world.langs.has(a.langId)) a.langId = this.firstLang(world).id; if (a.beliefs && a.beliefs.trust == null) a.beliefs.trust = 0; }
+      if (!world._speechHooked) { world._speechHooked = true; world.events.on('StrangerArrived', (ev) => { const a = world.agents.get(ev.agentId); if (a) this.foreignTongue(world, a); }); }
+    },
+    firstLang(world) { let best = null; for (const l of world.langs.values()) if (!best || l.id < best.id) best = l; return best; },
+    lang(world, id) { return world.langs.get(id) || this.firstLang(world); },
+    newLang(world, o) {
+      const rng = world.rng; const id = world.nextIds.lang == null ? 1 : world.nextIds.lang++; if (world.nextIds.lang == null) world.nextIds.lang = 2;
+      const cons = o.cons ? o.cons.slice() : pickN(rng, CONS_POOL, rng.int(6, 11)), vows = o.vows ? o.vows.slice() : pickN(rng, VOW_POOL, rng.int(3, 6));
+      const l = { id, name: null, cons, vows, patterns: o.patterns ? o.patterns.slice() : rng.pick([['CV', 'CVC', 'V'], ['CV', 'CVC'], ['CV', 'V', 'VC'], ['CVC', 'CV', 'CVV']]), order: o.order || rng.weighted(['SOV', 'SVO', 'VSO'], [5, 4, 1]), words: o.words ? { ...o.words } : {}, parent: o.parent ?? null, born: world.tick, founderId: o.founderId ?? null, speakers: 0, secret: 0, place: o.place || null };
+      world.langs.set(id, l); return l;
+    },
+    syllable(rng, l) { const p = rng.pick(l.patterns); let s = ''; for (const ch of p) s += ch === 'C' ? rng.pick(l.cons) : rng.pick(l.vows); return s; },
+    /** Új szó egy fogalomra: a nyelv hangkészletéből, ütközés nélkül. */
+    coin(world, l, concept, avoid) {
+      const rng = world.rng; const taken = new Set(Object.values(l.words)); if (avoid) for (const c in avoid) taken.add(avoid[c].w);
+      for (let k = 0; k < 12; k++) { const n = rng.chance(0.55) ? 1 : 2; let w = ''; for (let i = 0; i < n; i++) w += this.syllable(rng, l); w = w.replace(/(.)\1\1+/g, '$1$1'); if (w.length >= 2 && !taken.has(w)) return w; }
+      return this.syllable(rng, l) + this.syllable(rng, l) + rng.pick(l.vows);
+    },
+    /** Hangváltozás: egy hang cserélődik, lekopik vagy hozzáragad. */
+    mutate(rng, l, w) {
+      const r = rng.f(); const i = rng.int(0, w.length - 1); const ch = w[i]; const isV = /[aeiouy]/.test(ch);
+      if (r < 0.6) return w.slice(0, i) + (isV ? rng.pick(l.vows.filter((v) => v.length === 1).concat(['a'])) : rng.pick(l.cons.filter((c) => c.length === 1).concat(['n']))) + w.slice(i + 1);
+      if (r < 0.8 && w.length > 3) return w.slice(0, -1);
+      return w + rng.pick(l.vows.filter((v) => v.length === 1).concat(['a']));
+    },
+    /** Idegen a peremen túlról: saját nyelv, néhány kész szóval. */
+    foreignTongue(world, a) {
+      const l = this.newLang(world, { founderId: a.id }); a.langId = l.id; a.vocab = a.vocab || {};
+      const n = world.rng.int(6, 10); const cs = world.rng.shuffle(Object.keys(CONCEPTS).filter((c) => STARTER.includes(c) || world.rng.chance(0.15))).slice(0, n);
+      for (const c of cs) { const w = this.coin(world, l, c, a.vocab); a.vocab[c] = { w, s: 0 }; l.words[c] = w; }
+      l.speakers = 1;
+    },
+    // ---------------- miről beszélnek
+    topics(world, a, t) {
+      const rng = world.rng; const out = []; const add = (c) => { if (c && CONCEPTS[c] && !out.includes(c)) out.push(c); };
+      const g = a.plan && !a.plan.done ? a.plan.goal : null; const gc = GOAL_CONCEPTS[g]; if (gc) for (const c of rng.shuffle(gc.slice()).slice(0, 2)) add(c);
+      const N = a.needs, E = a.emotions; const dyn = [];
+      if (N.food < 0.35) dyn.push('food'); if (N.water < 0.35) dyn.push('water'); if (N.warmth < 0.4) dyn.push('cold'); if (E.fear > 0.4) dyn.push('danger'); if (E.grief > 0.4) dyn.push('death'); if (E.love > 0.5) dyn.push('love'); if (E.anger > 0.5) dyn.push('bad'); if (E.joy > 0.6) dyn.push('good');
+      const ws = world.weather && world.weather.state; const cold = world.tileTemp(world.idx(a.x | 0, a.y | 0)) < 0; if (ws === 'rain') dyn.push(cold ? 'snow' : 'rain'); else if (ws === 'storm') dyn.push(cold ? 'snow' : 'storm');
+      if (LW.Time.isNight(world.tick)) dyn.push('night');
+      const recentDivine = a.memory.episodic.length && a.memory.episodic.slice(-6).some((m) => m.divine && world.tick - m.tick < T.TICKS_PER_DAY * 3); if (recentDivine) dyn.push(rng.pick(['voice', 'sky', 'creator']));
+      if (t && a.partner === t.id) dyn.push('partner'); if (t && a.children.includes(t.id)) dyn.push('child'); if (t && t.langId !== a.langId) dyn.push('stranger');
+      if (a.inv.spear) dyn.push('spear'); if (a.home != null) dyn.push('home');
+      for (const c of rng.shuffle(dyn).slice(0, rng.int(1, 2))) add(c);
+      if (!out.length) add(rng.pick(['you', 'good', 'here', 'look', 'i']));
+      if (out.length < 2 && rng.chance(0.6)) add(rng.pick(['you', 'i', 'we', 'good', 'here']));
+      return out.slice(0, 4);
+    },
+    /** Egy megszólalás: a beszélő szavai (vagy mutogatás), a hallgató tanul, a szó vándorol. */
+    say(world, a, t, concepts) {
+      const rng = world.rng; const l = this.lang(world, a.langId); a.vocab = a.vocab || {};
+      const cs = concepts || this.topics(world, a, t);
+      const words = [], gestures = [];
+      for (const c of cs) {
+        let v = a.vocab[c];
+        if (!v) { if (rng.chance(0.55 * (0.4 + a.personality.creativity * 0.8 + a.personality.sociability * 0.3))) { const w = this.coin(world, l, c, a.vocab); v = a.vocab[c] = { w, s: 0 }; world.events.emit('WordCoined', { tick: world.tick, agentId: a.id, word: w, concept: c, langId: l.id }); } else { gestures.push(c); continue; } }
+        words.push([c, v.w, v.s ? 1 : 0]);
+      }
+      // szórend a nyelv szerint
+      const key = (x) => { const r = ROLE[x[0]] || 'O'; return l.order === 'SOV' ? (r === 'S' ? 0 : r === 'O' ? 1 : 2) : l.order === 'VSO' ? (r === 'V' ? 0 : r === 'S' ? 1 : 2) : (r === 'S' ? 0 : r === 'V' ? 1 : 2); };
+      words.sort((x, y) => key(x) - key(y));
+      // titkos szavak: aki neheztel a hangra, és a társa is, új szavakat sugdos
+      if (t && words.length && a.beliefs.creator > 0.4 && a.beliefs.trust < -0.25 && t.beliefs.trust < -0.1 && (a.lastSecretTick == null || world.tick - a.lastSecretTick > T.TICKS_PER_DAY * 20) && rng.chance(0.2)) {
+        let n = 0; for (const wd of rng.shuffle(words.slice()).slice(0, 2)) { const c = wd[0]; const w = this.coin(world, l, c, a.vocab); a.vocab[c] = { w, s: 1 }; t.vocab[c] = { w, s: 1 }; wd[1] = w; wd[2] = 1; n++; }
+        if (n) { a.lastSecretTick = world.tick; t.lastSecretTick = world.tick; world.events.emit('SecretTongue', { tick: world.tick, agentId: a.id, otherId: t.id, n }); }
+      }
+      // tanulás
+      if (t) { const r = t.relationships.get(a.id); for (const [c, w, s] of words) this.learn(world, t, a, c, w, s, r); }
+      this.grammar(world, l); const fl = this.fluency(world, a);
+      const utt = { t: world.tick, a: a.id, b: t ? t.id : null, l: l.id, w: words, g: gestures, f: Math.round(fl * 100) / 100, p: fl > 0.5 && l.particle && words.length >= 3 ? l.particle : null, q: null };
+      if (words.some((x) => x[0] === 'many') && l.plural) utt.pl = l.plural;
+      a.lastSaid = utt; world.speechLog.push(utt); if (world.speechLog.length > 80) world.speechLog.splice(0, world.speechLog.length - 80);
+      world.events.emit('Utterance', { tick: world.tick, agentId: a.id, otherId: t ? t.id : null, utt });
+      return utt;
+    },
+    learn(world, listener, speaker, c, w, s, r) {
+      const rng = world.rng; listener.vocab = listener.vocab || {}; const have = listener.vocab[c]; const ll = this.lang(world, listener.langId);
+      const young = LW.Time.ageYears(listener.bornTick, world.tick) < 14; const fam = r ? r.familiarity : 0;
+      if (!have) { if (rng.chance(0.45 * (0.5 + listener.personality.intelligence) * (young ? 1.4 : 1) * (0.7 + fam * 0.6))) { const mut = rng.chance(0.04 * (1.6 - listener.personality.intelligence)); listener.vocab[c] = { w: mut ? this.mutate(rng, ll, w) : w, s }; } }
+      else if (have.w !== w) { const p = 0.1 * (0.4 + (r ? r.respect + r.friendship * 0.5 : 0) + speaker.personality.dominance * 0.5) * (young ? 1.5 : 1); if (rng.chance(clamp(p, 0, 0.5))) listener.vocab[c] = { w, s: s || have.s }; }
+      // idegen nyelvű beszélő szavait tanulva az ember lassan átáll arra a nyelvre, amelyiket a többség körülötte beszéli
+      if (speaker.langId !== listener.langId && rng.chance(0.03)) { const near = world.agentsNear(listener.x, listener.y, 12, listener.id); let same = 0, other = 0; for (const o of near) { if (o.langId === speaker.langId) other++; else if (o.langId === listener.langId) same++; } if (other > same + 1) listener.langId = speaker.langId; }
+    },
+    /** Mennyire folyékony a beszéde (0–1): szókincs, gyakorlat, a nyelv érettsége. Ezt tanulják, ha beszélnek. */
+    fluency(world, a) {
+      const l = world.langs.get(a.langId); const words = Object.keys(a.vocab || {}).length; const talks = a.counters ? a.counters.talks : 0;
+      const f = Math.min(1, words / 40) * 0.55 + Math.min(1, talks / 120) * 0.25 + Math.min(1, (l ? Object.keys(l.words).length : 0) / 60) * 0.2;
+      return Math.max(0, Math.min(1, f));
+    },
+    /** Egy nyelv nyelvtani apróságai a szókincs növekedésével: kötőszó-szócska, kérdő-szócska, többes jel. */
+    grammar(world, l) {
+      const n = Object.keys(l.words).length;
+      if (!l.particle && n >= 20) l.particle = this.syllable(world.rng, l);
+      if (!l.plural && n >= 32) l.plural = this.syllable(world.rng, l).replace(/^(.)/, (m) => m);
+      if (!l.question && n >= 45) l.question = this.syllable(world.rng, l);
+      return l;
+    },
+    /** Két ember mennyire érti egymást (0–1). Kevés szóval még a mutogatás is elég. */
+    intelligibility(a, b) {
+      if (!a.vocab || !b.vocab) return 1; let common = 0, same = 0; for (const c in a.vocab) { const v = b.vocab[c]; if (!v) continue; common++; if (v.w === a.vocab[c].w) same++; }
+      if (common < 4) return 1; return same / common;
+    },
+    // ---------------- napi: konszenzus, nevek, szakadás, gyerekek, imák
+    daily(world) {
+      const rng = world.rng; const cfgA = world.cfg.agents;
+      // gyerekek a nevelőiktől tanulnak
+      for (const a of world.agents.values()) {
+        if (LW.Time.ageYears(a.bornTick, world.tick) >= cfgA.adultAge) continue; a.vocab = a.vocab || {};
+        const cg = LW.Agents.caregivers(world, a).concat(LW.Agents.household(world, a).filter((o) => o !== a)); if (!cg.length) continue;
+        const c = rng.pick(cg); if (!c.vocab) continue; const ks = Object.keys(c.vocab).filter((k) => !a.vocab[k]); if (!ks.length) continue; a.langId = c.langId;
+        for (const k of rng.shuffle(ks).slice(0, 2)) if (rng.chance(0.5)) a.vocab[k] = { w: c.vocab[k].w, s: c.vocab[k].s };
+      }
+      // konszenzus nyelvenként
+      const counts = new Map(); for (const l of world.langs.values()) { l.speakers = 0; l.secret = 0; counts.set(l.id, {}); }
+      for (const a of world.agents.values()) { const l = world.langs.get(a.langId); if (!l) continue; l.speakers++; const cnt = counts.get(l.id); for (const c in a.vocab) { const v = a.vocab[c]; const m = cnt[c] || (cnt[c] = {}); m[v.w] = (m[v.w] || 0) + 1; if (v.s) l.secret++; } }
+      for (const l of world.langs.values()) {
+        const cnt = counts.get(l.id); const words = {}; for (const c in cnt) { let bw = null, bn = 0; for (const w in cnt[c]) if (cnt[c][w] > bn) { bn = cnt[c][w]; bw = w; } if (bw) words[c] = bw; }
+        if (l.speakers > 0) l.words = words;
+        if (!l.name && l.speakers >= 2 && Object.keys(l.words).length >= 10) { const base = l.words.we || l.words.person || l.words.speak || l.words[Object.keys(l.words)[0]]; l.name = base[0].toUpperCase() + base.slice(1); const st = this.homeOf(world, l); l.place = st ? st.name : null; world.events.emit('LanguageNamed', { tick: world.tick, name: l.name, langId: l.id, speakers: l.speakers, place: l.place, tile: st ? world.idx(st.x | 0, st.y | 0) : undefined }); }
+      }
+      // nyelvszakadás: ugyanannak a nyelvnek két települése már nem érti egymást
+      if (world.tick % (T.TICKS_PER_DAY * 10) < T.TICKS_PER_DAY) this.splitCheck(world);
+      // imák: aki hisz és bajban van, az éghez beszél
+      for (const a of world.agents.values()) { if (a.beliefs.creator < 0.55 || a.sleeping) continue; const N = a.needs; const need = N.food < 0.25 ? 'food' : N.water < 0.25 ? 'water' : N.warmth < 0.3 ? 'warm' : a.emotions.grief > 0.6 ? 'death' : a.emotions.fear > 0.6 ? 'danger' : null; if (need && rng.chance(0.25)) this.say(world, a, null, [rng.pick(['creator', 'sky', 'voice']), a.beliefs.trust < -0.2 ? 'bad' : 'give', need]); }
+    },
+    homeOf(world, l) { const by = new Map(); for (const a of world.agents.values()) { if (a.langId !== l.id) continue; const s = LW.Settlements.at(world, a.x, a.y); if (!s) continue; by.set(s.id, (by.get(s.id) || 0) + 1); } let best = null, bn = 0; for (const [id, n] of by) if (n > bn) { bn = n; best = world.settlements.get(id); } return best; },
+    splitCheck(world) {
+      const groups = new Map(); // langId → settlementId → agents
+      for (const a of world.agents.values()) { const s = LW.Settlements.at(world, a.x, a.y); if (!s || s.abandonedTick) continue; const g = groups.get(a.langId) || new Map(); groups.set(a.langId, g); const arr = g.get(s.id) || []; arr.push(a); g.set(s.id, arr); }
+      for (const [langId, g] of groups) {
+        const sets = [...g.entries()].filter(([, arr]) => arr.length >= 3); if (sets.length < 2) continue;
+        const parent = world.langs.get(langId); if (!parent) continue;
+        const cons = (arr) => { const cnt = {}; for (const a of arr) for (const c in a.vocab) { const m = cnt[c] || (cnt[c] = {}); m[a.vocab[c].w] = (m[a.vocab[c].w] || 0) + 1; } const out = {}; for (const c in cnt) { let bw = null, bn = 0; for (const w in cnt[c]) if (cnt[c][w] > bn) { bn = cnt[c][w]; bw = w; } out[c] = bw; } return out; };
+        const vocs = sets.map(([sid, arr]) => ({ sid, arr, v: cons(arr) }));
+        for (let i = 0; i < vocs.length; i++) for (let j = i + 1; j < vocs.length; j++) {
+          const A = vocs[i], B = vocs[j]; let common = 0, same = 0; for (const c in A.v) if (B.v[c]) { common++; if (A.v[c] === B.v[c]) same++; }
+          if (common < 12 || same / common >= 0.45) continue;
+          const small = A.arr.length <= B.arr.length ? A : B; const st = world.settlements.get(small.sid);
+          const l = this.newLang(world, { cons: parent.cons, vows: parent.vows, patterns: parent.patterns, order: parent.order, words: small.v, parent: parent.id, place: st ? st.name : null });
+          const base = small.v.we || small.v.person || small.v[Object.keys(small.v)[0]]; l.name = base[0].toUpperCase() + base.slice(1); l.speakers = small.arr.length;
+          for (const a of small.arr) a.langId = l.id;
+          world.events.emit('LanguageSplit', { tick: world.tick, name: l.name, langId: l.id, parentId: parent.id, place: st ? st.name : 'egy csoport', tile: st ? world.idx(st.x | 0, st.y | 0) : undefined });
+          return; // évente legfeljebb néhány szakadás; a többi majd a következő ellenőrzéskor
+        }
+      }
+    },
+    // ---------------- a Teremtő füle
+    lexKey(langId, w) { return `${langId}:${w}`; },
+    known(world, langId, w) { return world.creatorLexicon[this.lexKey(langId, w)] || null; },
+    /** Egy megszólalás olvasata a Teremtőnek: eredeti szavak + amit ért belőle. */
+    render(world, utt) {
+      const ear = world.creatorSettings && world.creatorSettings.divineEar; const parts = [], gl = []; let hidden = 0;
+      const fl = utt.f == null ? 0.3 : utt.f; const sep = fl < 0.25 ? ' … ' : fl < 0.5 ? ' · ' : ' ';
+      utt.w.forEach(([c, w, s], k) => { let word = w; if (utt.pl && c === 'many') word = w + utt.pl; parts.push(word); if (utt.p && k === 0 && utt.w.length >= 3) parts.push(utt.p); const kn = this.known(world, utt.l, w); const understood = kn || (ear && !s); gl.push(understood ? this.gloss(c) : '?'); if (!understood) hidden++; });
+      for (const c of utt.g) { parts.push(`*${this.gestureWord(c)}*`); gl.push(this.gloss(c)); }
+      return { text: parts.join(sep), gloss: gl.join(' '), hidden, full: hidden === 0, fluency: fl };
+    },
+    gestureWord(c) { return ({ i: 'magára mutat', you: 'rád mutat', we: 'körbemutat', here: 'a földre mutat', there: 'a távolba mutat', food: 'a szájához nyúl', eat: 'a szájához nyúl', water: 'ivást mímel', drink: 'ivást mímel', sleep: 'a fejét oldalra hajtja', cold: 'összehúzza magát', fire: 'a tűzre mutat', danger: 'hátrahőköl', go: 'int', come: 'magához int', big: 'széttárja a karját', small: 'két ujját közelíti', good: 'bólogat', bad: 'a fejét rázza', no: 'a fejét rázza', yes: 'bólint', love: 'a mellére teszi a kezét' })[c] || 'mutogat'; },
+    /** A Teremtő hallgatózik: ha a szó a látható helyzethez illik, megtanulja. Csak a Teremtő hívja (megfigyelő nem). */
+    decode(world, utt) {
+      const a = world.agents.get(utt.a); if (!a) return []; const ctx = this.contextConcepts(world, a); const learned = [];
+      for (const [c, w, s] of utt.w) { const k = this.lexKey(utt.l, w); if (world.creatorLexicon[k]) continue; const p = (ctx.has(c) ? 0.5 : 0.04) * (s ? 0.1 : 1); if (Math.random() < p) { world.creatorLexicon[k] = { c, t: world.tick, s }; learned.push([w, c]); } }
+      return learned;
+    },
+    reveal(world, langId, w, c, s) { world.creatorLexicon[this.lexKey(langId, w)] = { c, t: world.tick, s: s ? 1 : 0, told: 1 }; },
+    contextConcepts(world, a) {
+      const s = new Set(); const p = a.plan; const st = p && !p.done ? p.steps[p.i] : null; const g = p ? p.goal : null; if (g && GOAL_CONCEPTS[g]) for (const c of GOAL_CONCEPTS[g]) s.add(c);
+      if (st) { if (st.op === 'gather') { s.add('gather'); s.add(st.item === 'wood' ? 'wood' : st.item === 'stone' ? 'stone' : 'food'); if (st.item === 'berries') s.add('berries'); } if (st.op === 'consume') { s.add('eat'); s.add('food'); } if (st.op === 'drink') { s.add('drink'); s.add('water'); } if (st.op === 'sleep') s.add('sleep'); if (st.op === 'hunt') { s.add('hunt'); s.add('animal'); } if (st.op === 'fish') s.add('fish'); if (st.op === 'build' || st.op === 'deliver') { s.add('build'); s.add('home'); } if (st.op === 'flee') { s.add('danger'); s.add('go'); } }
+      const N = a.needs; if (N.food < 0.35) s.add('food'); if (N.water < 0.35) s.add('water'); if (N.warmth < 0.4) s.add('cold'); if (a.emotions.fear > 0.4) s.add('danger'); if (a.emotions.grief > 0.4) s.add('death');
+      const ws = world.weather && world.weather.state; const cold = world.tileTemp(world.idx(a.x | 0, a.y | 0)) < 0; if (ws === 'rain') s.add(cold ? 'snow' : 'rain'); if (ws === 'storm') s.add(cold ? 'snow' : 'storm'); if (LW.Time.isNight(world.tick)) s.add('night');
+      for (const b of world.buildingsNear(a.x | 0, a.y | 0, 2)) if (b.kind === 'campfire' && b.lit) s.add('fire'); if (a.inv.spear) s.add('spear');
+      return s;
+    },
+    /** A Teremtő szótára egy nyelvhez: [fogalom, szó, ismert?, titkos?] */
+    dictionary(world, l) { const ear = world.creatorSettings && world.creatorSettings.divineEar; const out = []; const secret = new Set(); for (const a of world.agents.values()) if (a.langId === l.id) for (const c in a.vocab) if (a.vocab[c].s) secret.add(c); for (const c in l.words) { const w = l.words[c]; const k = this.known(world, l.id, w); const s = secret.has(c); out.push({ c, w, known: !!k || (ear && !s), secret: s, gloss: this.gloss(c) }); } out.sort((x, y) => x.gloss.localeCompare(y.gloss, 'hu')); return out; },
+    describeLang(world, l) { return l.name ? `${l.name.toLowerCase()} nyelv` : l.parent ? 'új tájszólás' : l.speakers <= 1 && l.founderId != null ? 'idegen nyelv' : 'ősnyelv'; },
+    // ---------------- mentés
+    toJSON(world) { return { langs: [...world.langs.values()], lexicon: world.creatorLexicon, settings: world.creatorSettings, chatLog: world.chatLog.slice(-200), speechLog: world.speechLog.slice(-80) }; },
+    fromJSON(world, j) { world.langs = new Map(); if (j) { for (const l of j.langs || []) world.langs.set(l.id, l); world.creatorLexicon = j.lexicon || {}; world.creatorSettings = j.settings || { divineEar: true }; world.chatLog = j.chatLog || []; world.speechLog = j.speechLog || []; } },
+  };
+  function pickN(rng, pool, n) { const items = pool.slice(); const out = []; while (out.length < n && items.length) { const i = rng.int(0, items.length - 1); out.push(items[i]); items.splice(i, 1); } return out; }
+  LW.Speech = Speech;
+})(globalThis.LW || (globalThis.LW = {}));
+
+
 /* ===== history/history.js ===== */
 /* LEVENTE — THE CREATOR · history/history.js — importance, firsts (WOW), chronicle, feeds, yearly statistics (spec §73–§78) */
 (function (LW) {
@@ -2855,6 +3104,13 @@
         case 'Harvest': return { text: `${n(ev.agentId)} aratott: ${ev.amount} gabona.`, base: 0.35, firstKey: 'harvest', firstTitle: 'Első aratás' };
         case 'PathFormed': return { text: 'A lábak ösvényt tapostak a földbe.', base: 0.3, firstKey: 'path', firstTitle: 'Első ösvény' };
         case 'FireWentOut': return { text: 'Kialudt egy tűz.', base: 0.05 };
+        case 'WordCoined': return { text: `${n(ev.agentId)} kimondott egy szót, ami eddig nem létezett: „${ev.word}” — ${LW.Speech.gloss(ev.concept)}.`, base: 0.12, firstKey: 'word', firstTitle: 'Az első szó' };
+        case 'LanguageNamed': return { text: `${ev.speakers} ember már közös szavakkal beszél${ev.place ? ' ' + ev.place + ' körül' : ''}: megszületett a ${ev.name.toLowerCase()} nyelv.`, base: 0.75, firstKey: 'language', firstTitle: 'Az első nyelv' };
+        case 'LanguageSplit': return { text: `${ev.place} népe már nem érti a többieket: a maguk nyelvén beszélnek, a ${ev.name.toLowerCase()} nyelven.`, base: 0.85, firstKey: 'langsplit', firstTitle: 'Az első nyelvszakadás' };
+        case 'SecretTongue': return { text: `${n(ev.agentId)} és ${n(ev.otherId)} új szavakat sugdos egymásnak — nem akarják, hogy a hang értse.`, base: 0.55, firstKey: 'secret', firstTitle: 'Az első titkos szó' };
+        case 'CreatorSpoke': return { text: ev.text, base: 0.5, god: true, firstKey: 'spoke', firstTitle: 'A Teremtő első szava' };
+        case 'CreatorAnswered': return { text: ev.text, base: 0.45, god: true, firstKey: 'answered', firstTitle: 'Az első válasz a Teremtőnek' };
+        case 'Utterance': return null;
         case 'Conversation': return null;
         default: return null;
       }
@@ -2967,6 +3223,7 @@
       A().memory(world, a, { type: 'divine', text, importance: 0.9, emotion: fear > awe ? 'fear' : 'excitement', intensity: Math.max(awe, fear), divine: true });
       a.emotions.fear = LW.clamp01(a.emotions.fear + fear); a.emotions.excitement = LW.clamp01(a.emotions.excitement + awe);
       a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.25 * (0.4 + a.personality.optimism * 0.4 + a.personality.curiosity * 0.3));
+      a.beliefs.trust = LW.clamp((a.beliefs.trust || 0) + (awe - fear) * 0.35 * (0.6 + a.personality.optimism * 0.5), -1, 1); // jótétemény bizalmat épít, csapás rombolja
       a.importance += 0.2; if (!a.achievements.includes('A Teremtő tanúja')) a.achievements.push('A Teremtő tanúja');
     },
     witnessManifestation(world, a, b) {
@@ -2981,8 +3238,8 @@
       a.divineRequest = { cmd, tile, targetId, force, tick: world.tick, interpreted: force ? 'obey' : null };
       a.plan = null; a.sleeping = false;
       world.events.emit('DivineCommandIssued', { tick: world.tick, agentId: a.id, text: `${force ? 'Kényszerítetted' : 'Kérted'} őt: ${a.name} — ${label}.`, tile });
-      if (!force) { A().memory(world, a, { type: 'divine', text: `egy száj nélküli hang szólt: ${label.toLowerCase()}`, importance: 0.9, emotion: 'fear', intensity: 0.6, divine: true }); a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.3); a.emotions.fear = LW.clamp01(a.emotions.fear + 0.2); a.emotions.excitement = LW.clamp01(a.emotions.excitement + 0.3); }
-      else A().memory(world, a, { type: 'divine', text: `a testem idegen akaratra mozdult: ${label.toLowerCase()}`, importance: 0.9, emotion: 'fear', intensity: 0.7, divine: true });
+      if (!force) { A().memory(world, a, { type: 'divine', text: `egy száj nélküli hang szólt: ${label.toLowerCase()}`, importance: 0.9, emotion: 'fear', intensity: 0.6, divine: true }); a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.3); a.emotions.fear = LW.clamp01(a.emotions.fear + 0.2); a.emotions.excitement = LW.clamp01(a.emotions.excitement + 0.3); a.beliefs.trust = LW.clamp((a.beliefs.trust || 0) - 0.03, -1, 1); }
+      else { A().memory(world, a, { type: 'divine', text: `a testem idegen akaratra mozdult: ${label.toLowerCase()}`, importance: 0.9, emotion: 'fear', intensity: 0.7, divine: true }); a.beliefs.trust = LW.clamp((a.beliefs.trust || 0) - 0.25, -1, 1); }
       a.importance += 0.5; a.lastDecisionTick = -1000;
     },
     obedience(world, a) { const P = a.personality; return LW.clamp01(0.3 + P.loyalty * 0.35 + a.beliefs.creator * 0.45 + a.emotions.fear * 0.2 + P.optimism * 0.15 - P.dominance * 0.3 - P.riskTolerance * 0.1); },
@@ -3004,6 +3261,7 @@
       if (a.divineRequest) a.divineRequest.interpreted = how;
       A().memory(world, a, { type: 'divine', text: how === 'obey' ? 'engedelmeskedtem a hangnak' : how === 'ignore' ? 'nem törődtem a hanggal' : how === 'fear' ? 'elbújtam a hang elől' : 'azt tettem, amit a hang szerintem akart', importance: 0.7, emotion: how === 'fear' ? 'fear' : 'excitement', intensity: 0.6, divine: true });
       world.events.emit('DivineCommandInterpreted', { tick: world.tick, agentId: a.id, how, text });
+      return how;
     },
     planRequest(world, a) {
       const r = a.divineRequest; if (!r) return null; const W = world;
@@ -3022,8 +3280,265 @@
     },
   };
   // completion op registered into Actions
-  LW.Actions.OPS.divineDone = function (world, a) { if (a.divineRequest) { A().memory(world, a, { type: 'divine', text: 'megtettem, amit a hang kért', importance: 0.6, emotion: 'pride', intensity: 0.5, divine: true }); a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.1); a.divineRequest = null; } return 'done'; };
+  LW.Actions.OPS.divineDone = function (world, a) { if (a.divineRequest) { A().memory(world, a, { type: 'divine', text: 'megtettem, amit a hang kért', importance: 0.6, emotion: 'pride', intensity: 0.5, divine: true }); a.beliefs.creator = LW.clamp01(a.beliefs.creator + 0.1); a.beliefs.trust = LW.clamp((a.beliefs.trust || 0) + 0.05, -1, 1); a.divineRequest = null; } return 'done'; };
   LW.God = God;
+})(globalThis.LW || (globalThis.LW = {}));
+
+
+/* ===== agents/dialogue.js ===== */
+/* LEVENTE — THE CREATOR · agents/dialogue.js
+ * A közös beszéd: a Teremtő szabad szöveggel szól egy emberhez vagy mindenkihez. A szöveget
+ * a motor értelmezi (kérés, kérdés, sugallat, hangnem), a hatás valódi (emlék, hit, bizalom,
+ * isteni kérés — amit az ember a maga feje szerint fogad meg vagy hagy figyelmen kívül), a
+ * válasz pedig az ember állapotából épül: magyarul, ha hajlandó a hangnak felelni — a saját
+ * nyelvén, ha nem. Nyelvi modell (ha van kulcs) csak megfogalmazza, amit a rendszer eldöntött.
+ */
+(function (LW) {
+  'use strict';
+  const T = LW.TIME;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const norm = (s) => String(s || '').toLowerCase().replace(/[áà]/g, 'a').replace(/[éè]/g, 'e').replace(/í/g, 'i').replace(/[óöő]/g, 'o').replace(/[úüű]/g, 'u').replace(/[„”"“,.;:!()]/g, ' ').replace(/\s+/g, ' ').trim();
+  const STOP = new Set(['az', 'a', 'hogy', 'szo', 'szot', 'ez', 'azt', 'mit', 'jelent', 'mond', 'mondtak', 'ok', 'te', 'o']);
+  // harmadik személyű leírás → első személy (a beszélő magáról beszél)
+  const FIRST = [['a gyermekét gondozza', 'a gyermekemet gondozom'], ['a szülője mellett marad', 'a szüleim mellett maradok'], ['együtt van a párjával', 'a párommal vagyok'], ['ételt gyűjt későbbre', 'ételt gyűjtök későbbre'], ['a tüzet táplálja', 'a tüzet táplálom'], ['a földet műveli', 'a földet művelem'], ['felszed valamit', 'felszedek valamit'], ['készít valamit', 'készítek valamit'], ['a Teremtőnek felel', 'a Teremtőnek felelek'], ['ételt oszt meg', 'ételt osztok meg'], ['összebújva melegszik', 'összebújva melegszem'], ['a szülőjét követi', 'a szüleimet követem'], ['fedél alatt vár', 'fedél alatt várok'], ['a tűznél ül', 'a tűznél ülök'], ['társaságot keres', 'társaságot keresek'], ['meleget keres', 'meleget keresek'], ['ételt keres', 'ételt keresek'], ['segít építeni', 'segítek építeni'], ['otthont épít', 'otthont építek'], ['tüzet gyújt', 'tüzet gyújtok'], ['inni megy', 'inni megyek'], ['úton van', 'úton vagyok'], ['kísérletezik', 'kísérletezem'], ['gondolkodik', 'gondolkodom'], ['beszélget', 'beszélgetek'], ['vadászik', 'vadászom'], ['halászik', 'halászom'], ['verekszik', 'verekszem'], ['menekül', 'menekülök'], ['felfedez', 'felfedezek'], ['flörtöl', 'flörtölök'], ['gyászol', 'gyászolok'], ['gyűjt:', 'gyűjtök:'], ['épít:', 'építek:'], ['készít:', 'készítek:'], ['alszik', 'alszom'], ['tanít', 'tanítok'], ['pihen', 'pihenek'], ['ás', 'ások']];
+  const firstPerson = (s) => { for (const [a, b] of FIRST) { if (s.includes(a)) { s = s.split(a).join(b); } } return s; };
+  const has = (s, re) => re.test(s);
+
+  const NUDGE = [
+    [/\b(gyujts|szedj|hozz|szerezz|gyujtsetek|szedjetek|tartalek|raktaroz)\b/, 'stockpile'], [/\b(egyel|egyetek|egyel valamit)\b/, 'eat'], [/\b(igyal|igyatok)\b/, 'drink'], [/\b(aludj|pihenj|fekudj le|aludjatok)\b/, 'sleep'],
+    [/\b(tuzet|tuz|gyujts tuzet|rakj tuzet)\b/, 'makeFire'], [/\b(vadassz|vadasszatok|vadaszni)\b/, 'eat'], [/\b(tanitsd|tanits|tanitsatok)\b/, 'teach'], [/\b(keszits|csinalj|faragj|szerszam|keszitsetek)\b/, 'craft'],
+    [/\b(kiserletezz|probalj ki|talalj fel|kiserlet|ujat)\b/, 'experiment'], [/\b(beszelj|beszelgess|beszeljetek|barat|baratkozz)\b/, 'socialize'], [/\b(udvarolj|keress parat|szeresd|szerelem|part)\b/, 'flirt'], [/\b(vess|ultess|muveld|gabona|foldet)\b/, 'farm'],
+    [/\b(kunyho|haz|otthon|fedezek|menedek)\b/, 'buildShelter'], [/\b(fedezd fel|fedezzetek|nezz korul|nezz szet|jarj|vandorolj|fedez)\b/, 'explore'], [/\b(ass|asd|asatok|foldben)\b/, 'dig'],
+  ];
+  const GOAL_HU = { stockpile: 'gyűjtsön', eat: 'egyen', drink: 'igyon', sleep: 'aludjon', makeFire: 'tüzet gyújtson', teach: 'tanítson', craft: 'készítsen valamit', experiment: 'kísérletezzen', socialize: 'beszélgessen', flirt: 'párt keressen', farm: 'földet műveljen', buildShelter: 'otthont építsen', explore: 'felfedezzen', dig: 'ásson' };
+
+  const Dialogue = {
+    /** Mit akar a hang? (kérés / kérdés / sugallat / beszéd) + hangnem */
+    parse(world, text) {
+      const s = norm(text); const it = { kind: 'tell', ask: null, cmd: null, nudge: null, tone: 0, word: null, raw: text, place: null, personId: null, force: false };
+      const pos = (s.match(/\b(koszon|szeret|buszke|ugyes|szep|jo |jol |orul|aldas|segit|ne felj|biztonsag|nyugodj|batran|szeretlek|draga|kedves|remek|csodas|vigyazok)\b/g) || []).length;
+      const neg = (s.match(/\b(hulye|ostoba|utal|pusztulj|meghalsz|buntet|atkoz|rossz vagy|gyulol|fenyeget|megollek|halj meg|takarodj|szemet|nyomorult|felj|rettegj|ver|elpusztit)\b/g) || []).length;
+      it.tone = clamp(pos * 0.35 - neg * 0.5, -1, 1);
+      if (has(s, /\b(muszaj|kenyszer|parancsolom|azonnal|kotelezo)\b/)) it.force = true;
+      // személy a szövegben
+      for (const a of world.agents.values()) { const n = norm(a.name); if (n.length >= 3 && s.includes(n)) { it.personId = a.id; break; } }
+      // isteni parancsok
+      if (has(s, /\b(kovesd|menj vele|maradj vele|tarts vele|kiserd)\b/) && it.personId != null) it.cmd = 'follow';
+      else if (has(s, /\b(vedd meg|vedd|vigyazz ra|orizd|vedelmezd)\b/) && it.personId != null) it.cmd = 'protect';
+      else if (has(s, /\b(hagyd el|menj el innen|tavozz|koltozz el|hagyd itt|hagyjatok el)\b/)) it.cmd = 'leave';
+      else if (has(s, /\b(epits|epitsetek|epitsen|epitsd)\b/)) it.cmd = 'build';
+      else if (has(s, /\b(ass|asd|asatok|keress a foldben|ass a foldben|kutass)\b/)) it.cmd = 'search';
+      else if (has(s, /\b(fedezd fel|fedezzetek fel|nezz korul|nezz szet|jarj korbe|vandorolj|fedezz fel)\b/)) it.cmd = 'explore';
+      else if (has(s, /\b(menj|gyere|indulj|eredj|vonulj|setalj|fuss|szaladj|menjetek|gyertek|induljatok)\b/)) it.cmd = 'go';
+      if (it.cmd === 'go' || it.cmd === 'explore' || it.cmd === 'search') it.place = this.placeWords(s);
+      if (it.cmd === 'go' && !it.place && it.personId == null) it.cmd = 'explore';
+      if (it.cmd === 'go' && !it.place && it.personId != null) it.cmd = 'follow';
+      // sugallat (nem parancs, csak erősebb késztetés egy napig)
+      if (!it.cmd) for (const [re, g] of NUDGE) if (has(s, re)) { it.nudge = g; break; }
+      // kérdések
+      const Q = [['meaning', /\b(mit jelent|mi az hogy|mit mond|mi az a)\b\s*(?:az\s+|a\s+)?["'„]?([a-z\-]{2,})/], ['how', /\b(hogy vagy|hogy erzed|jol vagy|mi ujsag|mi van veled|mizu|mi a helyzet|hogy vagytok|hogy telik)\b/], ['doing', /\b(mit csinalsz|mit muvelsz|mivel foglalkozol|mit tervezel|mire keszulsz|mit fogsz|mit csinaltok)\b/], ['where', /\b(hol vagy|merre vagy|hol laksz|hova mesz|hol vagytok)\b/], ['who', /\b(ki vagy|mi a neved|hogy hivnak|mutatkozz be|meselj magadrol)\b/], ['age', /\b(hany eves|mikor szulettel|milyen idos)\b/], ['family', /\b(csalad|szuleid|anyad|apad|gyereked|gyerekeid|testvered|parod|feleseged|ferjed|kit szeretsz|szerelmes|gyerekek)\b/], ['know', /\b(mit tudsz|mihez ertesz|mit tanultal|mit fedeztel|tudasod|mire jottel ra|mit ismersz)\b/], ['fear', /\b(felsz|mitol felsz|felelem|mi bant|mi a baj|szomoru|mi fajj|mi faj)\b/], ['me', /\b(ki vagyok|tudod ki vagyok|hallasz|hiszel bennem|mit gondolsz rolam|ki beszel|ismersz engem|teremto vagyok|en vagyok|ki szol)\b/], ['want', /\b(mit szeretnel|mire vagysz|mit kivansz|mit kersz|mit akarsz|mi kell|miben segitsek|segithetek|mit adjak)\b/], ['language', /\b(nyelv|hogy mondjak|hogy mondod|hogy hivjatok|milyen szavak|tanits meg|szavaitok)\b/], ['weather', /\b(milyen az ido|hideg van|esik|meleg van|milyen a videk)\b/], ['world', /\b(mi tortent|mi ujsag a faluban|mi ujsag nalatok|mi volt ma|mesélj|meselj)\b/]];
+      for (const [k, re] of Q) { const m = re.exec(s); if (m) { it.kind = 'ask'; it.ask = k; if (k === 'meaning') { const toks = s.split(' ').reverse(); it.word = toks.find((t) => t.length >= 2 && !STOP.has(t) && !/^(mit|jelent|mi|hogy|az|a)$/.test(t)) || m[2]; } break; } }
+      if (it.kind !== 'ask' && (it.cmd || it.nudge)) it.kind = 'command';
+      if (it.kind === 'tell' && has(s, /\b(szia|hello|helo|udv|szervusz|jo napot|jo reggelt|jo estet|hahó|haho|hé|he)\b/)) it.kind = 'greet';
+      if (it.kind === 'tell' && /\?\s*$/.test(String(text))) { it.kind = 'ask'; it.ask = 'unknown'; }
+      return it;
+    },
+    placeWords(s) {
+      if (has(s, /\b(folyo|viz|to |tohoz|tenger|part|patak|vizhez|folyohoz|itat)\b/)) return 'water';
+      if (has(s, /\b(erdo|erdobe|fak|fakhoz|liget)\b/)) return 'forest';
+      if (has(s, /\b(hegy|domb|hegyre|dombra|csucs|szikla|hegyekbe)\b/)) return 'hill';
+      if (has(s, /\b(haza|otthon|otthonodba|kunyhodba|hazadba)\b/)) return 'home';
+      if (has(s, /\b(tabor|falu|telepules|tanya|a tobbiekhez|emberekhez|hozzajuk)\b/)) return 'settlement';
+      if (has(s, /\b(eszak|eszakra)\b/)) return 'N'; if (has(s, /\b(del|delre)\b/)) return 'S'; if (has(s, /\b(kelet|keletre)\b/)) return 'E'; if (has(s, /\b(nyugat|nyugatra)\b/)) return 'W';
+      if (has(s, /\b(messze|tavol|tavolra|a vilag vegere|tul a)\b/)) return 'far';
+      return null;
+    },
+    resolvePlace(world, a, place) {
+      const W = world, t = W.tiles; const ax = a.x | 0, ay = a.y | 0; let best = -1, bd = 1e9;
+      const scan = (r, ok) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const x = ax + dx, y = ay + dy; if (!W.inBounds(x, y)) continue; const i = W.idx(x, y); if (!ok(i)) continue; const d = dx * dx + dy * dy; if (d < bd && d > 1) { bd = d; best = i; } } return best; };
+      switch (place) {
+        case 'water': { let near = -1, nd = 1e9; for (const p of a.knowledge.places.values()) if (p.k === 'water') { const d = LW.dist(ax, ay, W.xOf(p.i), W.yOf(p.i)); if (d < nd) { nd = d; near = p.i; } } if (near < 0) { scan(25, (i) => LW.isFreshBiome(t.biome[i])); near = best; } if (near < 0) return null; const sh = LW.Agents.tileNear(W, a, near); return sh != null && sh >= 0 ? sh : W.randomNear(W.xOf(near), W.yOf(near), 1); }
+        case 'forest': return scan(30, (i) => t.trees[i] > 80 && W.isPassable(i));
+        case 'hill': return scan(40, (i) => (t.biome[i] === LW.BIOME.HILLS || t.biome[i] === LW.BIOME.MOUNTAIN) && W.isPassable(i));
+        case 'home': { const h = a.home != null ? W.buildings.get(a.home) : null; return h ? W.idx(h.x, h.y) : null; }
+        case 'settlement': { let s = null, sd = 1e9; for (const st of W.settlements.values()) { if (st.abandonedTick) continue; const d = LW.dist(ax, ay, st.x, st.y); if (d < sd) { sd = d; s = st; } } if (s) return W.randomNear(s.x | 0, s.y | 0, 2); let o = null, od = 1e9; for (const b of W.agents.values()) { if (b.id === a.id) continue; const d = LW.dist(ax, ay, b.x, b.y); if (d < od) { od = d; o = b; } } return o ? W.randomNear(o.x | 0, o.y | 0, 1) : null; }
+        case 'N': case 'S': case 'E': case 'W': case 'far': { const dx = place === 'E' ? 1 : place === 'W' ? -1 : 0, dy = place === 'S' ? 1 : place === 'N' ? -1 : 0; const dist = place === 'far' ? 30 : 16; const ang = place === 'far' ? W.rng.range(0, Math.PI * 2) : Math.atan2(dy, dx); for (let d = dist; d > 4; d -= 3) { const x = clamp(Math.round(ax + Math.cos(ang) * d), 1, W.w - 2), y = clamp(Math.round(ay + Math.sin(ang) * d), 1, W.h - 2); if (W.isPassable(W.idx(x, y))) return W.idx(x, y); } return null; }
+      }
+      return null;
+    },
+    // ---------------- hatás
+    attitude(a) { const b = a.beliefs.creator, tr = a.beliefs.trust || 0; if (b < 0.25) return 'confused'; if (tr < -0.35) return 'hostile'; if (tr < -0.08) return 'wary'; if (b > 0.7 && tr > 0.3) return 'devout'; if (tr > 0.15) return 'warm'; return 'neutral'; },
+    /** Az ember meghallja a hangot: hit, bizalom, érzelem, emlék. */
+    hear(world, a, text, it, opts) {
+      const first = !a.memory.episodic.some((m) => m.divine); const P = a.personality;
+      if (first) { a.emotions.fear = clamp(a.emotions.fear + 0.35 * (1 - P.bravery), 0, 1); a.emotions.excitement = clamp(a.emotions.excitement + 0.4 * P.curiosity, 0, 1); a.beliefs.creator = clamp(a.beliefs.creator + 0.3, 0, 1); }
+      else a.beliefs.creator = clamp(a.beliefs.creator + 0.08, 0, 1);
+      let dTrust = it.tone * 0.18 + (it.kind === 'ask' ? 0.03 : 0) + (it.force ? -0.12 : 0) - (opts && opts.broadcast ? 0.02 : 0);
+      if (it.tone > 0) dTrust *= 0.6 + P.optimism * 0.6; if (it.tone < 0) dTrust *= 0.6 + (1 - P.patience) * 0.6;
+      a.beliefs.trust = clamp((a.beliefs.trust || 0) + dTrust, -1, 1);
+      if (it.tone < -0.3) { a.emotions.fear = clamp(a.emotions.fear + 0.3, 0, 1); a.emotions.anger = clamp(a.emotions.anger + 0.2 * P.dominance, 0, 1); }
+      if (it.tone > 0.3) { a.emotions.joy = clamp(a.emotions.joy + 0.15, 0, 1); a.emotions.fear = Math.max(0, a.emotions.fear - 0.15); a.emotions.stress *= 0.8; }
+      if (!it.cmd) LW.Memory.add(world, a, { type: 'divine', text: `${opts && opts.broadcast ? 'az égből' : 'a semmiből'} egy száj nélküli hang szólt: „${excerpt(text)}”`, importance: first ? 0.95 : 0.6, emotion: it.tone < 0 ? 'fear' : 'excitement', intensity: first ? 0.8 : 0.45, divine: true });
+      a.importance += first ? 0.6 : 0.15; if (!a.achievements.includes('Beszélt a hanggal')) a.achievements.push('Beszélt a hanggal');
+      a.chatHistory = (a.chatHistory || []).slice(-9); a.chatHistory.push({ who: 'creator', text: String(text).slice(0, 240), t: world.tick });
+      a.lastCreatorTalk = world.tick;
+    },
+    /** A hang egy emberhez szól. Visszaad: { reply, utt, how, it, att } — az egyik reply/utt üres. */
+    respond(world, a, text, opts) {
+      opts = opts || {}; const it = opts.intent || this.parse(world, text); const rng = world.rng;
+      if (!a.vocab) a.vocab = {}; if (a.beliefs.trust == null) a.beliefs.trust = 0;
+      const stage = LW.Agents.stage(world, a); const infant = stage === 'infant';
+      const asleep = a.sleeping;
+      if (!opts.heard) this.hear(world, a, text, it, opts);
+      let how = null, nudged = null;
+      if (it.cmd && !infant) {
+        let tile = null, targetId = null;
+        if (it.cmd === 'go' || it.cmd === 'explore' || it.cmd === 'search') tile = it.place ? this.resolvePlace(world, a, it.place) : null;
+        if (it.cmd === 'follow' || it.cmd === 'protect') { targetId = it.personId != null && it.personId !== a.id ? it.personId : null; if (targetId == null) { it.cmd = null; } }
+        if (it.cmd) { if (it.cmd === 'go' && tile == null) it.cmd = 'explore'; const forced = !!(it.force && opts.allowForce); LW.God.command(world, a, it.cmd, { tile, targetId, force: forced }); how = forced ? 'forced' : LW.God.interpret(world, a); }
+      }
+      if (it.nudge && !infant) { a.nudge = { goal: it.nudge, until: world.tick + T.TICKS_PER_DAY, text: excerpt(text) }; nudged = it.nudge; if (it.nudge === 'sleep' || it.nudge === 'eat' || it.nudge === 'drink') a.lastDecisionTick = -1000; LW.Memory.add(world, a, { type: 'divine', text: `a hang azt akarta, hogy ${GOAL_HU[it.nudge] || it.nudge}`, importance: 0.5, emotion: 'excitement', intensity: 0.4, divine: true }); }
+      const att = this.attitude(a);
+      const res = { it, att, how, nudged, reply: '', utt: null, asleep };
+      if (asleep && rng.chance(0.6)) { res.reply = ''; res.asleep = true; return res; } // alszik: hallja ugyan, de csak álmában
+      if (infant) { res.utt = LW.Speech.say(world, a, null, []); res.reply = ''; res.babble = true; return res; }
+      // aki neheztel, nem felel a hang nyelvén
+      if (att === 'hostile' && Object.keys(a.vocab).length >= 5 && rng.chance(0.75)) { res.utt = LW.Speech.say(world, a, null, rng.shuffle(['no', 'you', 'go', 'bad', 'secret', 'we']).slice(0, 3).filter((c) => a.vocab[c] || rng.chance(0.5))); if (!res.utt.w.length) res.reply = this.compose(world, a, it, att, how, nudged); return res; }
+      res.reply = this.compose(world, a, it, att, how, nudged);
+      (a.chatHistory = a.chatHistory || []).push({ who: a.id, text: res.reply.slice(0, 240), t: world.tick });
+      return res;
+    },
+    /** Magyar válasz az állapotból. */
+    compose(world, a, it, att, how, nudged) {
+      const rng = world.rng; const P = a.personality, N = a.needs, E = a.emotions; const S = []; const pick = (arr) => rng.pick(arr);
+      const name = (id) => { const o = world.agents.get(id) || world.deceased.get(id); return o ? o.name : 'valaki'; };
+      const first = a.chatHistory.filter((h) => h.who === 'creator').length <= 1;
+      // megszólítás
+      if (att === 'confused') S.push(pick(['Ki beszél? Nincs itt senki.', 'Hang… a fejemben? Ki vagy?', 'Ezt csak én hallom?', 'Valaki szólt. Nem látom, honnan.']));
+      else if (att === 'hostile') S.push(pick(['Megint te.', 'Hagyj békén.', 'Nem kértem, hogy szólj.', 'Mit akarsz már megint?']));
+      else if (att === 'wary') S.push(pick(['Hallak.', 'Itt vagy megint.', 'Beszélj, de ne kérj sokat.']));
+      else if (att === 'devout') S.push(pick(['Hallak, Teremtő.', 'Itt vagyok, Teremtő.', 'Szólj, hallgatlak.']));
+      else if (att === 'warm') S.push(pick(['Hallak, hang.', 'Örülök, hogy szólsz.', 'Igen?']));
+      else if (first) S.push(pick(['Hallak. Furcsa ez.', 'Egy hang, aminek nincs szája.']));
+      // parancs kimenetele
+      if (it.cmd) {
+        const L = LW.God.COMMANDS[it.cmd] || it.cmd;
+        if (how === 'obey') S.push(pick(['Megteszem.', 'Rendben, indulok.', `Jó. ${L.toLowerCase()} — értem.`, 'Ha ezt kéred, megyek.']));
+        else if (how === 'misinterpret') S.push(pick(['Azt hiszem, értem, mit akarsz.', 'Valami ilyesmit kérsz… megpróbálom.']));
+        else if (how === 'fear') S.push(pick(['Félek tőled. Elbújok.', 'Ne! Hagyj!', 'Miért pont én?']));
+        else if (how === 'ignore') S.push(pick([`Nem. Most más a dolgom: ${this.doing(world, a)}.`, 'Nem teszem meg. Nem parancsolsz nekem.', 'Majd ha én is úgy akarom.']));
+        else if (how === 'forced') S.push(pick(['A testem mozdul, nem én.', 'Nem én akarom. Mégis megyek.']));
+        else S.push(pick(['Ezt nem tudom megtenni.', 'Nem tudom, hogyan.']));
+      } else if (nudged) {
+        const g = GOAL_HU[nudged] || nudged;
+        S.push(att === 'hostile' || att === 'wary' ? pick([`Hogy ${g}? Majd meglátom.`, 'Ne mondd meg, mit tegyek.']) : pick([`Hogy ${g}… igen, erre gondolok.`, `Jó ötlet, hogy ${g}. Talán.`, 'Erre már én is gondoltam.']));
+      }
+      // kérdés
+      if (it.kind === 'ask') S.push(...this.answer(world, a, it, att));
+      else if (it.kind === 'greet') S.push(pick(['Szia… ha így kell mondani.', 'Üdv. Nem tudom, hogyan illik köszönni egy hangnak.', 'Üdv neked is.']));
+      else if (it.kind === 'tell' && !it.cmd && !nudged) {
+        if (it.tone > 0.3) S.push(pick(['Jólesik, amit mondasz.', 'Köszönöm. Ritkán mond ilyet valaki.', 'Ettől könnyebb a nap.']));
+        else if (it.tone < -0.3) S.push(pick(['Miért beszélsz így velem?', 'Ez fáj. Mit vétettem?', 'Ne fenyegess.']));
+        else S.push(pick(['Nem értem egészen, mit akarsz ezzel.', 'Értem. Azt hiszem.', 'Gondolkodom rajta.', `Aha. ${this.state(world, a)}`]));
+      }
+      // egy sor a mostani helyzetről (a beszédesek beszédesebbek)
+      if (S.length < 3 && (it.kind === 'greet' || it.kind === 'tell') && rng.chance(0.3 + P.sociability * 0.6)) S.push(this.state(world, a));
+      if (P.humor > 0.75 && rng.chance(0.2)) S.push(pick(['Ha már mindent hallasz, hozhatnál egy kis esőt is. Vagy inkább ne.', 'Legalább te nem horkolsz éjjel.', 'Ha isten vagy, miért nem tudsz tüzet rakni helyettem?']));
+      let out = S.filter(Boolean).join(' ').trim();
+      if (!out) out = this.state(world, a);
+      if (P.sociability < 0.3 && out.length > 120) out = out.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ');
+      return out;
+    },
+    /** Egy mondat arról, hogy van most. */
+    state(world, a) {
+      const N = a.needs, E = a.emotions; const rng = world.rng; const pick = (arr) => rng.pick(arr);
+      if (N.food < 0.25) return pick(['Éhes vagyok, régen ettem rendesen.', 'Korog a gyomrom. Ételt kell találnom.']);
+      if (N.water < 0.25) return pick(['Kiszáradt a torkom.', 'Vizet kell találnom, gyorsan.']);
+      if (N.warmth < 0.35) return pick(['Fázom. A hideg a csontomig hatol.', 'Meleg kell. Tűz vagy fedél.']);
+      if (E.grief > 0.5) return pick(['Elment valaki, aki fontos volt. Még mindig keresem.', 'Nehéz a szívem. Gyászolok.']);
+      if (E.fear > 0.5) return pick(['Félek. Valami nincs rendben a levegőben.', 'Nem érzem magam biztonságban.']);
+      if (E.love > 0.6 && a.partner != null) return `${(world.agents.get(a.partner) || {}).name || 'A párom'} mellett ma minden könnyebb.`;
+      if (E.pride > 0.5) return 'Csináltam valamit, ami jó, és az enyém.';
+      if (E.joy > 0.5) return pick(['Jól vagyok. Ma jó nap.', 'Nincs bajom. Süt a nap, van mit enni.']);
+      return `Épp ${this.doing(world, a)}.`;
+    },
+    doing(world, a) { return firstPerson(LW.Actions.describe(world, a)); },
+    answer(world, a, it, att) {
+      const rng = world.rng; const pick = (arr) => rng.pick(arr); const W = world; const A = LW.Agents; const N = a.needs, E = a.emotions; const S = [];
+      const name = (id) => { const o = W.agents.get(id) || W.deceased.get(id); return o ? o.name : 'valaki'; };
+      const refuse = att === 'hostile' && rng.chance(0.6);
+      switch (it.ask) {
+        case 'how': { if (refuse) { S.push('Mit érdekel az téged.'); break; } S.push(this.state(W, a)); const hi = Object.entries(E).filter(([, v]) => v > 0.35).sort((x, y) => y[1] - x[1])[0]; if (hi && rng.chance(0.6)) S.push(`Leginkább ${LW.HU.emotion(hi[0])} van bennem.`); break; }
+        case 'doing': { S.push(`Épp ${this.doing(W, a)}.`); const why = a.why; if (why && why.chosen && why.chosen.factors.length && rng.chance(0.7)) S.push(`Azért, mert ${why.chosen.factors[0]}.`); break; }
+        case 'where': { const s = LW.Settlements.at(W, a.x, a.y); const home = a.home != null ? W.buildings.get(a.home) : null; const B = LW.BIOME_NAME[W.tiles.biome[W.idx(a.x | 0, a.y | 0)]]; S.push(s ? `${s.name} ${LW.HU.tier(s.tier)}ánál, ${B.toLowerCase()} vidéken.` : `Egy ${B.toLowerCase()} vidéken, nincs neve ennek a helynek.`); S.push(home ? `Van otthonom: egy ${LW.Buildings.def(home).label.toLowerCase()}.` : 'Otthonom nincs, ott alszom, ahol az este ér.'); break; }
+        case 'who': { const par = a.parents.filter((p) => p != null).map(name); S.push(`${a.name} vagyok${par.length ? `, ${par.join(' és ')} gyermeke` : a.genesis ? ', az Elsők egyike' : ''}. ${Math.floor(A.age(W, a))} éves ${a.sex === 'f' ? 'nő' : 'férfi'}.`); if (a.occupation) S.push(`Leginkább ${LW.HU.occupation(a.occupation)} vagyok.`); break; }
+        case 'age': S.push(`${Math.floor(A.age(W, a))} telet láttam.`); break;
+        case 'family': { if (refuse) { S.push('A családom nem a te dolgod.'); break; } const p = a.partner != null ? name(a.partner) : null; const kids = a.children.map(name); const par = a.parents.filter((x) => x != null).map(name); S.push(p ? `A párom ${p}.` : A.isAdult(W, a) ? 'Nincs párom.' : 'Még gyerek vagyok.'); if (kids.length) S.push(`Gyerekeim: ${kids.join(', ')}.`); if (par.length) S.push(`Szüleim: ${par.join(' és ')}.`); const best = [...a.relationships.entries()].filter(([id, r]) => W.agents.has(id) && r.friendship > 0.4).sort((x, y) => y[1].friendship - x[1].friendship)[0]; if (best) S.push(`A legjobb barátom ${name(best[0])}.`); const foe = [...a.relationships.entries()].filter(([id, r]) => W.agents.has(id) && r.resentment > 0.5)[0]; if (foe) S.push(`${name(foe[0])} — vele nem vagyunk jóban.`); break; }
+        case 'know': { const techs = [...a.knowledge.techs].map((t) => LW.Tech.D[t]).filter((d) => d && !d.hidden).map((d) => d.name.toLowerCase()); S.push(techs.length ? `Ezekhez értek: ${techs.slice(0, 6).join(', ')}.` : 'Nem tudok még semmit, csak amit a kezem és a gyomrom tanított.'); const sk = Object.entries(a.skills).sort((x, y) => y[1] - x[1])[0]; if (sk && sk[1] > 0.3) S.push(`A legjobban ${LW.HU.skill(sk[0])}ben vagyok jó.`); break; }
+        case 'fear': { const hi = Object.entries(E).sort((x, y) => y[1] - x[1])[0]; if (E.fear > 0.4) S.push(pick(['Félek. A sötéttől, a vadaktól, attól, hogy nem lesz mit enni.', 'Félek, hogy nem érem meg a következő nyarat.'])); else if (hi && hi[1] > 0.3) S.push(`Most leginkább ${LW.HU.emotion(hi[0])} van bennem.`); else S.push('Nem félek. Most nem.'); const m = a.memory.emotional[a.memory.emotional.length - 1]; if (m && rng.chance(0.6)) S.push(`Ami nem hagy nyugodni: ${m.text}.`); break; }
+        case 'me': { if (a.beliefs.creator < 0.25) S.push(pick(['Nem tudom, ki vagy. Egy hang, aminek nincs szája.', 'Nem ismerlek. Talán a fejemben laksz.'])); else if (a.beliefs.creator < 0.7) S.push(pick(['Azt mondják, van valaki az égen túl, aki figyel. Te lennél az?', 'Egy hang az égből. Nem tudom, mit akarsz tőlünk.'])); else S.push(pick(['Te vagy az, aki figyel minket. A Teremtő.', 'Hiszek benned. Láttam, amit tettél.'])); const tr = a.beliefs.trust; S.push(tr > 0.3 ? 'Bízom benned.' : tr < -0.3 ? 'Nem bízom benned. Amit tettél, nem felejtem.' : 'Még nem tudom, jót akarsz-e.'); break; }
+        case 'want': { if (N.food < 0.4) S.push('Ételt. Ha tudsz adni, adj.'); else if (N.water < 0.4) S.push('Vizet.'); else if (N.warmth < 0.4) S.push('Meleget. Tüzet vagy fedelet.'); else if (a.home == null && A.isAdult(W, a)) S.push('Egy otthont. Falakat a hideg ellen.'); else if (a.partner == null && A.isAdult(W, a) && N.affection < 0.5) S.push('Valakit, aki mellettem alszik.'); else S.push(pick(['Semmit. Megvan, ami kell.', 'Hogy a gyerekek megérjék a nyarat.', 'Hogy hagyj minket élni.'])); break; }
+        case 'meaning': { const w = it.word; let hit = null; for (const c in a.vocab) if (a.vocab[c].w === w) { hit = c; break; } if (!hit) { for (const l of W.langs.values()) for (const c in l.words) if (l.words[c] === w) hit = c; } if (!hit) S.push(pick([`„${w}”? Ezt a szót nem ismerem.`, 'Ilyet nem mondunk.'])); else if ((a.vocab[hit] && a.vocab[hit].s && (a.beliefs.trust || 0) < 0.35) || refuse) S.push(pick(['Azt nem mondom meg. Az a miénk.', 'Nem neked való szó.'])); else { S.push(`„${w}” azt jelenti: ${LW.Speech.gloss(hit)}.`); LW.Speech.reveal(W, a.langId, w, hit, a.vocab[hit] && a.vocab[hit].s); } break; }
+        case 'language': { const ks = Object.keys(a.vocab); if (!ks.length) S.push('Nincsenek még szavaink. Mutogatunk.'); else if (refuse || (a.beliefs.trust || 0) < -0.2) S.push('A szavaink a mieink. Nem tanítom meg neked.'); else { const sel = rng.shuffle(ks.slice()).filter((c) => !a.vocab[c].s).slice(0, 3); S.push(`Így mondjuk: ${sel.map((c) => `„${a.vocab[c].w}” — ${LW.Speech.gloss(c)}`).join(', ')}.`); for (const c of sel) LW.Speech.reveal(W, a.langId, a.vocab[c].w, c, 0); const l = W.langs.get(a.langId); if (l && l.name) S.push(`A nyelvünk a ${l.name.toLowerCase()}.`); } break; }
+        case 'weather': { const temp = W.tileTemp(W.idx(a.x | 0, a.y | 0)); S.push(`${W.weather.describe(temp)}, ${temp.toFixed(0)} fok. ${temp < 5 ? 'Hideg.' : temp > 25 ? 'Meleg.' : 'Elviselhető.'}`); break; }
+        case 'world': { const ch = W.history.chronicle.slice(-3).map((e) => e.text); S.push(ch.length ? `Ami történt: ${ch.join(' ')}` : 'Nem történt semmi, amiről beszélni érdemes.'); break; }
+        default: S.push(pick(['Nem értem a kérdést.', 'Erre nem tudok mit mondani.', `Nem tudom. ${this.state(W, a)}`]));
+      }
+      return S;
+    },
+    /** A hang mindenkihez szól: mindenki hallja, aki ébren van; néhányan felelnek. */
+    broadcast(world, text, opts) {
+      opts = opts || {}; const it = this.parse(world, text); const rng = world.rng; const hearers = [], replies = [];
+      for (const a of world.agents.values()) { if (a.sleeping && rng.chance(0.7)) continue; if (LW.Agents.stage(world, a) === 'infant') continue; hearers.push(a); }
+      const max = opts.maxReplies || 3;
+      const order = hearers.slice().sort((x, y) => (y.beliefs.creator + y.personality.sociability * 0.5 + (y.id === opts.preferId ? 2 : 0)) - (x.beliefs.creator + x.personality.sociability * 0.5 + (x.id === opts.preferId ? 2 : 0)));
+      for (const a of hearers) { const res = this.respond(world, a, text, { intent: { ...it }, broadcast: true }); if (order.indexOf(a) < max && (res.reply || res.utt)) replies.push({ a, res }); }
+      world.events.emit('CreatorSpoke', { tick: world.tick, text: `A hang mindenkihez szólt: „${excerpt(text)}”`, hearers: hearers.length });
+      return { it, hearers: hearers.length, replies };
+    },
+    // ---------------- nyelvi modellnek: tények és kérés
+    facts(world, a) {
+      const W = world; const A = LW.Agents; const N = a.needs, E = a.emotions; const name = (id) => { const o = W.agents.get(id) || W.deceased.get(id); return o ? o.name : 'valaki'; };
+      const s = LW.Settlements.at(W, a.x, a.y); const home = a.home != null ? W.buildings.get(a.home) : null; const l = W.langs.get(a.langId);
+      const lines = [];
+      lines.push(`Név: ${a.name} (${a.sex === 'f' ? 'nő' : 'férfi'}, ${Math.floor(A.age(W, a))} éves, ${LW.HU.occupation(a.occupation || A.stage(W, a))}${a.genesis ? ', az Elsők egyike' : ''})`);
+      lines.push(`Világ: ${W.name}, ${W.year}. év, ${LW.Time.seasonName(W.tick)}, ${LW.Time.isNight(W.tick) ? 'éjszaka' : 'nappal'}; idő: ${W.weather.describe(W.tileTemp(W.idx(a.x | 0, a.y | 0)))}, ${W.tileTemp(W.idx(a.x | 0, a.y | 0)).toFixed(0)} °C`);
+      lines.push(`Hely: ${s ? s.name + ' (' + LW.HU.tier(s.tier) + ')' : 'névtelen vidék'}; otthon: ${home ? LW.Buildings.def(home).label.toLowerCase() : 'nincs'}`);
+      lines.push(`Éppen: ${this.doing(W, a)}${a.why && a.why.chosen ? ' — mert ' + a.why.chosen.factors.slice(0, 2).join(', ') : ''}`);
+      lines.push(`Szükségletek (0–100): ${Object.entries(N).map(([k, v]) => `${LW.HU.need(k).toLowerCase()} ${Math.round(v * 100)}`).join(', ')}; egészség ${Math.round(a.health * 100)}`);
+      const em = Object.entries(E).filter(([, v]) => v > 0.15).sort((x, y) => y[1] - x[1]).slice(0, 4); lines.push(`Érzések: ${em.length ? em.map(([k, v]) => `${LW.HU.emotion(k)} ${Math.round(v * 100)}`).join(', ') : 'nyugodt'}`);
+      const tr = Object.entries(a.personality).sort((x, y) => Math.abs(y[1] - 0.5) - Math.abs(x[1] - 0.5)).slice(0, 5); lines.push(`Jellem: ${tr.map(([k, v]) => `${v < 0.5 ? 'kevés ' : ''}${LW.HU.trait(k)} (${Math.round(v * 100)})`).join(', ')}`);
+      lines.push(`Család: pár: ${a.partner != null ? name(a.partner) : 'nincs'}; szülők: ${a.parents.filter((p) => p != null).map(name).join(', ') || (a.genesis ? 'nincs, teremtetett' : 'ismeretlen')}; gyerekek: ${a.children.map(name).join(', ') || 'nincs'}`);
+      const rels = [...a.relationships.entries()].filter(([id]) => W.agents.has(id)).map(([id, r]) => ({ id, r, label: LW.Relationships.label(r) })).filter((x) => x.label !== 'idegen').sort((x, y) => (y.r.friendship + y.r.romance - y.r.resentment) - (x.r.friendship + x.r.romance - x.r.resentment)).slice(0, 5); if (rels.length) lines.push(`Kapcsolatok: ${rels.map((x) => `${name(x.id)} (${x.label})`).join(', ')}`);
+      const techs = [...a.knowledge.techs].map((t) => LW.Tech.D[t]).filter((d) => d && !d.hidden).map((d) => d.name.toLowerCase()); lines.push(`Tudás: ${techs.length ? techs.join(', ') : 'semmi, csak ösztön'}; holmi: ${Object.entries(a.inv).filter(([, q]) => q > 0).map(([k, q]) => `${LW.ITEMS[k] ? LW.ITEMS[k].label.toLowerCase() : k} ×${q}`).join(', ') || 'semmi'}`);
+      lines.push(`Hit a Teremtőben: ${Math.round(a.beliefs.creator * 100)}/100; bizalom a hang iránt: ${Math.round((a.beliefs.trust || 0) * 100)} (−100…100)`);
+      const ks = Object.keys(a.vocab || {}); lines.push(`Nyelv: ${l ? LW.Speech.describeLang(W, l) : 'nincs'}; ${ks.length} szót tud${ks.length ? ', pl. ' + ks.slice(0, 5).map((c) => `„${a.vocab[c].w}”=${LW.Speech.gloss(c)}`).join(', ') : ' (mutogat)'}`);
+      const mems = a.memory.episodic.slice(-8).reverse().map((m) => `${LW.Time.year(m.tick)}. év: ${m.text}`); lines.push(`Emlékek (frissek elöl): ${mems.join(' | ') || 'nincs'}`);
+      const strong = a.memory.emotional.slice(-3).map((m) => m.text); if (strong.length) lines.push(`Legerősebb emlékek: ${strong.join(' | ')}`);
+      const recent = W.history.chronicle.slice(-4).map((e) => e.text); if (recent.length) lines.push(`Ami a világban történt mostanában: ${recent.join(' ')}`);
+      return lines;
+    },
+    prompt(world, a, text, res) {
+      const facts = this.facts(world, a); const it = res.it;
+      const outcome = it.cmd ? `A hang kérésére a döntésed már megszületett: ${{ obey: 'ENGEDELMESKEDSZ (megteszed, amit kért)', misinterpret: 'FÉLREÉRTETTED, valami hasonlót fogsz tenni', fear: 'MEGRÉMÜLTÉL és elbújsz', ignore: 'NEM TÖRŐDSZ VELE, a magad dolgát teszed' }[res.how] || 'nem tudod megtenni'}.` : res.nudged ? `A hang sugallata elért: egy napig erősebben gondolsz erre: ${GOAL_HU[res.nudged] || res.nudged}. Nem ígérsz semmit, csak fontolgatod.` : '';
+      const att = { confused: 'Nem tudod, ki beszél; zavart vagy, talán félsz. Nem tudsz semmit Teremtőről.', hostile: 'Neheztelsz a hangra, kurtán, elutasítóan felelsz.', wary: 'Gyanakodsz, óvatos vagy.', neutral: 'Semleges vagy, kíváncsi.', warm: 'Bizalommal, barátságosan felelsz.', devout: 'Hiszel benne, hogy a Teremtő szól; tisztelettel felelsz.' }[res.att];
+      const hist = (a.chatHistory || []).slice(-8, -1).map((h) => `${h.who === 'creator' ? 'A hang' : a.name}: ${h.text}`).join('\n');
+      const system = `Te ${a.name} vagy, egy ember egy ősi, kezdetleges világban. Nem tudsz semmit a mi világunkról, gépekről, országokról, más nyelvekről; csak azt tudod, ami a TÉNYEK között áll — ne találj ki új tényeket, neveket, helyeket. Egy száj nélküli hang szól hozzád (a világ Teremtője, aki figyeli a világot). Beszélj első személyben, MAGYARUL, egyszerűen, ahogy egy ilyen ember beszélne: 1–3 rövid mondat, a jellemed és a hangulatod szerint. ${att} Ha a hang parancsot adott, a döntést NEM te hozod meg most: a lenti KIMENETEL szerint fogalmazz. Ne magyarázd a rendszert, ne használj idézőjelet. Válaszolj kizárólag ezzel a JSON-nal: {"reply": "a válaszod", "trust": szám -0.2 és 0.2 között (mennyit változott a bizalmad a hang iránt e mondat után)}`;
+      const user = `TÉNYEK:\n${facts.join('\n')}\n${hist ? `\nEDDIGI BESZÉLGETÉS:\n${hist}\n` : ''}${outcome ? `\nKIMENETEL: ${outcome}\n` : ''}\nA hang most ezt mondja neked: „${text}”`;
+      return { system, user };
+    },
+    /** A modell válaszának alkalmazása (csak fogalmazás + kis bizalomváltozás). */
+    applyModel(world, a, parsed) {
+      const reply = parsed && typeof parsed.reply === 'string' ? parsed.reply.trim().slice(0, 400) : ''; if (!reply) return null;
+      const d = parsed && typeof parsed.trust === 'number' ? clamp(parsed.trust, -0.2, 0.2) : 0; a.beliefs.trust = clamp((a.beliefs.trust || 0) + d * 0.5, -1, 1);
+      if (a.chatHistory && a.chatHistory.length && a.chatHistory[a.chatHistory.length - 1].who === a.id) a.chatHistory[a.chatHistory.length - 1].text = reply.slice(0, 240); else (a.chatHistory = a.chatHistory || []).push({ who: a.id, text: reply.slice(0, 240), t: world.tick });
+      return reply;
+    },
+    /** Beszélgetés naplózása a világban (a felhőben is megmarad). */
+    log(world, entry) { world.chatLog = world.chatLog || []; entry.t = world.tick; entry.ms = Date.now(); world.chatLog.push(entry); if (world.chatLog.length > 200) world.chatLog.splice(0, world.chatLog.length - 200); return entry; },
+  };
+  function excerpt(text) { const s = String(text || '').replace(/\s+/g, ' ').trim(); return s.length > 60 ? s.slice(0, 57) + '…' : s; }
+  LW.Dialogue = Dialogue;
 })(globalThis.LW || (globalThis.LW = {}));
 
 
@@ -3050,7 +3565,7 @@
         if (!w.agents.has(a.id)) continue;
         try { this.agentDay(w, a, seasonFood); } catch (e) { if (w.onError) w.onError(e, a, { op: 'macro' }); }
       }
-      LW.Settlements.detect(w); LW.Agents.immigrationCheck(w);
+      LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w);
       for (const [i, g] of w.ground) { A().spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); }
     },
     agentDay(w, a, seasonFood) {
@@ -3095,7 +3610,7 @@
       A().daily(w, a); if (!w.agents.has(a.id)) return;
       // ---- social life
       const near = w.agentsNear(a.x, a.y, 14, a.id).filter((o) => w.agents.has(o.id));
-      if (near.length && stage !== 'infant') { const o = rng.pick(near); if (A().stage(w, o) !== 'infant' && rng.chance(0.7)) LW.Social.interact(w, a, o, 'converse', {}); }
+      if (near.length && stage !== 'infant') { const n = 1 + rng.int(0, 2); for (let k = 0; k < n; k++) { const o = rng.pick(near); if (A().stage(w, o) !== 'infant' && rng.chance(0.7)) LW.Social.interact(w, a, o, 'converse', {}); } }
       if (adult) {
         if (a.partner != null && w.agents.has(a.partner)) { const p = w.agents.get(a.partner); if (rng.chance(0.5)) LW.Social.interact(w, a, p, 'mate', {}); }
         else if (near.length && rng.chance(0.12)) { let best = null, bs = 0.35; for (const o of near) { if (!A().isAdult(w, o)) continue; const r = LW.Relationships.ensure(w, a, o); if (r.status === 'family' && LW.Relationships.kinship(w, a, o) >= 0.9) continue; if (r.lastFlirt != null && w.tick - r.lastFlirt < T.TICKS_PER_DAY * 6) continue; if (r.attraction > bs) { bs = r.attraction; best = o; } } if (best) LW.Social.interact(w, a, best, 'flirt', {}); }
@@ -3155,6 +3670,7 @@
       LW.Ecology.init(world);
       if (!world.history) new LW.History(world);
       world.ground = world.ground || new Map();
+      LW.Speech.init(world);
       world.rebuildBuckets();
     }
 
@@ -3190,12 +3706,13 @@
           if (((w.tick + a.id) & 1) === 0) LW.Perception.scan(w, a);
           if (LW.Brain.shouldDecide(w, a)) { LW.Brain.decide(w, a); a.lastDecisionTick = w.tick; }
           LW.Actions.step(w, a);
+          if (((w.tick + a.id) & 3) === 0) LW.Social.ambient(w, a);
           this.nightHazards(w, a);
         } catch (e) { w.onError(e, a, null); a.plan = null; }
       }
       LW.Buildings.step(w);
       if (w.tick % T.TICKS_PER_HOUR === 0) { const h = LW.Time.hour(w.tick); for (const a of w.agents.values()) if (a.id % 24 === h) LW.Memory.consolidate(w, a); }
-      if (w.tick % T.TICKS_PER_DAY === 0) { LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); for (const [i, g] of w.ground) { LW.Agents.spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); } }
+      if (w.tick % T.TICKS_PER_DAY === 0) { LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w); for (const [i, g] of w.ground) { LW.Agents.spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); } }
       if (w.tick % T.TICKS_PER_YEAR === 0) w.history.yearEnd();
       w.meta.lastSimulatedTick = w.tick;
       const dt = now() - t0; this.perf.tickUs = this.perf.tickUs * 0.98 + dt * 1000 * 0.02; if (dt * 1000 > this.perf.tickMaxUs) this.perf.tickMaxUs = dt * 1000; this.perf._acc++;
@@ -3247,7 +3764,7 @@
         const n = Math.min(300, detailTicks - dt);
         for (let k = 0; k < n; k++) this.tick();
         dt += n; doneTicks += n;
-        if (cb && cb.progress) cb.progress(doneTicks / total, `Simulating ${LW.Time.span(doneTicks)} of ${LW.Time.span(total)}…`);
+        if (cb && cb.progress) cb.progress(doneTicks / total, `Szimulálás: ${LW.Time.span(doneTicks)} / ${LW.Time.span(total)}…`);
         if (dt < detailTicks) schedule(stepDetail); else finish();
       };
       if (cb && cb.progress) cb.progress(0, 'A világ ébred…');
@@ -3283,7 +3800,7 @@
   const encArr = (arr) => ({ t: arr.constructor.name, d: b64encode(new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength)) });
   const decArr = (o) => { const u8 = b64decode(o.d); const buf = u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength); return o.t === 'Float32Array' ? new Float32Array(buf) : o.t === 'Uint16Array' ? new Uint16Array(buf) : new Uint8Array(buf); };
 
-  const TRANSIENT = new Set(['plan', 'why', 'env', 'threat', 'engagedWith']);
+  const TRANSIENT = new Set(['plan', 'why', 'env', 'threat', 'engagedWith', 'lastSaid']);
   function serializeAgent(a) {
     const o = {};
     for (const k in a) { if (TRANSIENT.has(k) || k[0] === '_') continue; o[k] = a[k]; }
@@ -3300,6 +3817,7 @@
     a.relationships = new Map(o.relationships || []);
     a.plan = null; a.why = null; a.env = null; a.threat = null; if (a.engagedUntil == null) a.engagedUntil = 0; if (a.lastDecisionTick == null) a.lastDecisionTick = -1000;
     if (!a.palette) a.palette = LW.Genetics.palette(a.genes.appearance);
+    if (!a.vocab) a.vocab = {}; if (a.beliefs && a.beliefs.trust == null) a.beliefs.trust = 0; if (!a.chatHistory) a.chatHistory = [];
     return a;
   }
 
@@ -3314,7 +3832,7 @@
         weather: w.weather.toJSON(), language: w.language.toJSON(),
         agents: [...w.agents.values()].map(serializeAgent), deceased: [...w.deceased.values()],
         buildings: [...w.buildings.values()], settlements: [...w.settlements.values()], landmarks: w.landmarks,
-        history: w.history.toJSON(),
+        history: w.history.toJSON(), speech: LW.Speech.toJSON(w),
       };
     },
     restore(state) {
@@ -3334,6 +3852,7 @@
       for (const st of state.settlements) w.settlements.set(st.id, st);
       w.landmarks = state.landmarks || [];
       LW.History.fromJSON(w, state.history);
+      LW.Speech.fromJSON(w, state.speech);
       const sim = new LW.Simulation(w);
       sim.setPreset(state.meta.speedPreset || w.cfg.time.defaultPreset);
       return sim;
@@ -3374,13 +3893,13 @@
       else { for (let d = 0; d < T.DAYS_PER_YEAR; d++) { LW.Macro.day(w); if (w.population === 0 && opts.stopOnExtinction !== false) break; } }
       const s = sim.summary(); metrics.timeline.push({ year: w.year, pop: s.population, techs: s.techs, level: s.techLevel, settlements: s.settlements, buildings: s.buildings });
       if (invariants) { const res = invariants.check(w); if (res.length) { failures.push({ year: w.year, res }); metrics.errors += res.length; } }
-      log(`Y${w.year} pop ${s.population} techs ${s.techs} (${s.techLevel}) settlements ${s.settlements} buildings ${s.buildings} births ${s.births} deaths ${s.deaths}`);
+      log(`${w.year}. év · népesség ${s.population} · tudás ${s.techs} (${s.techLevel}) · települések ${s.settlements} · épületek ${s.buildings} · születés ${s.births} · halál ${s.deaths}`);
       if (opts.onYear) opts.onYear(sim, y);
-      if (w.population === 0 && opts.stopOnExtinction !== false) { log('EXTINCTION at year ' + w.year); break; }
+      if (w.population === 0 && opts.stopOnExtinction !== false) { log('KIHALÁS: ' + w.year); break; }
     }
     metrics.ms = Date.now() - t0; metrics.summary = sim.summary();
     for (const k in w.history.firsts) metrics.firsts[k] = { year: LW.Time.year(w.history.firsts[k].tick), title: w.history.firsts[k].title };
-    metrics.chronicle = w.history.chronicle.map((e) => `Y${e.year} ${e.first ? '★ ' : ''}${e.text}`);
+    metrics.chronicle = w.history.chronicle.map((e) => `${e.year}. év ${e.first ? '★ ' : ''}${e.text}`);
     metrics.invariantFailures = failures; metrics.simErrors = sim.errors;
     return { sim, metrics };
   };
@@ -3395,7 +3914,7 @@
 
 
 /* ===== ../tests/invariants.js ===== */
-/* LEVENTE — THE CREATOR · tests/invariants.js — automated simulation invariants (ROADMAP.md §4) */
+/* LEVENTE — THE CREATOR · tests/invariants.js — automated szimulációs invariánsok (ROADMAP.md §4) */
 (function (LW) {
   'use strict';
 
@@ -3441,23 +3960,23 @@
     },
     /** Full suite. Returns {passed, failed, results[]} */
     suite(log = () => {}) {
-      const results = []; const push = (name, ok, info) => { results.push({ name, ok, info }); log(`${ok ? 'PASS' : 'FAIL'} ${name}${info ? ' — ' + info : ''}`); };
+      const results = []; const push = (name, ok, info) => { results.push({ name, ok, info }); log(`${ok ? 'OK' : 'HIBA'} ${name}${info ? ' — ' + info : ''}`); };
       try {
         const { sim, metrics } = LW.runHeadless({ seed: 777, years: 3, mode: 'detail', checkInvariants: true, log: () => {} });
-        push('3 detailed years without exception', metrics.simErrors.length === 0, metrics.simErrors.length ? metrics.simErrors[0].msg.slice(0, 200) : '');
-        push('invariants hold during detailed run', metrics.errors === 0, metrics.invariantFailures.length ? JSON.stringify(metrics.invariantFailures[0].res.slice(0, 3)) : '');
-        const rt = this.roundTrip(sim); push('save → load → save identical', rt.ok, `${(rt.size / 1024).toFixed(0)} KB`);
-        rt.sim2.runTicks(200); push('restored world keeps running', rt.sim2.errors.length === 0 && this.check(rt.sim2.world).length === 0);
+        push('3 részletes év kivétel nélkül', metrics.simErrors.length === 0, metrics.simErrors.length ? metrics.simErrors[0].msg.slice(0, 200) : '');
+        push('az invariánsok igazak a részletes futásban', metrics.errors === 0, metrics.invariantFailures.length ? JSON.stringify(metrics.invariantFailures[0].res.slice(0, 3)) : '');
+        const rt = this.roundTrip(sim); push('mentés → betöltés → mentés azonos', rt.ok, `${(rt.size / 1024).toFixed(0)} KB`);
+        rt.sim2.runTicks(200); push('a visszatöltött világ tovább fut', rt.sim2.errors.length === 0 && this.check(rt.sim2.world).length === 0);
         const m2 = LW.runHeadless({ seed: 777, years: 40, mode: 'macro', checkInvariants: true, log: () => {} }).metrics;
-        push('40 macro years without exception', m2.simErrors.length === 0, m2.simErrors.length ? m2.simErrors[0].msg.slice(0, 200) : '');
-        push('invariants hold during macro run', m2.errors === 0, m2.invariantFailures.length ? JSON.stringify(m2.invariantFailures[0].res.slice(0, 3)) : '');
-        const det = this.determinism(4242, 3000); push('same seed → identical world', det.ok);
+        push('40 makró-év kivétel nélkül', m2.simErrors.length === 0, m2.simErrors.length ? m2.simErrors[0].msg.slice(0, 200) : '');
+        push('az invariánsok igazak a makró-futásban', m2.errors === 0, m2.invariantFailures.length ? JSON.stringify(m2.invariantFailures[0].res.slice(0, 3)) : '');
+        const det = this.determinism(4242, 3000); push('ugyanaz a seed → ugyanaz a világ', det.ok);
         // tech prerequisites respected
         let prereqOk = true; for (const a of sim.world.agents.values()) for (const tId of a.knowledge.techs) { const d = LW.Tech.D[tId]; if (d.prereq) for (const p of d.prereq) if (!a.knowledge.techs.has(p) && !d.hidden) prereqOk = false; }
-        push('technology prerequisites respected', prereqOk);
+        push('a technológiai előfeltételek teljesülnek', prereqOk);
         // catch-up consistency: N days of catch-up advance the tick count exactly
-        const s3 = LW.Simulation.newWorld(99, JSON.parse(JSON.stringify(LW.CONFIG)), 0); s3.world.meta.lastRealTimeMs = 0; const r = s3.catchUp(5 * 3600 * 1000, { sync: true }); push('catch-up advances the exact owed ticks', r.worldTicks === r.owedTicks, `${r.worldTicks} ticks (${LW.Time.span(r.worldTicks)})`);
-      } catch (e) { push('suite crashed', false, String(e && e.stack || e)); }
+        const s3 = LW.Simulation.newWorld(99, JSON.parse(JSON.stringify(LW.CONFIG)), 0); s3.world.meta.lastRealTimeMs = 0; const r = s3.catchUp(5 * 3600 * 1000, { sync: true }); push('a felzárkózás pontosan a hiányzó tickeket lépi', r.worldTicks === r.owedTicks, `${r.worldTicks} ticks (${LW.Time.span(r.worldTicks)})`);
+      } catch (e) { push('a tesztsor összeomlott', false, String(e && e.stack || e)); }
       return { passed: results.filter((r) => r.ok).length, failed: results.filter((r) => !r.ok).length, results };
     },
   };

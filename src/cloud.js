@@ -42,7 +42,7 @@
         const b64 = btoa(unescape(encodeURIComponent(text)));
         const blob = await this.post(`${base}/blobs`, { content: b64, encoding: 'base64' });
         const tree = await this.post(`${base}/trees`, { tree: [{ path: this.path, mode: '100644', type: 'blob', sha: blob.sha }] });
-        const commit = await this.post(`${base}/commits`, { message: message || 'world state', tree: tree.sha, parents: [] });
+        const commit = await this.post(`${base}/commits`, { message: message || 'a világ állapota', tree: tree.sha, parents: [] });
         const ref = await fetch(`${base}/refs/heads/${this.branch}`, { method: 'PATCH', headers: this.headers(true), body: JSON.stringify({ sha: commit.sha, force: true }) });
         if (ref.status === 422 || ref.status === 404) { const c = await fetch(`${base}/refs`, { method: 'POST', headers: this.headers(true), body: JSON.stringify({ ref: `refs/heads/${this.branch}`, sha: commit.sha }) }); if (!c.ok) throw new Error('ref create ' + c.status); }
         else if (!ref.ok) throw new Error('ref update ' + ref.status);

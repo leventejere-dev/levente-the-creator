@@ -2,20 +2,20 @@
 (function (LW) {
   'use strict';
   const PX = LW.Sprites.PX;
-  const ZOOMS = [3, 4, 6, 8, 12, 16, 24, 32];
+  const ZOOMS = [3, 4, 6, 8, 12, 16, 24, 32, 48, 64];
 
   class Renderer {
     constructor(canvas, minimap, world) {
       this.canvas = canvas; this.ctx = canvas.getContext('2d'); this.minimap = minimap; this.mctx = minimap ? minimap.getContext('2d') : null;
       this.world = world;
-      this.cam = { x: world.genesis.x + 0.5, y: world.genesis.y + 0.5, zoom: 12 };
+      this.cam = { x: world.genesis.x + 0.5, y: world.genesis.y + 0.5, zoom: 16 };
       this.follow = null; this.selected = null; this.hover = null; this.godCursor = null; this.frame = 0;
       this.terrain = document.createElement('canvas'); this.terrain.width = world.w * PX; this.terrain.height = world.h * PX; this.tctx = this.terrain.getContext('2d');
       this.light = document.createElement('canvas'); this.lctx = this.light.getContext('2d');
       this.rain = []; this.flash = 0; this.lastTickDrawn = -1; this.perf = { ms: 0 };
       this.bakeAll();
     }
-    setWorld(world) { this.world = world; this.terrain.width = world.w * PX; this.terrain.height = world.h * PX; this.cam = { x: world.genesis.x + 0.5, y: world.genesis.y + 0.5, zoom: 12 }; this.follow = null; this.selected = null; this.bakeAll(); }
+    setWorld(world) { this.world = world; this.terrain.width = world.w * PX; this.terrain.height = world.h * PX; this.cam = { x: world.genesis.x + 0.5, y: world.genesis.y + 0.5, zoom: 16 }; this.follow = null; this.selected = null; this.bakeAll(); }
     bakeAll() { const w = this.world; for (let i = 0; i < w.w * w.h; i++) this.bakeTile(i); w.dirtyTiles.clear(); this.bakeMinimapBase(); }
     bakeTile(i) {
       const w = this.world; const x = w.xOf(i), y = w.yOf(i); const px = x * PX, py = y * PX;
@@ -54,11 +54,13 @@
       // re-bake dirty tiles (bounded per frame)
       let n = 0; for (const i of w.dirtyTiles) { this.bakeTile(i); w.dirtyTiles.delete(i); if (++n > 3000) break; }
       if (this.frame % 300 === 0) this.bakeMinimapBase();
-      c.imageSmoothingEnabled = false; c.fillStyle = '#07080c'; c.fillRect(0, 0, cv.width, cv.height);
+      c.fillStyle = '#07080c'; c.fillRect(0, 0, cv.width, cv.height);
+      c.imageSmoothingEnabled = z < PX; c.imageSmoothingQuality = 'high'; // kicsinyítve simítva, nagyítva éles képpontok
       // visible world rect
       const vw = cv.width / z, vh = cv.height / z; const x0 = this.cam.x - vw / 2, y0 = this.cam.y - vh / 2;
       const sx = Math.floor(x0 * PX), sy = Math.floor(y0 * PX); const dx = -(x0 * PX - sx) * (z / PX), dy = -(y0 * PX - sy) * (z / PX);
       c.drawImage(this.terrain, sx, sy, Math.ceil(vw * PX) + PX, Math.ceil(vh * PX) + PX, dx, dy, (Math.ceil(vw * PX) + PX) * (z / PX), (Math.ceil(vh * PX) + PX) * (z / PX));
+      c.imageSmoothingEnabled = false;
       const tx0 = Math.max(0, Math.floor(x0) - 1), ty0 = Math.max(0, Math.floor(y0) - 1), tx1 = Math.min(w.w - 1, Math.ceil(x0 + vw) + 1), ty1 = Math.min(w.h - 1, Math.ceil(y0 + vh) + 1);
       const S = z / PX; // sprite scale
       const lod = this.lodLevel();
@@ -75,13 +77,13 @@
         const s = this.worldToScreen(a.x, a.y);
         if (lod === 'region') { c.fillStyle = '#ffe9a8'; c.fillRect(s.x - 1, s.y - 1, 2, 2); continue; }
         const stage = LW.Agents.stage(w, a); const moving = a.plan && !a.plan.done && a.plan.steps[a.plan.i] && (a.plan.steps[a.plan.i].op === 'moveTo' || a.plan.steps[a.plan.i].op === 'follow' || a.plan.steps[a.plan.i].op === 'flee');
-        const frame = moving ? ((this.frame >> 3) & 1) : 0; const spr = LW.Sprites.agent(a, stage, frame, a.facing, a.sleeping);
-        const sw = spr.width * S, sh = spr.height * S; const bob = moving ? ((this.frame >> 3) & 1) * S : 0;
-        c.drawImage(spr, Math.round(s.x - sw / 2), Math.round(s.y - sh + S * 2 - bob), sw, sh);
-        if (this.selected === a.id) { c.strokeStyle = '#ffd37a'; c.lineWidth = 2; c.beginPath(); c.ellipse(s.x, s.y + S * 1.5, S * 5, S * 2.2, 0, 0, Math.PI * 2); c.stroke(); }
+        const frame = moving ? [1, 0, 2, 0][(this.frame >> 2) & 3] : 0; const spr = LW.Sprites.agent(a, stage, frame, a.facing, a.sleeping);
+        const sw = spr.width * S, sh = spr.height * S;
+        if (this.selected === a.id) { c.strokeStyle = '#ffd37a'; c.lineWidth = 2; c.beginPath(); c.ellipse(s.x, s.y + S * 1.5, Math.max(6, S * 7), Math.max(3, S * 3), 0, 0, Math.PI * 2); c.stroke(); }
+        c.drawImage(spr, Math.round(s.x - sw / 2), Math.round(s.y - sh + S * 2), Math.max(1, Math.round(sw)), Math.max(1, Math.round(sh)));
         // carrying / status hints at close zoom
-        if (lod === 'micro') { if (a.inv.wood) { c.fillStyle = '#7a4a22'; c.fillRect(s.x + sw * 0.35, s.y - sh * 0.75, S, S * 3); } if (a.inv.basket) { c.fillStyle = '#c9a86a'; c.fillRect(s.x - sw * 0.7, s.y - sh * 0.5, S * 2, S * 2); } if (a.pregnancy && (w.tick - a.pregnancy.since) > 96 * 120) { c.fillStyle = '#ffb0c0'; c.fillRect(s.x - S, s.y - sh - S * 2, S * 2, S); } }
-        if (a.divineRequest) { c.fillStyle = 'rgba(255,230,140,0.9)'; c.beginPath(); c.arc(s.x, s.y - sh - S * 3, S * 1.2, 0, Math.PI * 2); c.fill(); }
+        if (lod === 'micro') { if (a.inv.wood) { c.fillStyle = '#7a4a22'; c.fillRect(s.x + sw * 0.3, s.y - sh * 0.8, S * 2, S * 7); } if (a.pregnancy && (w.tick - a.pregnancy.since) > 96 * 120) { c.fillStyle = '#ffb0c0'; c.fillRect(s.x - S * 1.5, s.y - sh - S * 3, S * 3, S * 1.5); } }
+        if (a.divineRequest) { c.fillStyle = 'rgba(255,230,140,0.9)'; c.beginPath(); c.arc(s.x, s.y - sh - S * 4, Math.max(2, S * 2.4), 0, Math.PI * 2); c.fill(); }
       }
       // weather particles
       this.drawWeather(c, cv, z);
@@ -135,6 +137,8 @@
       const w = this.world; c.font = `${Math.max(11, Math.min(16, z))}px "Segoe UI", system-ui, sans-serif`; c.textAlign = 'center';
       for (const s of w.settlements.values()) { if (s.abandonedTick) continue; const p = this.worldToScreen(s.x + 0.5, s.y - 1.2); if (p.x < -100 || p.x > c.canvas.width + 100 || p.y < -50 || p.y > c.canvas.height + 50) continue; const label = `${s.name}`; const sub = `${LW.HU.tier(s.tier)} · ${s.population} lakó`; c.fillStyle = 'rgba(0,0,0,0.55)'; const tw = Math.max(c.measureText(label).width, c.measureText(sub).width) + 14; c.fillRect(p.x - tw / 2, p.y - 26, tw, 30); c.fillStyle = '#f1e5c4'; c.fillText(label, p.x, p.y - 13); c.fillStyle = '#bdb090'; c.font = `${Math.max(9, Math.min(12, z * 0.8))}px "Segoe UI", system-ui, sans-serif`; c.fillText(sub, p.x, p.y - 1); c.font = `${Math.max(11, Math.min(16, z))}px "Segoe UI", system-ui, sans-serif`; }
       if (lod !== 'region') for (const a of w.agents.values()) { if (a.id !== this.selected && !(this.hoverAgent === a.id)) continue; const p = this.worldToScreen(a.x, a.y); c.fillStyle = 'rgba(0,0,0,0.6)'; const tw = c.measureText(a.name).width + 10; c.fillRect(p.x - tw / 2, p.y - z * 2.2 - 16, tw, 16); c.fillStyle = a.id === this.selected ? '#ffd37a' : '#eee'; c.fillText(a.name, p.x, p.y - z * 2.2 - 4); }
+      // beszédbuborék: aki az imént szólt, annak a szavai egy pillanatra látszanak (közelről)
+      if (z >= 10) { c.font = `italic ${Math.max(10, Math.min(13, z * 0.9))}px "Segoe UI", system-ui, sans-serif`; for (const a of w.agents.values()) { const u = a.lastSaid; if (!u || w.tick - u.t > 6 || (!u.w.length && !u.g.length)) continue; const p = this.worldToScreen(a.x, a.y); if (p.x < -60 || p.x > c.canvas.width + 60 || p.y < -30 || p.y > c.canvas.height + 30) continue; const txt = u.w.length ? u.w.map((x) => x[1]).join(' ') : '…'; const tw = c.measureText(txt).width + 12; const y = p.y - z * 2.2 - (a.id === this.selected || this.hoverAgent === a.id ? 34 : 18); c.fillStyle = 'rgba(245,238,220,0.92)'; c.fillRect(p.x - tw / 2, y - 12, tw, 16); c.fillStyle = '#2a2418'; c.fillText(txt, p.x, y); } c.font = `${Math.max(11, Math.min(16, z))}px "Segoe UI", system-ui, sans-serif`; }
     }
     drawMinimap() {
       if (!this.mctx || !this.minimapBase) return; const w = this.world; const m = this.mctx; const cv = this.minimap; m.imageSmoothingEnabled = false;

@@ -12,12 +12,14 @@
       this.app = app; this.sim = app.sim; this.world = app.sim.world; this.r = app.renderer; this.audio = app.audio;
       this.tab = 'feed'; this.selected = null; this.selKind = null; this.godTool = null; this.cmdMode = 'message'; this.pendingCmd = null; this.lastPanel = 0; this.feedCount = 0; this.tree = null;
       this.bindTop(); this.bindTabs(); this.bindCanvas(); this.buildGodBar(); this.bindKeys();
+      this.chat = new LW.Chat(this);
       this.attachWorld(this.world);
     }
     attachWorld(world) {
       this.world = world; this.sim = this.app.sim; this.feedCount = 0; this.selected = null; this.selKind = null; $('#right').classList.add('hidden'); $('#mmwrap').classList.remove('shift'); $('#godbar').classList.remove('shift');
       $('#tab-feed').innerHTML = ''; $('#tab-god').innerHTML = ''; this.renderChronicle(); this.renderFirsts(); this.renderPeople();
       world.onHistory = (e) => this.onHistory(e);
+      this.chat.attachWorld(world);
       for (const e of world.history.feed.slice(-120)) this.appendFeed(e, false);
       for (const e of world.history.godFeed.slice(-60)) this.appendFeed(e, false, $('#tab-god'));
       this.bindSounds(world);
@@ -34,7 +36,8 @@
     setSpeed(p) { if (this.app.observer) { this.toast('Megfigyelő mód', 'Itt csak nézni lehet a világot. A menüből átveheted.', true); return; } if (!this.world.meta.started) { this.showGenesis(); return; } if (p === 'pause') this.sim.paused = !this.sim.paused; else { this.sim.paused = false; this.sim.setPreset(p); } this.refreshSpeed(); }
     refreshSpeed() { document.querySelectorAll('[data-speed]').forEach((b) => b.classList.toggle('active', this.sim.paused ? b.dataset.speed === 'pause' : b.dataset.speed === this.sim.preset)); }
     refreshSound() { $('#btn-sound').classList.toggle('active', this.audio.enabled && !this.audio.muted); $('#btn-sound').textContent = this.audio.enabled && !this.audio.muted ? '♪' : '♪̸'; }
-    bindTabs() { document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => { this.tab = b.dataset.tab; document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('active', x === b)); document.querySelectorAll('.tabbody').forEach((x) => x.classList.toggle('hidden', x.id !== 'tab-' + this.tab)); if (this.tab === 'chronicle') this.renderChronicle(); if (this.tab === 'firsts') this.renderFirsts(); if (this.tab === 'people') this.renderPeople(); this.click(); })); }
+    bindTabs() { document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => { this.tab = b.dataset.tab; document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('active', x === b)); document.querySelectorAll('.tabbody').forEach((x) => x.classList.toggle('hidden', x.id !== 'tab-' + this.tab)); if (this.tab === 'chronicle') this.renderChronicle(); if (this.tab === 'firsts') this.renderFirsts(); if (this.tab === 'people') this.renderPeople(); if (this.tab === 'chat') { this.chat.scrollEnd(); if (!this.app.observer) this.chat.input.focus(); } this.click(); })); }
+    showTab(name) { const b = document.querySelector(`.tabs button[data-tab="${name}"]`); if (b) b.click(); }
     click() { this.audio.play('click'); }
     refreshTop() {
       const w = this.world, s = this.sim.summary(); const T = LW.Time;
@@ -60,7 +63,7 @@
       box.appendChild(el); while (box.children.length > 220) box.removeChild(box.firstChild);
       if (scroll && box.scrollHeight - box.scrollTop - box.clientHeight < 80) box.scrollTop = box.scrollHeight;
     }
-    jumpTo(e) { const w = this.world; if (e.agentId != null && w.agents.has(e.agentId)) { this.select(w.agents.get(e.agentId)); const a = w.agents.get(e.agentId); this.r.centerOn(a.x, a.y); } else if (e.tile != null) { this.r.centerOn(w.xOf(e.tile) + 0.5, w.yOf(e.tile) + 0.5); } if (this.r.cam.zoom < 12) this.r.cam.zoom = 12; }
+    jumpTo(e) { const w = this.world; if (e.agentId != null && w.agents.has(e.agentId)) { this.select(w.agents.get(e.agentId)); const a = w.agents.get(e.agentId); this.r.centerOn(a.x, a.y); } else if (e.tile != null) { this.r.centerOn(w.xOf(e.tile) + 0.5, w.yOf(e.tile) + 0.5); } if (this.r.cam.zoom < 16) this.r.cam.zoom = 16; }
     renderChronicle() {
       const box = $('#tab-chronicle'); box.innerHTML = ''; const ch = this.world.history.chronicle; let year = -1;
       const list = ch.slice(-400);
@@ -107,7 +110,7 @@
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
         const k = e.key.toLowerCase(); const st = 24;
         if (k === ' ') { e.preventDefault(); this.setSpeed('pause'); } else if (k === 'w' || k === 'arrowup') this.r.pan(0, st); else if (k === 's' || k === 'arrowdown') this.r.pan(0, -st); else if (k === 'a' || k === 'arrowleft') this.r.pan(st, 0); else if (k === 'd' || k === 'arrowright') this.r.pan(-st, 0);
-        else if (k === '+' || k === '=') this.r.zoomIn(); else if (k === '-') this.r.zoomOut(); else if (k === 'o') this.r.overview(); else if (k === 'h') { this.r.centerOn(this.world.genesis.x, this.world.genesis.y); this.r.cam.zoom = 12; }
+        else if (k === '+' || k === '=') this.r.zoomIn(); else if (k === '-') this.r.zoomOut(); else if (k === 'o') this.r.overview(); else if (k === 'h') { this.r.centerOn(this.world.genesis.x, this.world.genesis.y); this.r.cam.zoom = 16; }
         else if (k === 'f' && this.selected != null) this.r.follow = this.r.follow ? null : this.selected; else if (k === 'escape') { this.godTool = null; this.pendingCmd = null; this.r.godCursor = null; $('#world').classList.remove('god'); this.refreshGodBar(); this.closeModal(); }
         else if (k === '1') this.setSpeed('slow'); else if (k === '2') this.setSpeed('normal'); else if (k === '3') this.setSpeed('fast'); else if (k === '4') this.setSpeed('ultra'); else if (k === '5') this.setSpeed('hyper');
         else if (k === '`') $('#debug').classList.toggle('hidden'); else if (k === 't' && this.selected != null) this.showTree(this.world.agents.get(this.selected));
@@ -115,7 +118,7 @@
     }
     // ---------------- kiválasztás & vizsgáló
     _openRight() { $('#right').classList.remove('hidden'); $('#mmwrap').classList.add('shift'); $('#godbar').classList.add('shift'); }
-    select(a) { this.selected = a.id; this.selKind = 'agent'; this.r.selected = a.id; this._openRight(); this.renderInspector(true); this.refreshGodBar(); }
+    select(a) { this.selected = a.id; this.selKind = 'agent'; this.r.selected = a.id; this._openRight(); this.renderInspector(true); this.refreshGodBar(); if (this.chat && LW.Agents.stage(this.world, a) !== 'infant') this.chat.setTarget(a.id); }
     selectBuilding(b) { this.selected = b.id; this.selKind = 'building'; this.r.selected = null; this._openRight(); this.renderInspector(true); this.refreshGodBar(); }
     selectTile(i) { this.selected = i; this.selKind = 'tile'; this.r.selected = null; this._openRight(); this.renderInspector(true); this.refreshGodBar(); }
     closeInspector() { this.selected = null; this.selKind = null; this.r.selected = null; this.r.follow = null; $('#right').classList.add('hidden'); $('#mmwrap').classList.remove('shift'); $('#godbar').classList.remove('shift'); this.refreshGodBar(); }
@@ -134,7 +137,7 @@
       el.appendChild(h('h2', null, h('span', { class: 'sw', style: `display:inline-block;width:14px;height:14px;border-radius:3px;background:${a.palette.skin};border:3px solid ${a.palette.hair}` }), a.name, h('button', { class: 'close', onclick: () => this.closeInspector() }, '✕')));
       const home = a.home != null ? w.buildings.get(a.home) : null; const settlement = LW.Settlements.at(w, a.x, a.y);
       el.appendChild(h('div', { class: 'sub' }, `${a.sex === 'f' ? 'Nő' : 'Férfi'} · ${Math.floor(age)} éves · ${HU().occupation(a.occupation || stage)} · ${a.generation}. nemzedék${a.genesis ? ' · az Elsők egyike' : ''}${settlement ? ' · ' + settlement.name : ''}${a.pregnancy ? ' · gyermeket vár' : ''}`));
-      el.appendChild(h('div', { class: 'btnrow' }, h('button', { onclick: () => { this.r.follow = this.r.follow === a.id ? null : a.id; this.click(); } }, this.r.follow === a.id ? '● Követem' : 'Követés'), h('button', { onclick: () => { this.showTree(a); this.click(); } }, 'Családfa'), h('button', { onclick: () => { this.showWhy(a); this.click(); } }, 'MIÉRT?')));
+      el.appendChild(h('div', { class: 'btnrow' }, h('button', { onclick: () => { this.r.follow = this.r.follow === a.id ? null : a.id; this.click(); } }, this.r.follow === a.id ? '● Követem' : 'Követés'), h('button', { onclick: () => { this.showTree(a); this.click(); } }, 'Családfa'), h('button', { onclick: () => { this.showWhy(a); this.click(); } }, 'MIÉRT?'), h('button', { class: 'primary', onclick: () => { this.chat.setTarget(a.id); this.showTab('chat'); } }, 'Beszélgetés')));
       el.appendChild(h('div', { class: 'thought' }, `„${this.thought(a)}”`));
       el.appendChild(h('h3', null, 'Állapot'));
       el.appendChild(this.bar('Egészség', a.health)); el.appendChild(this.bar('Kedv', LW.clamp01(0.5 + this.mood(a) / 2), this.mood(a) < -0.2 ? 'bad' : this.mood(a) < 0.1 ? 'warn' : ''));
@@ -164,6 +167,13 @@
       const inv = Object.entries(a.inv).filter(([, q]) => q > 0);
       el.appendChild(h('div', { class: 'chips' }, ...(inv.length ? inv.map(([k, q]) => h('span', { class: 'chip' }, `${LW.ITEMS[k] ? LW.ITEMS[k].label : k} ×${q}`)) : [h('span', { class: 'chip' }, 'semmi')])));
       el.appendChild(h('div', { class: 'kv', style: 'margin-top:6px' }, h('span', null, 'Otthon'), h('span', null, home ? `${LW.Buildings.def(home).label}${home.storage && Object.keys(home.storage).length ? ' · raktár: ' + Object.entries(home.storage).map(([k, q]) => `${q} ${LW.ITEMS[k] ? LW.ITEMS[k].label.toLowerCase() : k}`).join(', ') : ''}` : 'nincs'), h('span', null, 'Hit'), h('span', null, a.beliefs.creator > 0.7 ? `hisz a Teremtőben (${pct(a.beliefs.creator)})` : a.beliefs.creator > 0.3 ? `tűnődik egy Teremtőn (${pct(a.beliefs.creator)})` : 'nem tud rólad semmit')));
+      // nyelv & viszony a hanghoz
+      el.appendChild(h('h3', null, 'Nyelv & a hang'));
+      const lang = w.langs ? w.langs.get(a.langId) : null; const vk = Object.keys(a.vocab || {}); const secret = vk.filter((c) => a.vocab[c].s).length;
+      const trust = a.beliefs.trust || 0; const trLabel = a.beliefs.creator < 0.25 ? 'nem tud rólad' : trust > 0.35 ? 'bízik benned' : trust > 0.1 ? 'inkább bízik benned' : trust < -0.35 ? 'neheztel rád' : trust < -0.1 ? 'tart tőled' : 'még nem döntött rólad';
+      const fl = LW.Speech.fluency(w, a); const flLabel = fl < 0.2 ? 'mutogat' : fl < 0.4 ? 'akadozva beszél' : fl < 0.7 ? 'beszél' : 'folyékonyan beszél';
+      el.appendChild(h('div', { class: 'chips' }, h('span', { class: 'chip' }, lang ? LW.Speech.describeLang(w, lang) : 'nincs nyelv'), h('span', { class: 'chip' }, `${vk.length} szó${secret ? ` · ${secret} titkos` : ''}`), h('span', { class: 'chip', title: `folyékonyság ${pct(fl)}` }, flLabel), h('span', { class: 'chip' + (trust < -0.1 ? ' warn' : trust > 0.1 ? ' gold' : '') }, trLabel)));
+      if (vk.length) { const ear = w.creatorSettings && w.creatorSettings.divineEar; const show = vk.slice(-8).map((c) => { const v = a.vocab[c]; const k = LW.Speech.known(w, a.langId, v.w); const und = k || (ear && !v.s); return h('span', { class: 'chip', title: und ? LW.Speech.gloss(c) : 'nem érted (még)' }, `${v.w}${und ? ' = ' + LW.Speech.gloss(c) : ' = ?'}${v.s ? ' 🔒' : ''}`); }); el.appendChild(h('div', { class: 'chips', style: 'margin-top:4px' }, ...show)); }
       if (a.achievements.length) { el.appendChild(h('h3', null, 'Tettek')); el.appendChild(h('div', { class: 'chips' }, ...a.achievements.map((x) => h('span', { class: 'chip gold' }, x)))); }
       el.appendChild(h('h3', null, 'Emlékek'));
       const mems = a.memory.episodic.slice(-10).reverse();
@@ -177,6 +187,7 @@
       const w = this.world; const act = LW.Actions.describe(w, a); const E = a.emotions, N = a.needs;
       if (a.sleeping) return E.grief > 0.3 ? 'Csak álmomban nem fáj.' : 'Alszik.';
       if (a.divineRequest) return a.divineRequest.force ? 'A testem mozdul, és nem én mozdítom.' : 'Egy hang, aminek nincs szája. El kell döntenem, mit akar.';
+      if (a.nudge && w.tick < a.nudge.until && a.plan && a.plan.goal === a.nudge.goal) return `„${a.nudge.text}” — ezt mondta a hang. Talán igaza van.`;
       if (a.danger > 0.4) return 'Veszély. El innen.';
       if (N.food < 0.2) return `Olyan éhes vagyok. ${cap(act)}.`; if (N.water < 0.2) return `Kiszáradt a torkom. ${cap(act)}.`; if (N.warmth < 0.3) return `A hideg a csontomig hatol. ${cap(act)}.`;
       if (E.grief > 0.5) return 'Elment. Mégis keresem.'; if (E.love > 0.6 && a.partner != null) return `${this.nameOf(a.partner)}. Ma minden könnyebb.`; if (E.jealousy > 0.5) return 'Láttam őket együtt. Nem tudom nem látni.'; if (E.fear > 0.5) return 'Valami nincs rendben. Érzem a levegőben.'; if (E.pride > 0.5) return 'Csináltam valamit. Az enyém, és jó.';
@@ -269,9 +280,9 @@
     // ---------------- Teremtő-sáv
     buildGodBar() {
       const box = $('#god-interventions'); box.innerHTML = ''; box.appendChild(h('span', { class: 'gtitle' }, 'Teremtő'));
-      for (const [k, K] of Object.entries(LW.God.KINDS)) { const b = h('button', { class: 'godbtn' + (['disease', 'kill', 'destroy', 'meteor', 'earthquake', 'fire', 'lightning'].includes(k) ? ' danger' : ''), title: K.desc, onclick: () => this.pickGod(k) }, h('i', null, K.icon), K.label); b.dataset.god = k; box.appendChild(b); }
+      for (const [k, K] of Object.entries(LW.God.KINDS)) { const b = h('button', { class: 'godbtn' + (['disease', 'kill', 'destroy', 'meteor', 'earthquake', 'fire', 'lightning'].includes(k) ? ' danger' : ''), title: K.desc, onclick: () => this.pickGod(k) }, LW.Icons.el(k, 20), K.label); b.dataset.god = k; box.appendChild(b); }
       const cb = $('#god-commands'); cb.innerHTML = ''; cb.appendChild(h('span', { class: 'gtitle', id: 'cmd-title' }, 'Parancs'));
-      for (const [k, label] of Object.entries(LW.God.COMMANDS)) cb.appendChild(h('button', { class: 'godbtn', onclick: () => this.pickCmd(k) }, h('i', null, { go: '➤', build: '⌂', follow: '↝', protect: '⛨', explore: '✧', leave: '⇥', search: '⌕' }[k]), label));
+      for (const [k, label] of Object.entries(LW.God.COMMANDS)) cb.appendChild(h('button', { class: 'godbtn', onclick: () => this.pickCmd(k) }, LW.Icons.el(k, 20), label));
       const mode = h('button', { class: 'modebtn', id: 'cmd-mode', onclick: () => { this.cmdMode = this.cmdMode === 'force' ? 'message' : 'force'; this.refreshGodBar(); this.click(); } }, 'Isteni üzenet'); cb.appendChild(mode);
     }
     pickGod(k) { this.click(); if (this.app.observer) { this.toast('Megfigyelő mód', 'Innen nem tudsz beavatkozni. A menüből átveheted a világot.', true); return; } if (this.godTool === k) { this.godTool = null; this.r.godCursor = null; $('#world').classList.remove('god'); } else { this.godTool = k; this.pendingCmd = null; const K = LW.God.KINDS[k]; this.r.godCursor = { kind: k, radius: { rain: 12, forest: 3, food: 3, animals: 4, resource: 6, disease: 5, healing: 5, fertility: 6, earthquake: 8, meteor: 4 }[k] || 0 }; $('#world').classList.add('god'); if (K.target === 'world') { const text = LW.God.intervene(this.world, k, { x: -1, y: -1 }); if (text) this.audio.play(k === 'storm' ? 'thunder' : 'god'); this.godTool = null; this.r.godCursor = null; $('#world').classList.remove('god'); this.app.save(true); } } this.refreshGodBar(); }
@@ -301,8 +312,21 @@
       cloudBox.appendChild(h('div', { class: 'btnrow' }, h('button', { onclick: async () => { const t = tokenIn.value.trim(); if (!t) return; try { await C.verify(t); this.toast('Kulcs elfogadva', 'Ez a gép mostantól a Teremtő gépe; a világ a felhőbe ment.', true); if (app.observer) app.takeOver(); else app.save(true); this.showMenu(); } catch (e) { this.toast('A kulcs nem jó', String(e.message || e), true); } } }, 'Kulcs mentése'), C.canWrite ? h('button', { onclick: () => { C.setToken(''); this.toast('Kulcs törölve', 'Ez a gép csak helyben ment.', true); this.showMenu(); } }, 'Kulcs törlése') : null, app.observer && C.canWrite ? h('button', { class: 'primary', onclick: () => { this.closeModal(); app.takeOver(); } }, 'Átveszem itt a világot') : null));
       cloudBox.appendChild(h('p', { class: 'tiny', style: 'margin:6px 0 0' }, 'Kulcs: github.com → Settings → Developer settings → Personal access tokens → Fine-grained → csak ez a repó, Contents: Read and write. A kulcs csak ebben a böngészőben tárolódik.'));
       el.appendChild(cloudBox);
+      // nyelvi modell a beszélgetéshez
+      const L = LW.LLM; const aiBox = h('div', { style: 'border:1px solid rgba(90,200,184,.3);border-radius:6px;padding:10px 12px;margin:10px 0' });
+      aiBox.appendChild(h('h3', { style: 'margin:0 0 6px;font-size:11px;letter-spacing:.2em;color:#5ac8b8' }, 'BESZÉLGETÉS — NYELVI MODELL (INGYENES GEMINI-KULCS)'));
+      aiBox.appendChild(h('p', { class: 'tiny', style: 'margin:0 0 6px' }, `Kulcs nélkül is beszélhetsz velük: a beépített válaszoló az emlékeikből, érzéseikből, kapcsolataikból felel. Ingyenes Google Gemini-kulccsal természetesebben fogalmaznak (a modell csak fogalmaz — hogy mi történik, azt a világ dönti el). Állapot: ${L.enabled ? (L.status === 'quota' ? 'a keret most kimerült, kis szünet' : L.status === 'error' ? 'hiba — ' + L.error : 'kulcs megadva · ' + L.model) : 'NINCS KULCS — beépített válaszoló'}.`));
+      const aiIn = h('input', { type: 'password', placeholder: 'Gemini API-kulcs (AIza…)', style: 'width:100%', value: '' }); aiBox.appendChild(aiIn);
+      const modelSel = h('select', { style: 'margin-top:6px;max-width:100%;font:inherit;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:3px 4px' });
+      const fillModels = () => { modelSel.innerHTML = ''; const names = L.models.length ? L.models : (L.model ? [L.model] : []); for (const n of names) modelSel.appendChild(h('option', { value: n }, n)); if (L.model) modelSel.value = L.model; modelSel.classList.toggle('hidden', !names.length); };
+      fillModels(); modelSel.addEventListener('change', () => { L.setModel(modelSel.value); this.toast('Modell', modelSel.value, true); });
+      aiBox.appendChild(h('div', { class: 'btnrow' }, h('button', { onclick: async () => { const k = aiIn.value.trim(); if (!k) return; try { const m = await L.verify(k); this.toast('Gemini-kulcs elfogadva', `Modell: ${m}. Beszélgess velük a Beszéd fülön.`, true); this.showMenu(); } catch (e) { this.toast('A kulcs nem jó', String(e.message || e), true); } } }, 'Kulcs mentése'), L.enabled ? h('button', { onclick: () => { L.setKey(''); L.setModel(''); L.models = []; this.toast('Kulcs törölve', 'A beépített válaszoló felel.', true); this.showMenu(); } }, 'Kulcs törlése') : null, L.enabled ? h('button', { onclick: async () => { try { L.models = await L.listModels(L.key); fillModels(); this.toast('Modellek frissítve', `${L.models.length} elérhető`, true); } catch (e) { this.toast('Nem sikerült', String(e.message || e), true); } } }, 'Modellek') : null));
+      aiBox.appendChild(modelSel);
+      aiBox.appendChild(h('p', { class: 'tiny', style: 'margin:6px 0 0' }, 'Kulcs: aistudio.google.com/apikey → „Create API key” (ingyenes, bankkártya nem kell). A kulcs csak ebben a böngészőben tárolódik; a kérések közvetlenül a Google-hoz mennek. Az ingyenes csomagban a Google felhasználhatja a beszélgetéseket a modelljei fejlesztésére.'));
+      el.appendChild(aiBox);
       const vol = h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: this.audio.volume, oninput: (e) => this.audio.setVolume(+e.target.value) });
       el.appendChild(h('div', { class: 'kv', style: 'margin:10px 0' }, h('span', null, 'Hangerő'), vol));
+      el.appendChild(h('p', { class: 'tiny', style: 'margin:0 0 8px' }, `Beszédhangok: ${LW.Voice.describeVoices()} Az emberek a Beszéd fülön szólalnak meg („hang” kapcsoló); mikrofonnal te is szólhatsz hozzájuk.`));
       const grid = h('div', { class: 'menu-grid' });
       grid.appendChild(h('button', { onclick: () => { app.save(true); this.toast('Mentve', 'A világ biztonságban van.', true); } }, 'Mentés most', h('small', null, 'Automatikus mentés 30 mp-enként és kilépéskor')));
       grid.appendChild(h('button', { onclick: () => app.exportWorld() }, 'Világ exportálása', h('small', null, 'Letölt egy .json fájlt, amit bárhol importálhatsz')));
@@ -325,8 +349,9 @@
     }
     showHelp() {
       const el = h('div'); el.appendChild(h('h1', null, 'Hogyan nézz egy világot', h('small', null, 'Te vagy a Teremtő. A világnak nincs rád szüksége.')));
-      el.appendChild(h('div', { class: 'help-grid' }, h('b', null, 'húzás / WASD'), h('span', null, 'kamera mozgatása'), h('b', null, 'görgő / + −'), h('span', null, 'nagyítás (közelről emberek, távolról civilizációk)'), h('b', null, 'kattintás'), h('span', null, 'ember, épület vagy mező megvizsgálása'), h('b', null, 'F'), h('span', null, 'a kiválasztott ember követése'), h('b', null, 'T'), h('span', null, 'a kiválasztott ember családfája'), h('b', null, 'szóköz'), h('span', null, 'szünet'), h('b', null, '1–5'), h('span', null, 'sebességfokozatok'), h('b', null, 'O / H'), h('span', null, 'világtérkép / vissza a Genezis helyére'), h('b', null, 'jobb klikk / Esc'), h('span', null, 'Teremtő-eszköz elvetése'), h('b', null, '`'), h('span', null, 'fejlesztői kijelző')));
+      el.appendChild(h('div', { class: 'help-grid' }, h('b', null, 'Beszéd fül'), h('span', null, 'hallgasd, ahogy egymással beszélnek (a saját, kialakuló nyelvükön), és szólj hozzájuk — kérj, kérdezz, sugallj; ők döntik el, mit kezdenek vele'), h('b', null, 'húzás / WASD'), h('span', null, 'kamera mozgatása'), h('b', null, 'görgő / + −'), h('span', null, 'nagyítás (közelről emberek, távolról civilizációk)'), h('b', null, 'kattintás'), h('span', null, 'ember, épület vagy mező megvizsgálása'), h('b', null, 'F'), h('span', null, 'a kiválasztott ember követése'), h('b', null, 'T'), h('span', null, 'a kiválasztott ember családfája'), h('b', null, 'szóköz'), h('span', null, 'szünet'), h('b', null, '1–5'), h('span', null, 'sebességfokozatok'), h('b', null, 'O / H'), h('span', null, 'világtérkép / vissza a Genezis helyére'), h('b', null, 'jobb klikk / Esc'), h('span', null, 'Teremtő-eszköz elvetése'), h('b', null, '`'), h('span', null, 'fejlesztői kijelző')));
       el.appendChild(h('p', null, 'A lenti Teremtő-eszközök a fizikai világot változtatják; aki látja, emlékezik rá, továbbadja, és hit alakulhat belőle. Válassz ki egy embert isteni parancshoz — üzenetként, amit ő értelmez, vagy kényszerként.'));
+      el.appendChild(h('p', null, 'Nyelv: senki nem kap szavakat. Aki mondani akar valamit, kitalál rá egy szót; a másik megtanulja vagy elrontja; a távol élő csoportok szava eltér, és idővel külön nyelv lesz belőle. Aki neheztel rád, titkos szavakat sugdos, hogy ne értsd. Az „isteni fül” minden nem titkos szót megért; kikapcsolva neked kell kihallgatnod, mi mit jelent — vagy megkérdezni tőlük.'));
       el.appendChild(h('p', null, 'A világ akkor is él, amikor ez az oldal be van zárva: a felhőben lakik, a GitHub gépei félóránként továbbviszik, és visszatéréskor jelentést kapsz arról, mi történt.'));
       el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => { this.closeModal(); if (!this.world.meta.started && !this.app.observer) this.showGenesis(); } }, 'Bezár')));
       this.modal(el);
@@ -365,7 +390,7 @@
     // ---------------- képkockánkénti frissítés
     update(dt) {
       const now = performance.now(); if (now - this.lastPanel < 250) return; this.lastPanel = now;
-      this.refreshTop(); this.refreshCloud(); if (this.selected != null && !$('#right').classList.contains('hidden')) this.renderInspector();
+      this.refreshTop(); this.refreshCloud(); this.chat.update(); if (this.selected != null && !$('#right').classList.contains('hidden')) this.renderInspector();
       if (this.tab === 'people' && (this.frameCount = (this.frameCount || 0) + 1) % 12 === 0) this.renderPeople();
       const dbg = $('#debug'); if (!dbg.classList.contains('hidden')) { const p = this.sim.perf; dbg.textContent = `tick ${p.tickUs.toFixed(0)} µs (max ${p.tickMaxUs.toFixed(0)}) · ${p.ticksLastSec} tick/s · rajz ${this.r.perf.ms.toFixed(1)} ms · emberek ${this.world.population} · épületek ${this.world.buildings.size} · ég ${this.world.burning.size} · piszkos ${this.world.dirtyTiles.size} · mentés ${(this.app.lastSaveSize / 1024).toFixed(0)} KB · hibák ${this.sim.errors.length} · felhő ${LW.Cloud.status}`; }
     }

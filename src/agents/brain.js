@@ -120,9 +120,14 @@
       plan: (c, a) => a._follow ? { steps: [{ op: 'follow', target: a._follow.id, n: 12 }], target: a._follow.id } : null,
     },
     socialize: {
-      applicable: (c, a) => !c.infant && c.nearby.length > 0 && N(a).social < 0.85,
-      score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { if (A().stage(c.world, o) === 'infant' || o.sleeping) continue; const r = a.relationships.get(o.id); if (r && c.tick - r.last < 20) continue; const aff = r ? 0.3 + r.friendship * 0.7 + (r.status === 'family' ? 0.3 : 0) + (a.partner === o.id ? 0.4 : 0) - r.resentment : 0.35; const d = LW.dist(a.x, a.y, o.x, o.y); const s = u(N(a).social) * 0.95 * (0.5 + P(a).sociability) * Math.max(0.1, aff) * (1 - d / 25); if (s > best) { best = s; who = o; } } a._socialTarget = who; return [best + (E(a).loneliness * 0.3), who ? [`magány ${LW.pct(1 - N(a).social)}`, `vele: ${who.name}`] : []]; },
-      plan: (c, a) => a._socialTarget ? { steps: [{ op: 'moveTo', i: c.world.idx(a._socialTarget.x | 0, a._socialTarget.y | 0), near: 1 }, { op: 'interact', target: a._socialTarget.id, kind: 'converse', n: 4 }], target: a._socialTarget.id } : null,
+      applicable: (c, a) => !c.infant && N(a).social < 0.85 && (c.nearby.length > 0 || N(a).social < 0.5),
+      score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { if (A().stage(c.world, o) === 'infant' || o.sleeping) continue; const r = a.relationships.get(o.id); if (r && c.tick - r.last < 20) continue; const aff = r ? 0.3 + r.friendship * 0.7 + (r.status === 'family' ? 0.3 : 0) + (a.partner === o.id ? 0.4 : 0) - r.resentment : 0.35; const d = LW.dist(a.x, a.y, o.x, o.y); const s = u(N(a).social) * 0.95 * (0.5 + P(a).sociability) * Math.max(0.1, aff) * (1 - d / 25); if (s > best) { best = s; who = o; } } a._socialTarget = who; a._socialSeek = null;
+        if (!who && N(a).social < 0.5) { // senki sincs a közelben: elindul oda, ahol utoljára látott valakit, akit ismer
+          let seek = null, bs = 0; for (const [id, m] of a.memory.social) { if (m.lastTile < 0 || !c.world.agents.has(id) || c.tick - m.lastSeen > LW.TIME.TICKS_PER_DAY * 30) continue; const o = c.world.agents.get(id); const r = a.relationships.get(id); const aff = r ? 0.3 + r.friendship * 0.7 + (a.partner === id ? 0.5 : 0) - r.resentment : 0.3; const d = LW.dist(a.x, a.y, c.world.xOf(m.lastTile), c.world.yOf(m.lastTile)); if (d < 2 || d > 60) continue; const s = aff * (1 - d / 80); if (s > bs) { bs = s; seek = { id, tile: m.lastTile, name: o.name }; } }
+          if (seek) { a._socialSeek = seek; return [u(N(a).social) * 0.8 * (0.5 + P(a).sociability) * Math.max(0.3, bs * 2) + E(a).loneliness * 0.3, [`magány ${LW.pct(1 - N(a).social)}`, `keresi: ${seek.name}`]]; }
+        }
+        return [best + (E(a).loneliness * 0.3), who ? [`magány ${LW.pct(1 - N(a).social)}`, `vele: ${who.name}`] : []]; },
+      plan: (c, a) => a._socialTarget ? { steps: [{ op: 'moveTo', i: c.world.idx(a._socialTarget.x | 0, a._socialTarget.y | 0), near: 1 }, { op: 'interact', target: a._socialTarget.id, kind: 'converse', n: 4 }], target: a._socialTarget.id } : a._socialSeek ? { steps: [{ op: 'moveTo', i: a._socialSeek.tile, near: 2 }], tag: 'seek:people' } : null,
     },
     flirt: {
       applicable: (c, a) => c.adult && c.nearby.length > 0,
@@ -317,6 +322,7 @@
         try { if (!g.applicable(ctx, a)) continue; } catch (e) { continue; }
         let [s, factors] = g.score(ctx, a); if (!(s > 0)) continue;
         if (a.failStreak && a.failStreak.goal === id && a.failStreak.count >= 3 && world.tick - a.failStreak.tick < 32) { s *= 0.3; factors = [...factors, `sorra kudarc (×${a.failStreak.count})`]; }
+        if (a.nudge && a.nudge.goal === id && world.tick < a.nudge.until) { s = s * 1.4 + 0.25; factors = [...factors, 'a hang sugallata']; } // a Teremtő szava: erősebb késztetés, nem parancs
         s += world.rng.gauss(0, sigma);
         cand.push({ id, s, factors });
       }

@@ -20,8 +20,10 @@
     "agents/actions.js",
     "agents/social.js",
     "settlements/settlements.js",
+    "language/speech.js",
     "history/history.js",
     "god/god.js",
+    "agents/dialogue.js",
     "sim/macro.js",
     "sim/simulation.js",
     "persistence/persistence.js",
@@ -29,10 +31,14 @@
   ],
   "client": [
     "cloud.js",
+    "llm.js",
+    "voice.js",
     "audio/audio.js",
+    "render/icons.js",
     "render/sprites.js",
     "render/renderer.js",
     "ui/ui.js",
+    "ui/chat.js",
     "main.js"
   ],
   "tests": [

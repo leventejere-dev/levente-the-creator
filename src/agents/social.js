@@ -25,7 +25,9 @@
       a.counters.talks++; t.counters.talks++;
       if (!wasFriend && ra.friendship >= 0.3 && ra.status === 'stranger') { ra.status = 'acquaintance'; }
       if (ra.friendship >= 0.3 && rt.friendship >= 0.3 && ra.status !== 'family' && ra.status !== 'partner' && ra.status !== 'dating' && !ra.friendEvent) { ra.friendEvent = true; rt.friendEvent = true; world.events.emit('FriendshipFormed', { tick: world.tick, agentId: a.id, otherId: t.id, first: !world.firsts || !world.firsts['friendship'] }); }
-      // knowledge transfer, either direction
+      // szavak: aki beszél, szót talál vagy mutogat; a másik tanul, néha visszaszól
+      LW.Speech.say(world, a, t); if (world.rng.chance(0.6)) LW.Speech.say(world, t, a);
+      // knowledge transfer, either direction (a közös nyelv segít)
       this.transfer(world, a, t, ra); this.transfer(world, t, a, rt);
       // where things are: people tell each other about places
       for (const [x, y] of [[a, t], [t, a]]) { const pl = [...x.knowledge.places.values()]; for (let k = 0; k < 3 && pl.length; k++) { const p = world.rng.pick(pl); if (p.k !== 'fire') A().rememberPlace(world, y, p.k, p.i, p.q); } }
@@ -43,7 +45,7 @@
       if (hidden.length && world.rng.chance(0.3)) LW.Tech.learn(world, listener, world.rng.pick(hidden), 'taught', teller);
       if (!cand.length) return;
       const id = world.rng.pick(cand); const d = LW.Tech.D[id]; const cfg = world.cfg.social;
-      const p = cfg.conversationTransferBase * (0.5 + teller.personality.sociability) * (0.5 + listener.personality.intelligence) * (0.5 + r.friendship) * (1 - d.difficulty * 0.5);
+      const p = cfg.conversationTransferBase * (0.5 + teller.personality.sociability) * (0.5 + listener.personality.intelligence) * (0.5 + r.friendship) * (1 - d.difficulty * 0.5) * (0.5 + 0.5 * LW.Speech.intelligibility(teller, listener));
       if (world.rng.chance(p)) LW.Tech.learn(world, listener, id, 'taught', teller);
       else listener.knowledge.progress[id] = Math.min(0.95, (listener.knowledge.progress[id] || 0) + world.cfg.tech.hintProgress);
     },
@@ -134,6 +136,19 @@
       M().add(world, t, { type: 'gift', text: `${a.name} adott nekem: ${label}`, importance: 0.4, emotion: 'joy', intensity: 0.4, subjects: [a.id] });
       world.events.emit('Gift', { tick: world.tick, agentId: a.id, otherId: t.id, item, n, importance: 0.1 });
       if (LW.ITEMS[item] && LW.ITEMS[item].food && A().stage(world, t) !== 'infant' && t.needs.food < 0.6) A().eat(world, t, item);
+    },
+    /** Rövid szóváltás: aki egymás mellett dolgozik, ül a tűznél, az beszél is — terv nélkül, gyakran. */
+    ambient(world, a) {
+      if (a.sleeping || a.engagedUntil > world.tick || LW.Agents.stage(world, a) === 'infant') return;
+      const near = world.agentsNear(a.x, a.y, 1.8, a.id); if (!near.length) return;
+      const t = near[world.rng.int(0, near.length - 1)]; if (t.sleeping || t.engagedUntil > world.tick || LW.Agents.stage(world, t) === 'infant') return;
+      const ra = R().ensure(world, a, t), rt = R().ensure(world, t, a);
+      if (world.tick - (ra.lastChat || -1000) < 12) return;
+      if (!world.rng.chance(0.25 * (0.4 + a.personality.sociability) * (ra.resentment > 0.6 ? 0.2 : 1))) return;
+      ra.lastChat = world.tick; rt.lastChat = world.tick; ra.familiarity = b01(ra.familiarity + 0.01); rt.familiarity = b01(rt.familiarity + 0.01); ra.friendship = b01(ra.friendship + 0.003); rt.friendship = b01(rt.friendship + 0.003);
+      a.needs.social = b01(a.needs.social + 0.06); t.needs.social = b01(t.needs.social + 0.05); a.emotions.loneliness *= 0.9; t.emotions.loneliness *= 0.9;
+      a.facing = t.x > a.x ? 1 : 0; t.facing = a.x > t.x ? 1 : 0;
+      LW.Speech.say(world, a, t); if (world.rng.chance(0.5)) LW.Speech.say(world, t, a);
     },
     /** Daily: breakups, dating time-outs. */
     daily(world, a) {

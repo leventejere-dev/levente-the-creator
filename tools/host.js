@@ -29,5 +29,5 @@ const out = 'GZ:' + zlib.gzipSync(Buffer.from(LW.Persistence.toJSON(sim), 'utf8'
 fs.writeFileSync(file, out); fs.writeFileSync(flag, '1');
 const after = sim.summary();
 console.log(`host: ${w.name} · simulated ${LW.Time.span(rep.worldTicks || 0)} (${rep.owedTicks} ticks) · year ${before.year} → ${after.year} · population ${before.population} → ${after.population} · ${(out.length / 1024).toFixed(0)} KB`);
-for (const e of (rep.chronicle || []).slice(-12)) console.log(`  Y${e.year} ${e.first ? '★ ' : ''}${e.text}`);
+for (const e of (rep.chronicle || []).slice(-12)) console.log(`  ${e.year}. év ${e.first ? '★ ' : ''}${e.text}`);
 if (sim.errors.length) { console.log('host: simulation errors:'); for (const e of sim.errors.slice(0, 5)) console.log('  ' + e.msg.slice(0, 300)); }

@@ -288,3 +288,29 @@ Genesis agents have random genomes drawn from the seed.
 `experiment:fire_making`) by a caregiver adds `knowledge.progress[tech] += 0.02 ×
 intelligence`; reaching 1.0 = learned. Skills grow with practice:
 `skill += 0.004 × (1 − skill)` per action, decay `0.0002/day` unused.
+
+## 7. Speech — emergent language (`src/language/speech.js`) and the shared chat (`src/agents/dialogue.js`)
+
+Nobody is given words. A person has `vocab: {concept → {w: word, s: secretFlag}}` and a `langId`. Concepts are a fixed
+catalogue (~90: needs, objects, nature, actions, qualities, abstractions) with Hungarian glosses. When two people talk
+(`Social.converse`, or the plan-less *ambient* chatter of people standing next to each other, `Social.ambient`), the
+speaker picks 2–4 concepts from their situation (goal, needs, emotions, weather, recent divine memory, partner/child) and
+utters them: a word if they have one, a coined one (from the language's phoneme inventory) if creativity allows, a
+gesture otherwise. Listeners learn words (intelligence, familiarity, youth), sometimes mutated (sound shift), and may
+adopt a different word from a respected speaker. Daily, per language, the consensus word per concept is recomputed; a
+language gets a name (its word for *we*) once 10 consensus words exist. Every 10 days settlements of the same language
+are compared: if two groups share < 45 % of their words the smaller one splits into a child language. Strangers arrive
+with their own small language; learning from a majority slowly switches a person's `langId`. Knowledge transfer in
+conversation is scaled by mutual intelligibility. Believers in trouble *pray* (an utterance addressed to the sky).
+
+**Secrecy.** People who believe in the Creator but distrust the voice (`beliefs.trust < −0.25`) re-coin words with a
+partner who shares the sentiment (`s: 1`). The Creator's *divine ear* understands every non-secret word; secret words
+must be decoded by listening (low probability) or revealed by someone who trusts the voice.
+
+**The shared chat.** `Dialogue.parse` classifies the Creator's free text (command / nudge / question / greeting / tone),
+`Dialogue.hear` applies the effects (belief, trust, fear/joy, memory, achievement), commands go through `God.command` +
+`God.interpret` (obey / misinterpret / fear / ignore — the person decides), nudges boost one goal for a day
+(`a.nudge`), and `Dialogue.compose` builds the Hungarian reply from state (attitude: confused / hostile / wary / neutral /
+warm / devout). Hostile people answer in their own tongue. An LLM (free Gemini key, browser-side) only *phrases* the
+reply from `Dialogue.facts` and the decided outcome. `trust` is a new belief axis moved by witnessed interventions
+(awe − fear), forced commands, kept promises and the tone of the voice.

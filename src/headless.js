@@ -24,13 +24,13 @@
       else { for (let d = 0; d < T.DAYS_PER_YEAR; d++) { LW.Macro.day(w); if (w.population === 0 && opts.stopOnExtinction !== false) break; } }
       const s = sim.summary(); metrics.timeline.push({ year: w.year, pop: s.population, techs: s.techs, level: s.techLevel, settlements: s.settlements, buildings: s.buildings });
       if (invariants) { const res = invariants.check(w); if (res.length) { failures.push({ year: w.year, res }); metrics.errors += res.length; } }
-      log(`Y${w.year} pop ${s.population} techs ${s.techs} (${s.techLevel}) settlements ${s.settlements} buildings ${s.buildings} births ${s.births} deaths ${s.deaths}`);
+      log(`${w.year}. év · népesség ${s.population} · tudás ${s.techs} (${s.techLevel}) · települések ${s.settlements} · épületek ${s.buildings} · születés ${s.births} · halál ${s.deaths}`);
       if (opts.onYear) opts.onYear(sim, y);
-      if (w.population === 0 && opts.stopOnExtinction !== false) { log('EXTINCTION at year ' + w.year); break; }
+      if (w.population === 0 && opts.stopOnExtinction !== false) { log('KIHALÁS: ' + w.year); break; }
     }
     metrics.ms = Date.now() - t0; metrics.summary = sim.summary();
     for (const k in w.history.firsts) metrics.firsts[k] = { year: LW.Time.year(w.history.firsts[k].tick), title: w.history.firsts[k].title };
-    metrics.chronicle = w.history.chronicle.map((e) => `Y${e.year} ${e.first ? '★ ' : ''}${e.text}`);
+    metrics.chronicle = w.history.chronicle.map((e) => `${e.year}. év ${e.first ? '★ ' : ''}${e.text}`);
     metrics.invariantFailures = failures; metrics.simErrors = sim.errors;
     return { sim, metrics };
   };

@@ -27,6 +27,15 @@ látod.
   hozzáférési kulcs, csak ehhez a repóhoz, *Contents: Read and write*). A kulcs csak abban a böngészőben tárolódik.
 - Egyszerre egy gép a Teremtő; a többi megfigyel, és a menüből átveheti a világot.
 
+**Beszéd.** A *Beszéd* fülön hallgathatod, ahogy egymással beszélnek — a saját, menet közben kialakuló nyelvükön
+(senki nem kap szavakat: aki mondani akar valamit, kitalál rá egy szót, a másik megtanulja vagy elrontja; a távol élő
+csoportok szava eltér, és idővel külön nyelv lesz belőle; aki neheztel a Teremtőre, titkos szavakat sugdos). Ugyanitt
+szólhatsz hozzájuk — egy emberhez vagy mindenkihez, írva vagy **mikrofonon**, isteni hangként. Kérhetsz (*menj a
+folyóhoz*, *építs*, *kövesd X-et*), kérdezhetsz (*hogy vagy?*, *mit jelent az, hogy…?*), sugallhatsz; ők a maguk feje
+szerint fogadják meg, és **magyarul felelnek** az emlékeikből, érzéseikből, kapcsolataikból. A válaszokat a böngésző
+fel is olvassa (*hang* kapcsoló). Ha a menüben megadsz egy **ingyenes Google Gemini-kulcsot** (aistudio.google.com/apikey),
+természetesebben fogalmaznak — a modell csak fogalmaz, hogy mi történik, azt a világ dönti el.
+
 A felület és minden esemény, emlék, gondolat magyar. A dokumentáció (`docs/`) angol, mert a forráskód nyelve is az.
 
 ## Status
@@ -35,7 +44,8 @@ A felület és minden esemény, emlék, gondolat magyar. A dokumentáció (`docs
 |------:|------|--------|
 | 0 | Architecture & models | ✅ `docs/` |
 | 1 | **Genesis MVP** | ✅ playable — `dist/levente-world.html` |
-| 2 | Civilization (villages, jobs, trade, language, culture, religion, server) | planned |
+| 1½ | **Speech** — emergent languages, the shared chat with the Creator (text + voice), free Gemini phrasing | ✅ |
+| 2 | Civilization (villages, jobs, trade, culture, religion, server) | planned |
 | 3 | States (cities, politics, currency, companies, wars) | planned |
 | 4 | Industrial | planned |
 | 5 | Digital | planned |

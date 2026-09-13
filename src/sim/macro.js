@@ -20,7 +20,7 @@
         if (!w.agents.has(a.id)) continue;
         try { this.agentDay(w, a, seasonFood); } catch (e) { if (w.onError) w.onError(e, a, { op: 'macro' }); }
       }
-      LW.Settlements.detect(w); LW.Agents.immigrationCheck(w);
+      LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w);
       for (const [i, g] of w.ground) { A().spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); }
     },
     agentDay(w, a, seasonFood) {
@@ -65,7 +65,7 @@
       A().daily(w, a); if (!w.agents.has(a.id)) return;
       // ---- social life
       const near = w.agentsNear(a.x, a.y, 14, a.id).filter((o) => w.agents.has(o.id));
-      if (near.length && stage !== 'infant') { const o = rng.pick(near); if (A().stage(w, o) !== 'infant' && rng.chance(0.7)) LW.Social.interact(w, a, o, 'converse', {}); }
+      if (near.length && stage !== 'infant') { const n = 1 + rng.int(0, 2); for (let k = 0; k < n; k++) { const o = rng.pick(near); if (A().stage(w, o) !== 'infant' && rng.chance(0.7)) LW.Social.interact(w, a, o, 'converse', {}); } }
       if (adult) {
         if (a.partner != null && w.agents.has(a.partner)) { const p = w.agents.get(a.partner); if (rng.chance(0.5)) LW.Social.interact(w, a, p, 'mate', {}); }
         else if (near.length && rng.chance(0.12)) { let best = null, bs = 0.35; for (const o of near) { if (!A().isAdult(w, o)) continue; const r = LW.Relationships.ensure(w, a, o); if (r.status === 'family' && LW.Relationships.kinship(w, a, o) >= 0.9) continue; if (r.lastFlirt != null && w.tick - r.lastFlirt < T.TICKS_PER_DAY * 6) continue; if (r.attraction > bs) { bs = r.attraction; best = o; } } if (best) LW.Social.interact(w, a, best, 'flirt', {}); }

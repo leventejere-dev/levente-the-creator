@@ -59,7 +59,7 @@
       for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(this.next() * (i + 1)); const t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
       return arr;
     }
-    getState() { return [this.a, this.b, this.c, this.d]; }
+    getState() { return [this.a >>> 0, this.b >>> 0, this.c >>> 0, this.d >>> 0]; }
     setState(s) { this.a = s[0] >>> 0; this.b = s[1] >>> 0; this.c = s[2] >>> 0; this.d = s[3] >>> 0; }
     /** derive an independent child generator (for world-gen sub-steps) */
     fork(label) { return new Rng((hash32(label) ^ this.int(0, 0x7fffffff)) >>> 0); }

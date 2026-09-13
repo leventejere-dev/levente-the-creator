@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 17:15 */
+/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 18:55 */
 
 /* ===== core/rng.js ===== */
 /* LEVENTE — THE CREATOR · core/rng.js
@@ -3130,7 +3130,7 @@
     static newWorld(seed, cfg, nowMs, opts = {}) {
       const world = LW.World.create(seed, cfg);
       world.tick = T.TICKS_PER_DAY * 100; // Genesis happens in early summer: the first ones get a warm season to learn
-      world.meta = { seed: world.seed, name: world.name, createdMs: nowMs, lastRealTimeMs: nowMs, lastSimulatedTick: 0, speedPreset: opts.preset || cfg.time.defaultPreset, creatorName: opts.creatorName || 'Levente' };
+      world.meta = { seed: world.seed, name: world.name, createdMs: nowMs, lastRealTimeMs: nowMs, lastSimulatedTick: 0, speedPreset: opts.preset || cfg.time.defaultPreset, creatorName: opts.creatorName || 'Levente', started: true };
       const sim = new Simulation(world);
       LW.Agents.genesis(world, opts.population || cfg.genesis.population);
       // the first ones look around before anything else
@@ -3182,7 +3182,7 @@
       const maxTicks = Math.min(Math.floor(this.tickDebt), 2000); if (maxTicks <= 0) return 0;
       const t0 = now(); let n = 0;
       while (n < maxTicks) { this.tick(); n++; if (now() - t0 > budgetMs) break; }
-      this.tickDebt -= n; if (this.tickDebt > 600) this.tickDebt = 600; // drop unpayable debt
+      this.tickDebt -= n; if (this.tickDebt > 20000) this.tickDebt = 20000; // debt beyond ~this is handled by a real catch-up
       this.perf._accT += realDtMs; if (this.perf._accT >= 1000) { this.perf.ticksLastSec = this.perf._acc; this.perf._acc = 0; this.perf._accT = 0; this.perf.tickMaxUs *= 0.5; }
       return n;
     }

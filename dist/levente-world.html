@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LEVENTE — THE CREATOR</title>
-<meta name="description" content="An autonomous, persistent, emergent digital civilization. Built 2026-09-13 17:15.">
+<meta name="description" content="An autonomous, persistent, emergent digital civilization. Built 2026-09-13 18:55.">
 <style>
 :root {
   --bg: #07080c; --panel: rgba(12, 14, 20, 0.86); --panel2: rgba(20, 23, 32, 0.9); --line: rgba(255, 255, 255, 0.08);
@@ -3331,7 +3331,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
     static newWorld(seed, cfg, nowMs, opts = {}) {
       const world = LW.World.create(seed, cfg);
       world.tick = T.TICKS_PER_DAY * 100; // Genesis happens in early summer: the first ones get a warm season to learn
-      world.meta = { seed: world.seed, name: world.name, createdMs: nowMs, lastRealTimeMs: nowMs, lastSimulatedTick: 0, speedPreset: opts.preset || cfg.time.defaultPreset, creatorName: opts.creatorName || 'Levente' };
+      world.meta = { seed: world.seed, name: world.name, createdMs: nowMs, lastRealTimeMs: nowMs, lastSimulatedTick: 0, speedPreset: opts.preset || cfg.time.defaultPreset, creatorName: opts.creatorName || 'Levente', started: true };
       const sim = new Simulation(world);
       LW.Agents.genesis(world, opts.population || cfg.genesis.population);
       // the first ones look around before anything else
@@ -3383,7 +3383,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       const maxTicks = Math.min(Math.floor(this.tickDebt), 2000); if (maxTicks <= 0) return 0;
       const t0 = now(); let n = 0;
       while (n < maxTicks) { this.tick(); n++; if (now() - t0 > budgetMs) break; }
-      this.tickDebt -= n; if (this.tickDebt > 600) this.tickDebt = 600; // drop unpayable debt
+      this.tickDebt -= n; if (this.tickDebt > 20000) this.tickDebt = 20000; // debt beyond ~this is handled by a real catch-up
       this.perf._accT += realDtMs; if (this.perf._accT >= 1000) { this.perf.ticksLastSec = this.perf._acc; this.perf._acc = 0; this.perf._accT = 0; this.perf.tickMaxUs *= 0.5; }
       return n;
     }
@@ -4050,7 +4050,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       $('#btn-help').addEventListener('click', () => { this.click(); this.showHelp(); });
       this.refreshSpeed(); this.refreshSound();
     }
-    setSpeed(p) { if (p === 'pause') this.sim.paused = !this.sim.paused; else { this.sim.paused = false; this.sim.setPreset(p); } this.refreshSpeed(); }
+    setSpeed(p) { if (!this.world.meta.started) { this.showGenesis(); return; } if (p === 'pause') this.sim.paused = !this.sim.paused; else { this.sim.paused = false; this.sim.setPreset(p); } this.refreshSpeed(); }
     refreshSpeed() { document.querySelectorAll('[data-speed]').forEach((b) => b.classList.toggle('active', this.sim.paused ? b.dataset.speed === 'pause' : b.dataset.speed === this.sim.preset)); }
     refreshSound() { $('#btn-sound').classList.toggle('active', this.audio.enabled && !this.audio.muted); $('#btn-sound').textContent = this.audio.enabled && !this.audio.muted ? '♪' : '♪̸'; }
     bindTabs() { document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => { this.tab = b.dataset.tab; document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('active', x === b)); document.querySelectorAll('.tabbody').forEach((x) => x.classList.toggle('hidden', x.id !== 'tab-' + this.tab)); if (this.tab === 'chronicle') this.renderChronicle(); if (this.tab === 'firsts') this.renderFirsts(); if (this.tab === 'people') this.renderPeople(); this.click(); })); }
@@ -4334,7 +4334,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       el.appendChild(h('div', { class: 'help-grid' }, h('b', null, 'drag / WASD'), h('span', null, 'pan the camera'), h('b', null, 'wheel / + −'), h('span', null, 'zoom (close zoom shows people, far zoom shows civilizations)'), h('b', null, 'click'), h('span', null, 'inspect a person, building or tile'), h('b', null, 'F'), h('span', null, 'follow the selected person'), h('b', null, 'T'), h('span', null, 'family tree of the selected person'), h('b', null, 'space'), h('span', null, 'pause'), h('b', null, '1–5'), h('span', null, 'speed presets'), h('b', null, 'O / H'), h('span', null, 'world overview / back to the Genesis site'), h('b', null, 'right-click / Esc'), h('span', null, 'cancel a Creator tool'), h('b', null, '`'), h('span', null, 'debug overlay')));
       el.appendChild(h('p', null, 'Creator tools at the bottom change the physical world; people who witness them remember, tell others, and may come to believe. Select a person to send divine commands — as a message they interpret, or as force.'));
       el.appendChild(h('p', null, 'The world keeps living while this page is closed: when you return, the missing time is simulated and a report tells you what happened.'));
-      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => this.closeModal() }, 'Close')));
+      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => { this.closeModal(); if (!this.world.meta.started) this.showGenesis(); } }, 'Close')));
       this.modal(el);
     }
     showGenesis() {
@@ -4342,7 +4342,8 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       const el = h('div'); el.appendChild(h('h1', null, 'Genesis', h('small', null, 'a world is born')));
       el.appendChild(h('div', { class: 'big' }, w.name)); el.appendChild(h('p', null, `A ${w.shape === 'twin' ? 'world of two lands' : w.shape} with a mean temperature of ${w.climateMean.toFixed(0)}°C. Three small beings stand in a vast wild world: ${names}. They know nothing. They will learn.`));
       el.appendChild(h('p', { class: 'tiny' }, 'Seed ' + w.seed + ' · the world is saved in this browser automatically · export it from the menu to keep it forever.'));
-      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { onclick: () => { this.closeModal(); this.showHelp(); } }, 'How does this work?'), h('button', { class: 'primary', onclick: () => { this.closeModal(); this.app.startAudio(); } }, 'Watch')));
+      el.appendChild(h('p', null, h('b', null, 'Time has not started yet.'), ' It starts the moment you press Watch — and from then on it never waits for you: while this page is closed, while your computer is off, they keep living, and you will be told what happened.'));
+      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { onclick: () => { this.closeModal(); this.showHelp(); } }, 'How does this work?'), h('button', { class: 'primary', onclick: () => { this.closeModal(); this.app.startAudio(); this.app.beginWorld(); } }, 'Watch')));
       this.modal(el);
     }
     showCatchup(progress, label) {
@@ -4408,8 +4409,8 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       this.renderer = new LW.Renderer($('#world'), $('#minimap'), this.sim.world);
       this.ui = new LW.UI(this);
       if (Store.getRaw('lw.muted') === '1') this.audio.muted = true;
-      if (restored) this.runCatchUp(this.sim, (rep) => { this.ui.showWelcomeReport(rep); });
-      else { this.sim.world.meta.lastRealTimeMs = Date.now(); this.ui.showGenesis(); this.save(true); }
+      if (restored && this.sim.world.meta.started !== false) this.runCatchUp(this.sim, (rep) => { this.ui.showWelcomeReport(rep); });
+      else { this.sim.paused = true; this.sim.world.meta.started = false; this.sim.world.meta.lastRealTimeMs = Date.now(); this.ui.showGenesis(); this.ui.refreshSpeed(); this.save(true); }
       this.loop = this.loop.bind(this); this.last = performance.now(); requestAnimationFrame(this.loop);
       window.addEventListener('beforeunload', () => this.saveSync()); document.addEventListener('visibilitychange', () => { if (document.hidden) this.saveSync(); });
       window.addEventListener('pointerdown', () => this.startAudio(), { once: true }); window.addEventListener('keydown', () => this.startAudio(), { once: true });
@@ -4419,11 +4420,22 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       this.ui.showCatchup(0, 'Waking the world…'); this.catchingUp = true; sim.paused = true;
       sim.catchUp(Date.now(), { progress: (p, label) => this.ui.showCatchup(p, label), done: (rep) => { this.catchingUp = false; sim.paused = false; this.lastReport = rep; this.renderer.bakeAll(); this.ui.attachWorld(sim.world); done(rep); this.save(true); } });
     }
+    /** The world begins the moment the Creator first looks at it. */
+    beginWorld() { const w = this.sim.world; if (w.meta.started) return; w.meta.started = true; w.meta.createdMs = Date.now(); w.meta.lastRealTimeMs = Date.now(); this.sim.paused = false; this.ui.refreshSpeed(); this.ui.toast('The world begins', `${w.name}, year 0. From now on everything is up to them.`, false); this.save(true); }
     startAudio() { if (this.audio.init()) { this.audio.resume(); this.ui.refreshSound(); } }
     toggleSound() { this.startAudio(); this.audio.setMuted(!this.audio.muted); Store.setRaw('lw.muted', this.audio.muted ? '1' : '0'); }
     loop(now) {
       const dt = Math.min(250, now - this.last); this.last = now;
-      if (!this.catchingUp) { this.sim.advance(dt, this.cfg.time.frameBudgetMs); this.sim.world.meta.lastRealTimeMs = Date.now(); }
+      const meta = this.sim.world.meta;
+      if (!this.catchingUp && meta.started) {
+        if (this.sim.paused) meta.lastRealTimeMs = Date.now(); // a deliberate pause is the Creator's choice: no time accrues
+        else {
+          // real time owed since the last simulated frame — background tabs are throttled, so this can be much more than one frame
+          const owedMs = Math.max(dt, Date.now() - (meta.lastRealTimeMs || Date.now()));
+          if (owedMs > 120000) { this.runCatchUp(this.sim, (rep) => this.ui.showWelcomeReport(rep)); }
+          else { this.sim.advance(owedMs, this.cfg.time.frameBudgetMs); meta.lastRealTimeMs = Date.now(); }
+        }
+      }
       this.renderer.draw(this.sim, this.audioEnv); this.audio.ambient(this.audioEnv); this.ui.update(dt);
       if (!this.catchingUp && now - this.lastSave > this.cfg.persistence.autosaveSeconds * 1000) this.save();
       requestAnimationFrame(this.loop);
@@ -4439,10 +4451,11 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
     importWorld() { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json'; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const sim = LW.Persistence.fromJSON(String(r.result)); this.replaceSim(sim, true); this.ui.toast('World imported', sim.world.name, true); } catch (e) { alert('Import failed: ' + e.message); } }; r.readAsText(f); }; inp.click(); }
     replaceSim(sim, catchUp) {
       this.sim = sim; this.renderer.setWorld(sim.world); this.ui.attachWorld(sim.world); this.ui.closeModal();
-      if (catchUp) this.runCatchUp(sim, (rep) => this.ui.showWelcomeReport(rep));
+      if (sim.world.meta.started == null) sim.world.meta.started = true; // imported/old saves are running worlds
+      if (catchUp && sim.world.meta.started) this.runCatchUp(sim, (rep) => this.ui.showWelcomeReport(rep));
       else { sim.world.meta.lastRealTimeMs = Date.now(); this.save(true); }
     }
-    newWorld(seed, population) { const sim = LW.Simulation.newWorld(seed, this.cfg, Date.now(), { population }); this.replaceSim(sim, false); this.ui.showGenesis(); }
+    newWorld(seed, population) { const sim = LW.Simulation.newWorld(seed, this.cfg, Date.now(), { population }); sim.paused = true; sim.world.meta.started = false; this.replaceSim(sim, false); this.ui.showGenesis(); this.ui.refreshSpeed(); }
     hasSnapshot(slot) { const s = Store.getRaw(`${Store.key}.snap${slot}`); if (!s) return null; const m = Store.getRaw(`${Store.key}.snap${slot}.meta`); return m || 'saved'; }
     async snapshot(slot) { const json = LW.Persistence.toJSON(this.sim); const ok = await Store.set(`${Store.key}.snap${slot}`, json); if (ok) { Store.setRaw(`${Store.key}.snap${slot}.meta`, `${this.sim.world.name} · year ${this.sim.world.year}`); this.ui.toast('Snapshot saved', `Slot ${slot} · year ${this.sim.world.year}`, true); } else this.ui.toast('Snapshot failed', 'Browser storage is full.', true); }
     async restoreSnapshot(slot) { const s = await Store.get(`${Store.key}.snap${slot}`); if (!s) return; try { const sim = LW.Persistence.fromJSON(s); sim.world.meta.lastRealTimeMs = Date.now(); this.replaceSim(sim, false); this.ui.toast('Timeline restored', `Continuing from year ${sim.world.year} — an alternate history begins.`, false); } catch (e) { alert('Restore failed: ' + e.message); } }

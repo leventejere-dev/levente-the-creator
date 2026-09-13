@@ -26,8 +26,8 @@
       this.renderer = new LW.Renderer($('#world'), $('#minimap'), this.sim.world);
       this.ui = new LW.UI(this);
       if (Store.getRaw('lw.muted') === '1') this.audio.muted = true;
-      if (restored) this.runCatchUp(this.sim, (rep) => { this.ui.showWelcomeReport(rep); });
-      else { this.sim.world.meta.lastRealTimeMs = Date.now(); this.ui.showGenesis(); this.save(true); }
+      if (restored && this.sim.world.meta.started !== false) this.runCatchUp(this.sim, (rep) => { this.ui.showWelcomeReport(rep); });
+      else { this.sim.paused = true; this.sim.world.meta.started = false; this.sim.world.meta.lastRealTimeMs = Date.now(); this.ui.showGenesis(); this.ui.refreshSpeed(); this.save(true); }
       this.loop = this.loop.bind(this); this.last = performance.now(); requestAnimationFrame(this.loop);
       window.addEventListener('beforeunload', () => this.saveSync()); document.addEventListener('visibilitychange', () => { if (document.hidden) this.saveSync(); });
       window.addEventListener('pointerdown', () => this.startAudio(), { once: true }); window.addEventListener('keydown', () => this.startAudio(), { once: true });
@@ -37,11 +37,22 @@
       this.ui.showCatchup(0, 'Waking the world…'); this.catchingUp = true; sim.paused = true;
       sim.catchUp(Date.now(), { progress: (p, label) => this.ui.showCatchup(p, label), done: (rep) => { this.catchingUp = false; sim.paused = false; this.lastReport = rep; this.renderer.bakeAll(); this.ui.attachWorld(sim.world); done(rep); this.save(true); } });
     }
+    /** The world begins the moment the Creator first looks at it. */
+    beginWorld() { const w = this.sim.world; if (w.meta.started) return; w.meta.started = true; w.meta.createdMs = Date.now(); w.meta.lastRealTimeMs = Date.now(); this.sim.paused = false; this.ui.refreshSpeed(); this.ui.toast('The world begins', `${w.name}, year 0. From now on everything is up to them.`, false); this.save(true); }
     startAudio() { if (this.audio.init()) { this.audio.resume(); this.ui.refreshSound(); } }
     toggleSound() { this.startAudio(); this.audio.setMuted(!this.audio.muted); Store.setRaw('lw.muted', this.audio.muted ? '1' : '0'); }
     loop(now) {
       const dt = Math.min(250, now - this.last); this.last = now;
-      if (!this.catchingUp) { this.sim.advance(dt, this.cfg.time.frameBudgetMs); this.sim.world.meta.lastRealTimeMs = Date.now(); }
+      const meta = this.sim.world.meta;
+      if (!this.catchingUp && meta.started) {
+        if (this.sim.paused) meta.lastRealTimeMs = Date.now(); // a deliberate pause is the Creator's choice: no time accrues
+        else {
+          // real time owed since the last simulated frame — background tabs are throttled, so this can be much more than one frame
+          const owedMs = Math.max(dt, Date.now() - (meta.lastRealTimeMs || Date.now()));
+          if (owedMs > 120000) { this.runCatchUp(this.sim, (rep) => this.ui.showWelcomeReport(rep)); }
+          else { this.sim.advance(owedMs, this.cfg.time.frameBudgetMs); meta.lastRealTimeMs = Date.now(); }
+        }
+      }
       this.renderer.draw(this.sim, this.audioEnv); this.audio.ambient(this.audioEnv); this.ui.update(dt);
       if (!this.catchingUp && now - this.lastSave > this.cfg.persistence.autosaveSeconds * 1000) this.save();
       requestAnimationFrame(this.loop);
@@ -57,10 +68,11 @@
     importWorld() { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json'; inp.onchange = () => { const f = inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const sim = LW.Persistence.fromJSON(String(r.result)); this.replaceSim(sim, true); this.ui.toast('World imported', sim.world.name, true); } catch (e) { alert('Import failed: ' + e.message); } }; r.readAsText(f); }; inp.click(); }
     replaceSim(sim, catchUp) {
       this.sim = sim; this.renderer.setWorld(sim.world); this.ui.attachWorld(sim.world); this.ui.closeModal();
-      if (catchUp) this.runCatchUp(sim, (rep) => this.ui.showWelcomeReport(rep));
+      if (sim.world.meta.started == null) sim.world.meta.started = true; // imported/old saves are running worlds
+      if (catchUp && sim.world.meta.started) this.runCatchUp(sim, (rep) => this.ui.showWelcomeReport(rep));
       else { sim.world.meta.lastRealTimeMs = Date.now(); this.save(true); }
     }
-    newWorld(seed, population) { const sim = LW.Simulation.newWorld(seed, this.cfg, Date.now(), { population }); this.replaceSim(sim, false); this.ui.showGenesis(); }
+    newWorld(seed, population) { const sim = LW.Simulation.newWorld(seed, this.cfg, Date.now(), { population }); sim.paused = true; sim.world.meta.started = false; this.replaceSim(sim, false); this.ui.showGenesis(); this.ui.refreshSpeed(); }
     hasSnapshot(slot) { const s = Store.getRaw(`${Store.key}.snap${slot}`); if (!s) return null; const m = Store.getRaw(`${Store.key}.snap${slot}.meta`); return m || 'saved'; }
     async snapshot(slot) { const json = LW.Persistence.toJSON(this.sim); const ok = await Store.set(`${Store.key}.snap${slot}`, json); if (ok) { Store.setRaw(`${Store.key}.snap${slot}.meta`, `${this.sim.world.name} · year ${this.sim.world.year}`); this.ui.toast('Snapshot saved', `Slot ${slot} · year ${this.sim.world.year}`, true); } else this.ui.toast('Snapshot failed', 'Browser storage is full.', true); }
     async restoreSnapshot(slot) { const s = await Store.get(`${Store.key}.snap${slot}`); if (!s) return; try { const sim = LW.Persistence.fromJSON(s); sim.world.meta.lastRealTimeMs = Date.now(); this.replaceSim(sim, false); this.ui.toast('Timeline restored', `Continuing from year ${sim.world.year} — an alternate history begins.`, false); } catch (e) { alert('Restore failed: ' + e.message); } }

@@ -41,4 +41,6 @@ with open(out, 'w', encoding='utf-8') as f:
     f.write(html)
 with open(os.path.join(DIST, 'index.html'), 'w', encoding='utf-8') as f:
     f.write(html)
+with open(os.path.join(ROOT, 'index.html'), 'w', encoding='utf-8') as f:   # GitHub Pages serves the repo root
+    f.write(html)
 print('wrote', out, os.path.getsize(out), 'bytes')

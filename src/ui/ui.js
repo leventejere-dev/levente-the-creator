@@ -31,7 +31,7 @@
       $('#btn-help').addEventListener('click', () => { this.click(); this.showHelp(); });
       this.refreshSpeed(); this.refreshSound();
     }
-    setSpeed(p) { if (p === 'pause') this.sim.paused = !this.sim.paused; else { this.sim.paused = false; this.sim.setPreset(p); } this.refreshSpeed(); }
+    setSpeed(p) { if (!this.world.meta.started) { this.showGenesis(); return; } if (p === 'pause') this.sim.paused = !this.sim.paused; else { this.sim.paused = false; this.sim.setPreset(p); } this.refreshSpeed(); }
     refreshSpeed() { document.querySelectorAll('[data-speed]').forEach((b) => b.classList.toggle('active', this.sim.paused ? b.dataset.speed === 'pause' : b.dataset.speed === this.sim.preset)); }
     refreshSound() { $('#btn-sound').classList.toggle('active', this.audio.enabled && !this.audio.muted); $('#btn-sound').textContent = this.audio.enabled && !this.audio.muted ? '♪' : '♪̸'; }
     bindTabs() { document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => { this.tab = b.dataset.tab; document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('active', x === b)); document.querySelectorAll('.tabbody').forEach((x) => x.classList.toggle('hidden', x.id !== 'tab-' + this.tab)); if (this.tab === 'chronicle') this.renderChronicle(); if (this.tab === 'firsts') this.renderFirsts(); if (this.tab === 'people') this.renderPeople(); this.click(); })); }
@@ -315,7 +315,7 @@
       el.appendChild(h('div', { class: 'help-grid' }, h('b', null, 'drag / WASD'), h('span', null, 'pan the camera'), h('b', null, 'wheel / + −'), h('span', null, 'zoom (close zoom shows people, far zoom shows civilizations)'), h('b', null, 'click'), h('span', null, 'inspect a person, building or tile'), h('b', null, 'F'), h('span', null, 'follow the selected person'), h('b', null, 'T'), h('span', null, 'family tree of the selected person'), h('b', null, 'space'), h('span', null, 'pause'), h('b', null, '1–5'), h('span', null, 'speed presets'), h('b', null, 'O / H'), h('span', null, 'world overview / back to the Genesis site'), h('b', null, 'right-click / Esc'), h('span', null, 'cancel a Creator tool'), h('b', null, '`'), h('span', null, 'debug overlay')));
       el.appendChild(h('p', null, 'Creator tools at the bottom change the physical world; people who witness them remember, tell others, and may come to believe. Select a person to send divine commands — as a message they interpret, or as force.'));
       el.appendChild(h('p', null, 'The world keeps living while this page is closed: when you return, the missing time is simulated and a report tells you what happened.'));
-      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => this.closeModal() }, 'Close')));
+      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { class: 'primary', onclick: () => { this.closeModal(); if (!this.world.meta.started) this.showGenesis(); } }, 'Close')));
       this.modal(el);
     }
     showGenesis() {
@@ -323,7 +323,8 @@
       const el = h('div'); el.appendChild(h('h1', null, 'Genesis', h('small', null, 'a world is born')));
       el.appendChild(h('div', { class: 'big' }, w.name)); el.appendChild(h('p', null, `A ${w.shape === 'twin' ? 'world of two lands' : w.shape} with a mean temperature of ${w.climateMean.toFixed(0)}°C. Three small beings stand in a vast wild world: ${names}. They know nothing. They will learn.`));
       el.appendChild(h('p', { class: 'tiny' }, 'Seed ' + w.seed + ' · the world is saved in this browser automatically · export it from the menu to keep it forever.'));
-      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { onclick: () => { this.closeModal(); this.showHelp(); } }, 'How does this work?'), h('button', { class: 'primary', onclick: () => { this.closeModal(); this.app.startAudio(); } }, 'Watch')));
+      el.appendChild(h('p', null, h('b', null, 'Time has not started yet.'), ' It starts the moment you press Watch — and from then on it never waits for you: while this page is closed, while your computer is off, they keep living, and you will be told what happened.'));
+      el.appendChild(h('div', { class: 'modal-actions' }, h('button', { onclick: () => { this.closeModal(); this.showHelp(); } }, 'How does this work?'), h('button', { class: 'primary', onclick: () => { this.closeModal(); this.app.startAudio(); this.app.beginWorld(); } }, 'Watch')));
       this.modal(el);
     }
     showCatchup(progress, label) {

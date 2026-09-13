@@ -28,7 +28,9 @@ remembers.
 
 ## Run it
 
-Open **`dist/levente-world.html`** in a modern browser (Chrome, Edge, Firefox, Safari 16.4+).
+**Live (Observer / Creator mode):** https://leventejere-dev.github.io/levente-the-creator/
+
+Or open **`dist/levente-world.html`** in a modern browser (Chrome, Edge, Firefox, Safari 16.4+).
 That single file is the whole game: engine, renderer, UI, sounds. No install, no server.
 
 The world state is saved in the browser (`localStorage`, gzip-compressed) every 30

@@ -167,6 +167,10 @@
       const inv = Object.entries(a.inv).filter(([, q]) => q > 0);
       el.appendChild(h('div', { class: 'chips' }, ...(inv.length ? inv.map(([k, q]) => h('span', { class: 'chip' }, `${LW.ITEMS[k] ? LW.ITEMS[k].label : k} ×${q}`)) : [h('span', { class: 'chip' }, 'semmi')])));
       el.appendChild(h('div', { class: 'kv', style: 'margin-top:6px' }, h('span', null, 'Otthon'), h('span', null, home ? `${LW.Buildings.def(home).label}${home.storage && Object.keys(home.storage).length ? ' · raktár: ' + Object.entries(home.storage).map(([k, q]) => `${q} ${LW.ITEMS[k] ? LW.ITEMS[k].label.toLowerCase() : k}`).join(', ') : ''}` : 'nincs'), h('span', null, 'Hit'), h('span', null, a.beliefs.creator > 0.7 ? `hisz a Teremtőben (${pct(a.beliefs.creator)})` : a.beliefs.creator > 0.3 ? `tűnődik egy Teremtőn (${pct(a.beliefs.creator)})` : 'nem tud rólad semmit'), a.wealth ? h('span', null, 'Vagyon') : null, a.wealth ? h('span', null, `${a.wealth > 0 ? '+' : ''}${a.wealth} (a piacon adott/kapott)`) : null));
+      // tudat: ami hajtja, a belső hangja, kérdései
+      el.appendChild(h('h3', null, 'Tudat'));
+      { const m = a.mind || LW.Mind.fresh(); el.appendChild(h('div', { class: 'chips' }, h('span', { class: 'chip gold' }, m.purpose ? `hajtja: ${LW.Mind.label(m.purpose)}` : 'még nem tudja, mi hajtja'), h('span', { class: 'chip' + (m.mortality > 0.6 ? ' warn' : '') }, m.mortality > 0.6 ? 'érzi, hogy fogy az ideje' : m.mortality > 0.3 ? 'gondol a halálra' : 'a halál messze'), h('span', { class: 'chip' }, m.selfImage > 0.3 ? 'úgy érzi, kedvelik' : m.selfImage < -0.3 ? 'úgy érzi, nem kedvelik' : 'nem tudja, mit gondolnak róla'), m.existential > 0.5 ? h('span', { class: 'chip warn' }, `létkérdések ${pct(m.existential)}`) : null, a.ill > 0 ? h('span', { class: 'chip warn' }, `beteg (${a.ill} nap)`) : null, (a.beliefs.simulation || 0) > 0.6 ? h('span', { class: 'chip rose' }, 'tudja: teremtett világban él') : (a.beliefs.simulation || 0) > 0 && a.beliefs.simulation < 0.3 ? h('span', { class: 'chip' }, 'tagadja a szimulációt') : null));
+        const j = m.journal.slice(-3).reverse(); if (j.length) for (const x of j) el.appendChild(h('div', { class: 'mem' }, h('time', null, `${LW.Time.year(x.t)}. év ${LW.Time.dayOfYear(x.t) + 1}. nap`), h('b', { style: 'font-style:italic;font-weight:400' }, x.text))); else el.appendChild(h('div', { class: 'mem' }, 'Még nem gondolkodott el az életén.')); }
       // nyelv & viszony a hanghoz
       el.appendChild(h('h3', null, 'Nyelv & a hang'));
       const lang = w.langs ? w.langs.get(a.langId) : null; const vk = Object.keys(a.vocab || {}); const secret = vk.filter((c) => a.vocab[c].s).length;
@@ -188,6 +192,8 @@
       if (a.sleeping) return E.grief > 0.3 ? 'Csak álmomban nem fáj.' : 'Alszik.';
       if (a.divineRequest) return a.divineRequest.force ? 'A testem mozdul, és nem én mozdítom.' : 'Egy hang, aminek nincs szája. El kell döntenem, mit akar.';
       if (a.nudge && w.tick < a.nudge.until && a.plan && a.plan.goal === a.nudge.goal) return `„${a.nudge.text}” — ezt mondta a hang. Talán igaza van.`;
+      if (a.ill > 0 && (a.id & 1)) return 'Beteg vagyok. Csak kibírjam.';
+      if (a.mind && a.mind.voice && w.tick - a.mind.voiceTick < 96 && ((a.id + (w.tick >> 5)) % 3 === 0)) return a.mind.voice;
       if (a.danger > 0.4) return 'Veszély. El innen.';
       if (N.food < 0.2) return `Olyan éhes vagyok. ${cap(act)}.`; if (N.water < 0.2) return `Kiszáradt a torkom. ${cap(act)}.`; if (N.warmth < 0.3) return `A hideg a csontomig hatol. ${cap(act)}.`;
       if (E.grief > 0.5) return 'Elment. Mégis keresem.'; if (E.love > 0.6 && a.partner != null) return `${this.nameOf(a.partner)}. Ma minden könnyebb.`; if (E.jealousy > 0.5) return 'Láttam őket együtt. Nem tudom nem látni.'; if (E.fear > 0.5) return 'Valami nincs rendben. Érzem a levegőben.'; if (E.pride > 0.5) return 'Csináltam valamit. Az enyém, és jó.';
@@ -330,7 +336,8 @@
       el.appendChild(aiBox);
       const vol = h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: this.audio.volume, oninput: (e) => this.audio.setVolume(+e.target.value) });
       el.appendChild(h('div', { class: 'kv', style: 'margin:10px 0' }, h('span', null, 'Hangerő'), vol));
-      el.appendChild(h('p', { class: 'tiny', style: 'margin:0 0 8px' }, `Beszédhangok: ${LW.Voice.describeVoices()} Az emberek a Beszéd fülön szólalnak meg („hang” kapcsoló); mikrofonnal te is szólhatsz hozzájuk.`));
+      el.appendChild(h('p', { class: 'tiny', style: 'margin:0 0 4px' }, `Beszédhangok: ${LW.Voice.describeVoices()} Az emberek a Beszéd fülön szólalnak meg („hang” kapcsoló); mikrofonnal te is szólhatsz hozzájuk.`));
+      { const V = LW.Voice; if (V.ttsSupported) { V.loadVoices(); const mk = (kind, label) => { const sel = h('select', { style: 'max-width:100%;font:inherit;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:3px 4px' }); sel.appendChild(h('option', { value: '' }, 'automatikus')); for (const v of V.anyVoices) sel.appendChild(h('option', { value: v.name }, `${v.name} (${v.lang})`)); sel.value = V.choice(kind); sel.addEventListener('change', () => { V.setChoice(kind, sel.value); V.speak(kind === 'hu' ? 'Így fogok beszélni hozzád.' : 'Tuka vosha lii', { priority: true, voice: V.anyVoices.find((v) => v.name === sel.value) || null }); }); return h('div', { class: 'kv', style: 'margin:4px 0' }, h('span', null, label), sel); }; el.appendChild(mk('hu', 'Magyar válaszok hangja')); el.appendChild(mk('own', 'Saját nyelvük hangja')); } }
       const grid = h('div', { class: 'menu-grid' });
       grid.appendChild(h('button', { onclick: () => { app.save(true); this.toast('Mentve', 'A világ biztonságban van.', true); } }, 'Mentés most', h('small', null, 'Automatikus mentés 30 mp-enként és kilépéskor')));
       grid.appendChild(h('button', { onclick: () => app.exportWorld() }, 'Világ exportálása', h('small', null, 'Letölt egy .json fájlt, amit bárhol importálhatsz')));

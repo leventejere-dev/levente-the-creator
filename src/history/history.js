@@ -30,6 +30,18 @@
         case 'RecordWritten': return { text: `${n(ev.agentId)} leírta, amit tud: ${T[ev.tech].name.toLowerCase()}. A tudás most már túléli a tudót.`, base: 0.8, firstKey: 'record', firstTitle: 'Az első leírt tudás' };
         case 'Ritual': return { text: `${ev.n} ember szertartást tart a ${ev.temple ? 'templomnál' : 'szentélynél'}${ev.place ? ' (' + ev.place + ')' : ''}: az égi hangról énekelnek.`, base: 0.4, firstKey: 'rite', firstTitle: 'Az első szertartás' };
         case 'LeaderChosen': return { text: `${n(ev.agentId)} lett ${ev.place} vezetője.`, base: 0.7, firstKey: 'leader', firstTitle: 'Az első vezető' };
+        case 'Epidemic': return { text: `Járvány tört ki ${ev.place ? ev.place + ' településen' : 'a vidéken'}: ${ev.n} beteg.`, base: 0.8, firstKey: 'epidemic', firstTitle: 'Az első járvány' };
+        case 'EpidemicEnded': return { text: `A járvány elmúlt ${ev.place}ban ${ev.days} nap után (a csúcson ${ev.peak} beteg).`, base: 0.5 };
+        case 'SimulationHypothesis': return { text: `${n(ev.agentId)} kimondta, amit senki nem mert: talán ők maguk is egy világban élnek, amelyet valaki figyel.`, base: 1.0, firstKey: 'simhyp', firstTitle: 'A szimulációs hipotézis' };
+        case 'SimulationVerdict': return { text: ev.accepted ? `A többség (${Math.round(ev.share * 100)}%) elfogadja: ők is egy teremtett világban élnek — ahogy talán a Teremtőjük is.` : `A többség (${Math.round(ev.share * 100)}%) tagadja, hogy szimulációban élne. „Ez a világ valódi” — mondják.`, base: 1.0, firstKey: ev.accepted ? 'simyes' : 'simno', firstTitle: ev.accepted ? 'Elhitték' : 'Tagadták' };
+        case 'StateFounded': return { text: `${ev.place} népe államot alapított: ${n(ev.agentId)} törvények szerint uralkodik.`, base: 0.85, firstKey: 'state', firstTitle: 'Az első állam' };
+        case 'WarDeclared': return { text: `${ev.place} háborút indított ${ev.other} ellen — ${n(ev.agentId)} vezetésével.`, base: 1.0, firstKey: 'war', firstTitle: 'Az első háború' };
+        case 'Battle': return { text: `Csata: ${ev.place} harcosai legyőzték ${ev.other} embereit.`, base: 0.5 };
+        case 'WarEnded': return { text: ev.decisive ? `${ev.place} győzött: ${ev.other} behódolt.` : `${ev.place} és ${ev.other} háborúja elcsendesült — egyik sem győzött.`, base: 0.8, firstKey: 'peace', firstTitle: 'Az első béke' };
+        case 'CompanyFounded': return { text: `${n(ev.agentId)} vállalatot alapított: ${ev.name}.`, base: 0.7, firstKey: 'company', firstTitle: 'Az első vállalat' };
+        case 'NewLand': return { text: `${ev.agentId != null ? n(ev.agentId) + ' hajósai' : 'Hajósok'} új földet találtak a tengeren túl ${ev.side === 'east' ? 'keleten' : 'délen'}: ${ev.name}. A világ nagyobb lett (${ev.w}×${ev.h}).`, base: 1.2, firstKey: 'newland', firstTitle: 'Új föld a tengeren túl' };
+        case 'ExistentialQuestion': return { text: `${n(ev.agentId)} feltette a kérdést: „${ev.text}”`, base: 0.7, firstKey: 'question', firstTitle: 'Az első kérdés, amire nincs válasz' };
+        case 'FutureTech': return { text: `Olyan tudás született, amelyre a Teremtőnek sincs szava: ${ev.name}.`, base: 0.9, firstKey: 'future', firstTitle: 'Az ismeretlen jövő kezdete' };
         case 'WorldSimulated': return { text: `A Világmag egy ${ev.n}. világot indított el: apró lények, akik egy hangot hallanak az égből.`, base: 1.2, firstKey: 'worldsim', firstTitle: 'A világ a világban' };
         case 'KnowledgeLost': return { text: `${n(ev.agentId)} halálával elveszett a tudás: ${T[ev.tech].name.toLowerCase()}.`, base: 0.75, firstKey: 'lost', firstTitle: 'Első elveszett tudás' };
         case 'BuildingStarted': return { text: `${n(ev.agentId)} építeni kezdett: ${BD[ev.kind].label.toLowerCase()}.`, base: ev.kind === 'campfire' ? 0.05 : 0.18 };

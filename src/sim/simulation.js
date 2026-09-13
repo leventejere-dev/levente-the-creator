@@ -15,6 +15,7 @@
       world.ground = world.ground || new Map();
       world.reindexBuildings();
       LW.Speech.init(world);
+      for (const a of world.agents.values()) { if (!a.mind) a.mind = LW.Mind.fresh(); if (a.ill == null) a.ill = 0; if (a.beliefs.simulation == null) a.beliefs.simulation = 0; }
       world.rebuildBuckets();
     }
 

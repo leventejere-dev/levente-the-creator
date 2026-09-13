@@ -314,3 +314,21 @@ must be decoded by listening (low probability) or revealed by someone who trusts
 warm / devout). Hostile people answer in their own tongue. An LLM (free Gemini key, browser-side) only *phrases* the
 reply from `Dialogue.facts` and the decided outcome. `trust` is a new belief axis moved by witnessed interventions
 (awe − fear), forced commands, kept promises and the tone of the voice.
+
+## 8. Mind — the self-model (`src/agents/mind.js`) and civilization dynamics (`src/society/civilization.js`)
+
+`a.mind` is a functional model of consciousness, not consciousness: *purpose* (family / knowledge / faith / power / craft /
+freedom / love / survival / legacy, re-chosen monthly from personality, life situation and mortality), *self-image*
+(what nearby people feel about the person), *mortality* (age vs longevity, illness, recent deaths — it raises teaching
+and record-keeping: legacy), *existential load* (grows with scientific doubt, grief and the simulation hypothesis;
+shrinks with faith and purpose), a *journal* of inner sentences composed daily from the strongest real signal (illness,
+grief, hunger, mortality, doubt, pride, love, self-image, purpose), unanswerable *questions* asked once each, and
+*dreams* (an emotional memory replayed at night). The chat and the inspector read from it.
+
+Civilization: contagious *disease* (`a.ill`, spread to household and neighbours, immunity after recovery; epidemics per
+settlement; sanitation/vaccination/hospitals protect), *doubt* (`skepticism` from science lowers belief unless the
+Creator has recently acted), the *simulation hypothesis* (`beliefs.simulation`, per-person target from curiosity,
+faith and dominance once `world_simulation` is known; a verdict event when a majority accepts or denies), *states*
+(a leader who knows law), *war* (tension between neighbouring polities from dominance, resentment, hunger; markets and a
+shared language lower it; battles wound warriors; a decisive war annexes the loser), *companies* (a banker with wealth
+takes over a productive building), and *growth* (sailors discover a new land band; `World.expand` remaps every index).

@@ -29,7 +29,8 @@
     const c = canvas(sleeping ? Math.max(cw, H + 4) : cw, sleeping ? 12 : ch); const g = c.getContext('2d');
     const fill = (col, x, y, w, hh) => { g.fillStyle = typeof col === 'string' ? col : rgb(col); g.fillRect(x, y, w, hh); };
     const skinD = mul(skin, 0.78), hairD = mul(hair, 0.7), hairL = mul(hair, 1.25);
-    const clothCol = clothed ? [[150, 108, 62], [120, 96, 70], [96, 110, 70], [140, 84, 60], [110, 100, 90]][h % 5] : (f ? [120, 82, 48] : [100, 68, 40]);
+    const K = a.knowledge && a.knowledge.techs; const dyed = K && K.has('weaving'); const modern = K && K.has('electrification');
+    const clothCol = !clothed ? (f ? [120, 82, 48] : [100, 68, 40]) : modern ? [[70, 110, 190], [190, 70, 70], [60, 150, 110], [230, 200, 80], [120, 90, 170], [40, 40, 50], [220, 220, 220]][h % 7] : dyed ? [[150, 108, 62], [90, 110, 150], [150, 70, 60], [96, 130, 70], [170, 140, 70], [110, 80, 120]][h % 6] : [[150, 108, 62], [120, 96, 70], [96, 110, 70], [140, 84, 60], [110, 100, 90]][h % 5];
     const clothD = mul(clothCol, 0.75);
     if (sleeping) {
       // fekvő alak: fej balra, test és takaró jobbra
@@ -95,7 +96,7 @@
     PX,
     /** Ember-sprite (vászon) életszakasz/képkocka/irány szerint; gyorsítótárazva. */
     agent(a, stage, frame, facing, sleeping) {
-      const key = `${a.id}|${a.palette.skin}|${a.palette.hair}|${stage}|${frame}|${facing}|${sleeping ? 1 : 0}|${a.inv.clothes ? 1 : 0}|${a.inv.spear ? 1 : 0}|${a.inv.basket ? 1 : 0}|${a.inv.handaxe ? 1 : 0}`;
+      const key = `${a.id}|${a.palette.skin}|${a.palette.hair}|${stage}|${frame}|${facing}|${sleeping ? 1 : 0}|${a.inv.clothes ? 1 : 0}|${a.inv.spear ? 1 : 0}|${a.inv.basket ? 1 : 0}|${a.inv.handaxe ? 1 : 0}|${a.knowledge && a.knowledge.techs.has('weaving') ? 1 : 0}${a.knowledge && a.knowledge.techs.has('electrification') ? 1 : 0}`;
       let c = cache.get(key); if (c) return c;
       c = drawPerson(a, stage, frame, facing, sleeping); cache.set(key, c); if (cache.size > 4000) cache.clear(); return c;
     },
@@ -124,6 +125,8 @@
       }
       // talajrészletek
       const cold = b === B.TUNDRA || t.baseTemp[i] < 6;
+      // finom foltok: a talaj nem egyszínű
+      for (let k = 0; k < 3; k++) { const px2 = hash(i * 13 + k * 29) & 15, py2 = hash(i * 17 + k * 31) & 15; s(mul(col, k & 1 ? 0.94 : 1.06), px2, py2, 2 + (k & 1), 2); }
       if (b === B.GRASSLAND || b === B.FOREST || b === B.DENSE_FOREST || b === B.SAVANNA || b === B.HILLS) {
         const g1 = mul(col, 0.86), g2 = mul(col, 1.12);
         for (let k = 0; k < 6; k++) { const gx = hash(i * 3 + k * 11) & 15, gy = hash(i * 7 + k * 13) & 15; s(k & 1 ? g1 : g2, gx, gy, 1, 2); }

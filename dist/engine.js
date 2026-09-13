@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 21:41 */
+/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 22:06 */
 
 /* ===== core/rng.js ===== */
 /* LEVENTE — THE CREATOR · core/rng.js
@@ -264,7 +264,7 @@
     tier: { camp: 'tábor', hamlet: 'tanya', village: 'falu', town: 'mezőváros', city: 'város', metropolis: 'nagyváros' },
     tierBecame: { camp: 'táborrá', hamlet: 'tanyává', village: 'faluvá', town: 'mezővárossá', city: 'várossá', metropolis: 'nagyvárossá' },
     shape: { continent: 'Egy kontinens', archipelago: 'Egy szigetvilág', twin: 'Két földrész világa' },
-    eventType: { AgentBorn: 'Születés', AgentDied: 'Halál', Killing: 'Gyilkosság', CoupleFormed: 'Szerelem', CoupleBroke: 'Szakítás', Pregnancy: 'Terhesség', DiscoveryMade: 'Felfedezés', KnowledgeLost: 'Elveszett tudás', BuildingCompleted: 'Építés', BuildingDestroyed: 'Pusztulás', SettlementFounded: 'Település', SettlementGrew: 'Növekedés', SettlementAbandoned: 'Elnéptelenedés', SettlementResettled: 'Újranépesedés', ResourceFound: 'Lelet', WildfireStarted: 'Erdőtűz', BeliefFormed: 'Hit', ConflictOccurred: 'Összecsapás', StrangerArrived: 'Idegen', Harvest: 'Aratás', WeatherChanged: 'Időjárás', WordCoined: 'Szó', LanguageNamed: 'Nyelv', LanguageSplit: 'Nyelvszakadás', SecretTongue: 'Titkos nyelv', CreatorSpoke: 'A hang', CreatorAnswered: 'Válasz', RecordWritten: 'Írás', Ritual: 'Szertartás', LeaderChosen: 'Vezető', WorldSimulated: 'Világmag', ItemCrafted: 'Készítés' },
+    eventType: { AgentBorn: 'Születés', AgentDied: 'Halál', Killing: 'Gyilkosság', CoupleFormed: 'Szerelem', CoupleBroke: 'Szakítás', Pregnancy: 'Terhesség', DiscoveryMade: 'Felfedezés', KnowledgeLost: 'Elveszett tudás', BuildingCompleted: 'Építés', BuildingDestroyed: 'Pusztulás', SettlementFounded: 'Település', SettlementGrew: 'Növekedés', SettlementAbandoned: 'Elnéptelenedés', SettlementResettled: 'Újranépesedés', ResourceFound: 'Lelet', WildfireStarted: 'Erdőtűz', BeliefFormed: 'Hit', ConflictOccurred: 'Összecsapás', StrangerArrived: 'Idegen', Harvest: 'Aratás', WeatherChanged: 'Időjárás', WordCoined: 'Szó', LanguageNamed: 'Nyelv', LanguageSplit: 'Nyelvszakadás', SecretTongue: 'Titkos nyelv', CreatorSpoke: 'A hang', CreatorAnswered: 'Válasz', RecordWritten: 'Írás', Ritual: 'Szertartás', LeaderChosen: 'Vezető', WorldSimulated: 'Világmag', ItemCrafted: 'Készítés', Epidemic: 'Járvány', EpidemicEnded: 'Járvány vége', SimulationHypothesis: 'Hipotézis', SimulationVerdict: 'Ítélet', StateFounded: 'Állam', WarDeclared: 'Háború', Battle: 'Csata', WarEnded: 'Béke', CompanyFounded: 'Vállalat', NewLand: 'Új föld', FutureTech: 'Ismeretlen', ExistentialQuestion: 'Kérdés' },
   };
   const HU = {
     ...M,
@@ -775,6 +775,39 @@
     removeBuilding(id) { const b = this.buildings.get(id); if (!b) return; this.buildings.delete(id); if (this.btile) for (const i of this.buildingTiles(b)) { if (this.btile.get(i) === id) { this.btile.delete(i); this.tiles.shade[i] = 0; } } }
     buildingAt(i) { if (!this.btile) this.reindexBuildings(); const id = this.btile.get(i); return id != null ? (this.buildings.get(id) || null) : null; }
     reindexBuildings() { this.btile = new Map(); for (const b of this.buildings.values()) for (const i of this.buildingTiles(b)) this.btile.set(i, b.id); }
+    /** Új föld a tengeren túl: a térkép keletre vagy délre bővül egy külön generált sávval; minden mezőindex újraszámolva. */
+    expand(side, size, explorerId) {
+      const oldW = this.w, oldH = this.h; const east = side === 'east';
+      const newW = east ? oldW + size : oldW, newH = east ? oldH : oldH + size;
+      const bandCfg = { ...this.cfg.world, width: east ? size : oldW, height: east ? oldH : size };
+      this.expansions = (this.expansions || 0) + 1;
+      const band = LW.generateWorld((this.seed ^ Math.imul(0x9e3779b9, this.expansions + 1)) >>> 0, bandCfg);
+      const nt = LW.makeTiles(newW, newH);
+      for (const k in nt) { const src = this.tiles[k], bt = band.tiles[k]; if (!src || !bt) continue; for (let y = 0; y < oldH; y++) for (let x = 0; x < oldW; x++) nt[k][y * newW + x] = src[y * oldW + x]; if (east) { for (let y = 0; y < oldH; y++) for (let x = 0; x < size; x++) nt[k][y * newW + oldW + x] = bt[y * size + x]; } else { for (let y = 0; y < size; y++) for (let x = 0; x < oldW; x++) nt[k][(oldH + y) * newW + x] = bt[y * oldW + x]; } }
+      const remap = (i) => (i == null || i < 0 ? i : ((i / oldW) | 0) * newW + (i % oldW));
+      if (newW !== oldW) {
+        const seen = new Set();
+        for (const a of this.agents.values()) {
+          const places = new Map(); for (const p of a.knowledge.places.values()) { p.i = remap(p.i); places.set(LW.Agents.poiKey(p.k, p.i), p); } a.knowledge.places = places;
+          if (a.avoid) { const av = {}; for (const key in a.avoid) { const kind = Math.floor(key / 1048576), i = key % 1048576; av[kind * 1048576 + remap(i)] = a.avoid[key]; } a.avoid = av; }
+          for (const s of a.memory.social.values()) s.lastTile = remap(s.lastTile);
+          for (const m of a.memory.episodic) { if (seen.has(m)) continue; seen.add(m); if (m.tile != null) m.tile = remap(m.tile); }
+          for (const m of a.memory.emotional) { if (seen.has(m)) continue; seen.add(m); if (m.tile != null) m.tile = remap(m.tile); }
+          if (a.divineRequest && a.divineRequest.tile != null) a.divineRequest.tile = remap(a.divineRequest.tile);
+          a.plan = null; a.lastDecisionTick = -1000;
+        }
+        this.burning = new Set([...this.burning].map(remap)); this.ground = new Map([...this.ground].map(([i, g]) => [remap(i), g]));
+        if (this.pathAnnounced) this.pathAnnounced = new Set([...this.pathAnnounced].map(remap));
+        if (this.fireStats && this.fireStats.origin >= 0) this.fireStats.origin = remap(this.fireStats.origin);
+        if (this.weather && this.weather.lightningTile >= 0) this.weather.lightningTile = remap(this.weather.lightningTile);
+        if (this.history) { for (const list of [this.history.feed, this.history.godFeed, this.history.chronicle, this.history.wow]) for (const e of list) if (e.tile != null) e.tile = remap(e.tile); for (const k in this.history.firsts) if (this.history.firsts[k].tile != null) this.history.firsts[k].tile = remap(this.history.firsts[k].tile); }
+      }
+      this.w = newW; this.h = newH; this.tiles = nt; this._initPathBuffers(); this.reindexBuildings(); this.rebuildBuckets(); this.dirtyTiles = new Set();
+      const name = this.language.place();
+      this.landmarks.push({ kind: 'land', name, x: east ? oldW + size / 2 : oldW / 2, y: east ? oldH / 2 : oldH + size / 2, tick: this.tick });
+      this.events.emit('NewLand', { tick: this.tick, name, side, agentId: explorerId, w: newW, h: newH, tile: this.idx(east ? oldW + (size >> 1) : (oldW >> 1), east ? (oldH >> 1) : oldH + (size >> 1)) });
+      return name;
+    }
     buildingsNear(x, y, r) { const out = []; for (const b of this.buildings.values()) if (Math.abs(b.x - x) <= r && Math.abs(b.y - y) <= r) out.push(b); return out; }
 
     // ---- spatial hash for agents (rebuilt each tick)
@@ -1530,21 +1563,21 @@
     archive: pub({ label: 'Levéltár', cost: { clay: 12, wood: 10, stone: 6 }, ticks: 300, records: 1, tech: 'writing', lifeDays: 12000, minPop: 5, want: 'knowledge' }),
     library: pub({ label: 'Könyvtár', cost: { stone: 24, wood: 16, paper: 6 }, ticks: 600, records: 2, teach: 0.3, tech: 'paper_making', lifeDays: 20000, minPop: 12, want: 'knowledge', size: [2, 1] }),
     school: pub({ label: 'Iskola', cost: { wood: 20, stone: 10, brick: 6 }, ticks: 500, school: 1, teach: 0.4, tech: 'schooling', lifeDays: 12000, minPop: 10, want: 'knowledge' }),
-    university: pub({ label: 'Egyetem', cost: { stone: 40, brick: 30, glass: 6, paper: 10 }, ticks: 1400, school: 2, records: 2, discovery: 0.35, teach: 0.5, tech: 'universities', lifeDays: 40000, minPop: 30, want: 'knowledge', size: [2, 2] }),
+    university: pub({ label: 'Egyetem', cost: { stone: 40, brick: 30, glass: 6, paper: 10 }, ticks: 1400, school: 2, records: 2, discovery: 0.35, teach: 0.5, tech: 'universities', lifeDays: 40000, minPop: 21, want: 'knowledge', size: [2, 2] }),
     market: pub({ label: 'Piac', cost: { wood: 14, stone: 8, cloth: 4 }, ticks: 300, market: 1, storage: 150, tech: 'trade', lifeDays: 8000, minPop: 8, want: 'food' }),
     mill: pub({ label: 'Malom', cost: { wood: 24, stone: 12 }, ticks: 500, mill: 1, storage: 100, tech: 'milling', lifeDays: 10000, minPop: 8, want: 'food' }),
     irrigation: pub({ label: 'Öntözőcsatorna', cost: { stone: 20, wood: 6 }, ticks: 400, irrigation: 1, tech: 'irrigation', lifeDays: 10000, minPop: 8, want: 'food' }),
     brick_house: { label: 'Téglaház', cost: { brick: 30, wood: 12 }, ticks: 500, insulation: 20, safety: 0.9, sleep: 0.95, capacity: 6, storage: 100, dwelling: true, tier: 4, tech: 'brick_making', lifeDays: 15000, light: 0.7 },
     town_house: { label: 'Városi ház', cost: { brick: 40, wood: 20, glass: 4 }, ticks: 800, insulation: 22, safety: 0.92, sleep: 1, capacity: 8, storage: 160, dwelling: true, tier: 5, tech: 'architecture', lifeDays: 25000, light: 0.8, size: [2, 1] },
     modern_house: { label: 'Modern ház', cost: { concrete: 30, glass: 10, electric_part: 4 }, ticks: 900, insulation: 26, safety: 0.95, sleep: 1, capacity: 6, storage: 200, dwelling: true, tier: 6, tech: 'electrification', lifeDays: 30000, light: 1, size: [2, 1] },
-    printing_house: pub({ label: 'Nyomda', cost: { wood: 20, machine_part: 4, paper: 10 }, ticks: 600, records: 3, teach: 0.6, tech: 'printing', lifeDays: 15000, minPop: 20, want: 'knowledge' }),
-    lab: pub({ label: 'Laboratórium', cost: { brick: 30, glass: 20, machine_part: 6 }, ticks: 1200, lab: 1, discovery: 0.5, tech: 'scientific_method', lifeDays: 15000, minPop: 25, want: 'knowledge', size: [2, 1] }),
-    factory: pub({ label: 'Gyár', cost: { brick: 60, iron: 20, machine_part: 10 }, ticks: 2000, factory: 1, craft: 0.8, storage: 300, tech: 'factory_system', lifeDays: 20000, light: 0.8, minPop: 40, size: [3, 2] }),
-    power_plant: pub({ label: 'Erőmű', cost: { brick: 60, steel: 20, machine_part: 20, electric_part: 10 }, ticks: 2400, power: 1, tech: 'electrification', lifeDays: 20000, light: 1.2, minPop: 50, size: [2, 2] }),
-    hospital: pub({ label: 'Kórház', cost: { brick: 50, glass: 10, medicine: 10 }, ticks: 1400, hospital: 1, tech: 'modern_medicine', lifeDays: 20000, light: 0.8, minPop: 40, want: 'health', size: [2, 2] }),
-    computer_center: pub({ label: 'Számítóközpont', cost: { concrete: 40, electric_part: 30, chip: 20 }, ticks: 2400, computer: 1, discovery: 0.6, records: 4, tech: 'computer', lifeDays: 20000, light: 1, minPop: 60, want: 'knowledge', size: [2, 2] }),
-    data_center: pub({ label: 'Adatközpont', cost: { concrete: 60, chip: 80, electric_part: 40 }, ticks: 3000, computer: 2, records: 5, discovery: 0.8, teach: 1, tech: 'internet', lifeDays: 20000, light: 1, minPop: 100, want: 'knowledge', size: [3, 2] }),
-    simulation_core: pub({ label: 'Világmag', cost: { chip: 200, concrete: 80, electric_part: 80 }, ticks: 5000, simulation: 1, tech: 'world_simulation', lifeDays: 1e6, light: 1.5, minPop: 150, want: 'knowledge', size: [3, 3] }),
+    printing_house: pub({ label: 'Nyomda', cost: { wood: 20, machine_part: 4, paper: 10 }, ticks: 600, records: 3, teach: 0.6, tech: 'printing', lifeDays: 15000, minPop: 15, want: 'knowledge' }),
+    lab: pub({ label: 'Laboratórium', cost: { brick: 30, glass: 20, machine_part: 6 }, ticks: 1200, lab: 1, discovery: 0.5, tech: 'scientific_method', lifeDays: 15000, minPop: 18, want: 'knowledge', size: [2, 1] }),
+    factory: pub({ label: 'Gyár', cost: { brick: 60, iron: 20, machine_part: 10 }, ticks: 2000, factory: 1, craft: 0.8, storage: 300, tech: 'factory_system', lifeDays: 20000, light: 0.8, minPop: 28, size: [3, 2] }),
+    power_plant: pub({ label: 'Erőmű', cost: { brick: 60, steel: 20, machine_part: 20, electric_part: 10 }, ticks: 2400, power: 1, tech: 'electrification', lifeDays: 20000, light: 1.2, minPop: 35, size: [2, 2] }),
+    hospital: pub({ label: 'Kórház', cost: { brick: 50, glass: 10, medicine: 10 }, ticks: 1400, hospital: 1, tech: 'modern_medicine', lifeDays: 20000, light: 0.8, minPop: 28, want: 'health', size: [2, 2] }),
+    computer_center: pub({ label: 'Számítóközpont', cost: { concrete: 40, electric_part: 30, chip: 20 }, ticks: 2400, computer: 1, discovery: 0.6, records: 4, tech: 'computer', lifeDays: 20000, light: 1, minPop: 42, want: 'knowledge', size: [2, 2] }),
+    data_center: pub({ label: 'Adatközpont', cost: { concrete: 60, chip: 80, electric_part: 40 }, ticks: 3000, computer: 2, records: 5, discovery: 0.8, teach: 1, tech: 'internet', lifeDays: 20000, light: 1, minPop: 70, want: 'knowledge', size: [3, 2] }),
+    simulation_core: pub({ label: 'Világmag', cost: { chip: 200, concrete: 80, electric_part: 80 }, ticks: 5000, simulation: 1, tech: 'world_simulation', lifeDays: 1e6, light: 1.5, minPop: 105, want: 'knowledge', size: [3, 3] }),
   });
   B.lean_to.tier = 1; B.hut.tier = 2; B.stone_house.tier = 3;
 
@@ -1607,48 +1640,48 @@
   T('mechanical_clock', { name: 'Óra', era: 'medieval', prereq: ['mechanics', 'astronomy'], items: { machine_part: 2 }, nearby: 'workshop', difficulty: 0.93, skill: 'crafting', minSkill: 0.75, minPop: 15, fx: { craft: 0.1, discovery: 0.05 }, desc: 'A napot egyenlő darabokra vágó szerkezet.' });
   T('gunpowder', { name: 'Lőpor', era: 'medieval', prereq: ['charcoal_making', 'ore_lore_coal', 'mathematics'], itemsAny: [{ charcoal: 3, salt: 1 }, { charcoal: 3, coal: 2 }], difficulty: 0.94, skill: 'crafting', minSkill: 0.7, minPop: 15, accidents: [{ during: 'craft:charcoal', chance: 0.002, items: { salt: 1 } }], fx: { mine: 0.3 }, boosts: { firearms: 0.15 }, wow: 'Az első robbanás', desc: 'Szén, kén, salétrom: por, amely egy szikrától mennydörög.' });
   T('optics', { name: 'Optika', era: 'medieval', prereq: ['glassmaking', 'mathematics'], items: { glass: 2 }, nearby: 'workshop', difficulty: 0.92, skill: 'crafting', minSkill: 0.7, minPop: 12, fx: { discovery: 0.1 }, boosts: { astronomy: 0.2, anatomy: 0.1 }, desc: 'Csiszolt üveg, amely a kicsit naggyá, a távolit közelivé teszi.' });
-  T('universities', { name: 'Egyetem', era: 'medieval', prereq: ['schooling', 'paper_making', 'mathematics'], items: { paper: 4 }, nearby: 'library', difficulty: 0.93, skill: 'social', minSkill: 0.7, minPop: 30, buildings: ['university'], fx: { discovery: 0.2, teach: 0.3 }, wow: 'Az első egyetem', desc: 'Egy hely, ahol a tudás maga a munka.' });
+  T('universities', { name: 'Egyetem', era: 'medieval', prereq: ['schooling', 'paper_making', 'mathematics'], items: { paper: 4 }, nearby: 'library', difficulty: 0.93, skill: 'social', minSkill: 0.7, minPop: 21, buildings: ['university'], fx: { discovery: 0.2, teach: 0.3 }, wow: 'Az első egyetem', desc: 'Egy hely, ahol a tudás maga a munka.' });
   // — reneszánsz
-  T('printing', { name: 'Könyvnyomtatás', era: 'renaissance', prereq: ['paper_making', 'mechanics', 'alphabet'], items: { machine_part: 2, paper: 4 }, nearby: 'workshop', difficulty: 0.94, skill: 'crafting', minSkill: 0.75, minPop: 20, recipes: ['book'], buildings: ['printing_house'], fx: { teach: 0.5, discovery: 0.1 }, wow: 'Az első nyomtatott könyv', desc: 'Mozgatható betűk: egy gondolat ezer példányban.' });
-  T('scientific_method', { name: 'Tudományos módszer', era: 'renaissance', prereq: ['universities', 'optics', 'printing'], items: { glass: 2, paper: 2 }, nearby: 'university', difficulty: 0.95, skill: 'crafting', minSkill: 0.75, minPop: 25, buildings: ['lab'], fx: { discovery: 0.5 }, wow: 'Az első kísérlet, amit leírtak', desc: 'Kérdés, mérés, ismétlés, kétely: a tudás rendszerré válik.' });
-  T('anatomy', { name: 'Anatómia', era: 'renaissance', prereq: ['medicine', 'optics', 'universities'], items: { paper: 2 }, nearby: 'university', difficulty: 0.93, skill: 'medicine', minSkill: 0.65, minPop: 20, fx: { health: 0.2 }, desc: 'A test térképe.' });
-  T('banking', { name: 'Bankügy', era: 'renaissance', prereq: ['coinage', 'mathematics', 'law_code'], items: { coin: 6, paper: 2 }, difficulty: 0.92, skill: 'social', minSkill: 0.7, minPop: 25, fx: { food: 0.1, build: 0.1 }, desc: 'Pénz, ami pénzt csinál: a jövő beruházhatóvá válik.' });
-  T('firearms', { name: 'Lőfegyver', era: 'renaissance', prereq: ['gunpowder', 'steel_making', 'mechanics'], items: { steel: 2, machine_part: 1 }, nearby: 'workshop', difficulty: 0.94, skill: 'crafting', minSkill: 0.75, minPop: 20, recipes: ['rifle'], fx: { hunt: 0.4 }, wow: 'Az első lövés', desc: 'Cső, kő, por: az erő elszakad az izomtól.' });
-  T('chemistry', { name: 'Kémia', era: 'renaissance', prereq: ['scientific_method', 'glassmaking'], items: { glass: 3, salt: 1 }, nearby: 'lab', difficulty: 0.95, skill: 'crafting', minSkill: 0.75, minPop: 25, fx: { discovery: 0.15 }, boosts: { pharmacology: 0.15, oil_refining: 0.1, plastics: 0.1 }, desc: 'Az anyagok titkos nyelvtana.' });
+  T('printing', { name: 'Könyvnyomtatás', era: 'renaissance', prereq: ['paper_making', 'mechanics', 'alphabet'], items: { machine_part: 2, paper: 4 }, nearby: 'workshop', difficulty: 0.94, skill: 'crafting', minSkill: 0.75, minPop: 15, recipes: ['book'], buildings: ['printing_house'], fx: { teach: 0.5, discovery: 0.1 }, wow: 'Az első nyomtatott könyv', desc: 'Mozgatható betűk: egy gondolat ezer példányban.' });
+  T('scientific_method', { name: 'Tudományos módszer', era: 'renaissance', prereq: ['universities', 'optics', 'printing'], items: { glass: 2, paper: 2 }, nearby: 'university', difficulty: 0.95, skill: 'crafting', minSkill: 0.75, minPop: 18, buildings: ['lab'], fx: { discovery: 0.5 }, wow: 'Az első kísérlet, amit leírtak', desc: 'Kérdés, mérés, ismétlés, kétely: a tudás rendszerré válik.' });
+  T('anatomy', { name: 'Anatómia', era: 'renaissance', prereq: ['medicine', 'optics', 'universities'], items: { paper: 2 }, nearby: 'university', difficulty: 0.93, skill: 'medicine', minSkill: 0.65, minPop: 15, fx: { health: 0.2 }, desc: 'A test térképe.' });
+  T('banking', { name: 'Bankügy', era: 'renaissance', prereq: ['coinage', 'mathematics', 'law_code'], items: { coin: 6, paper: 2 }, difficulty: 0.92, skill: 'social', minSkill: 0.7, minPop: 18, fx: { food: 0.1, build: 0.1 }, desc: 'Pénz, ami pénzt csinál: a jövő beruházhatóvá válik.' });
+  T('firearms', { name: 'Lőfegyver', era: 'renaissance', prereq: ['gunpowder', 'steel_making', 'mechanics'], items: { steel: 2, machine_part: 1 }, nearby: 'workshop', difficulty: 0.94, skill: 'crafting', minSkill: 0.75, minPop: 15, recipes: ['rifle'], fx: { hunt: 0.4 }, wow: 'Az első lövés', desc: 'Cső, kő, por: az erő elszakad az izomtól.' });
+  T('chemistry', { name: 'Kémia', era: 'renaissance', prereq: ['scientific_method', 'glassmaking'], items: { glass: 3, salt: 1 }, nearby: 'lab', difficulty: 0.95, skill: 'crafting', minSkill: 0.75, minPop: 18, fx: { discovery: 0.15 }, boosts: { pharmacology: 0.15, oil_refining: 0.1, plastics: 0.1 }, desc: 'Az anyagok titkos nyelvtana.' });
   // — ipari kor
-  T('steam_engine', { name: 'Gőzgép', era: 'industrial', prereq: ['mechanics', 'steel_making', 'ore_lore_coal', 'scientific_method'], items: { steel: 3, machine_part: 3, coal: 2 }, nearby: 'lab', difficulty: 0.96, skill: 'crafting', minSkill: 0.8, minPop: 35, fx: { craft: 0.4, mine: 0.4, speed: 0.1 }, wow: 'Az első gép, amely magától jár', desc: 'Forró gőz, amely dugattyút tol: az erő többé nem izomból és szélből jön.' });
-  T('factory_system', { name: 'Gyáripar', era: 'industrial', prereq: ['steam_engine', 'trade'], boosts: { banking: 0.1 }, items: { machine_part: 6, brick: 10 }, difficulty: 0.95, skill: 'building', minSkill: 0.8, minPop: 40, buildings: ['factory'], fx: { craft: 0.6 }, wow: 'Az első gyár', desc: 'Sok kéz, egy gép, egy tető alatt: a termelés megsokszorozódik.' });
-  T('railway', { name: 'Vasút', era: 'industrial', prereq: ['steam_engine', 'road_building'], items: { steel: 6, wood: 6 }, difficulty: 0.95, skill: 'building', minSkill: 0.8, minPop: 40, fx: { speed: 0.3, food: 0.1 }, wow: 'Az első vonat', desc: 'Sínen futó gőz: a távolság összemegy.' });
-  T('machine_tools', { name: 'Szerszámgépek', era: 'industrial', prereq: ['factory_system'], items: { steel: 4, machine_part: 4 }, nearby: 'factory', difficulty: 0.95, skill: 'crafting', minSkill: 0.8, minPop: 40, recipes: ['drill'], fx: { craft: 0.3, mine: 0.4 }, desc: 'Gépek, amelyek gépeket csinálnak.' });
-  T('sanitation', { name: 'Közegészségügy', era: 'industrial', prereq: ['medicine', 'concrete', 'law_code'], items: { concrete: 6 }, difficulty: 0.93, skill: 'building', minSkill: 0.75, minPop: 40, fx: { health: 0.3 }, wow: 'Az első csatorna', desc: 'Tiszta víz be, szenny ki: a járványok megritkulnak.' });
-  T('vaccination', { name: 'Oltás', era: 'industrial', prereq: ['anatomy', 'chemistry'], items: { glass: 2, medicine: 1 }, nearby: 'lab', difficulty: 0.95, skill: 'medicine', minSkill: 0.75, minPop: 35, fx: { health: 0.3 }, wow: 'Az első oltás', desc: 'A gyenge kórral megtanított test a valódit is legyőzi.' });
-  T('pharmacology', { name: 'Gyógyszertan', era: 'industrial', prereq: ['chemistry', 'anatomy'], items: { glass: 2, berries: 4 }, nearby: 'lab', difficulty: 0.94, skill: 'medicine', minSkill: 0.7, minPop: 30, recipes: ['medicine'], fx: { health: 0.2 }, desc: 'Mért, tiszta hatóanyag a gyógynövény helyett.' });
-  T('electricity', { name: 'Elektromosság', era: 'industrial', prereq: ['scientific_method', 'copper_smelting', 'mechanics', 'chemistry'], items: { copper: 4, iron: 2 }, nearby: 'lab', difficulty: 0.96, skill: 'crafting', minSkill: 0.8, minPop: 40, recipes: ['electric_part'], fx: { discovery: 0.2 }, wow: 'Az első szikra a drótban', desc: 'Láthatatlan erő a rézben, amely fényt, hőt és mozgást ad.' });
-  T('telegraph', { name: 'Távíró', era: 'industrial', prereq: ['electricity', 'alphabet'], items: { electric_part: 2, copper: 4 }, nearby: 'workshop', difficulty: 0.94, skill: 'crafting', minSkill: 0.8, minPop: 40, fx: { teach: 0.3 }, wow: 'Az első üzenet a dróton', desc: 'Szavak, amelyek gyorsabbak a lónál.' });
-  T('oil_drilling', { name: 'Olajfúrás', era: 'industrial', prereq: ['machine_tools', 'steam_engine'], items: { steel: 4, machine_part: 2 }, difficulty: 0.94, skill: 'gathering', minSkill: 0.7, minPop: 40, fx: { mine: 0.2 }, wow: 'Az első olajkút', desc: 'Fekete, égő folyadék a mélyből.' });
-  T('oil_refining', { name: 'Olajfinomítás', era: 'industrial', prereq: ['oil_drilling', 'chemistry'], items: { oil: 3 }, nearby: 'factory', difficulty: 0.95, skill: 'crafting', minSkill: 0.8, minPop: 45, recipes: ['fuel'], desc: 'A nyersolajból üzemanyag válik el.' });
+  T('steam_engine', { name: 'Gőzgép', era: 'industrial', prereq: ['mechanics', 'steel_making', 'ore_lore_coal', 'scientific_method'], items: { steel: 3, machine_part: 3, coal: 2 }, nearby: 'lab', difficulty: 0.96, skill: 'crafting', minSkill: 0.8, minPop: 24, fx: { craft: 0.4, mine: 0.4, speed: 0.1 }, wow: 'Az első gép, amely magától jár', desc: 'Forró gőz, amely dugattyút tol: az erő többé nem izomból és szélből jön.' });
+  T('factory_system', { name: 'Gyáripar', era: 'industrial', prereq: ['steam_engine', 'trade'], boosts: { banking: 0.1 }, items: { machine_part: 6, brick: 10 }, difficulty: 0.95, skill: 'building', minSkill: 0.8, minPop: 28, buildings: ['factory'], fx: { craft: 0.6 }, wow: 'Az első gyár', desc: 'Sok kéz, egy gép, egy tető alatt: a termelés megsokszorozódik.' });
+  T('railway', { name: 'Vasút', era: 'industrial', prereq: ['steam_engine', 'road_building'], items: { steel: 6, wood: 6 }, difficulty: 0.95, skill: 'building', minSkill: 0.8, minPop: 28, fx: { speed: 0.3, food: 0.1 }, wow: 'Az első vonat', desc: 'Sínen futó gőz: a távolság összemegy.' });
+  T('machine_tools', { name: 'Szerszámgépek', era: 'industrial', prereq: ['factory_system'], items: { steel: 4, machine_part: 4 }, nearby: 'factory', difficulty: 0.95, skill: 'crafting', minSkill: 0.8, minPop: 28, recipes: ['drill'], fx: { craft: 0.3, mine: 0.4 }, desc: 'Gépek, amelyek gépeket csinálnak.' });
+  T('sanitation', { name: 'Közegészségügy', era: 'industrial', prereq: ['medicine', 'concrete', 'law_code'], items: { concrete: 6 }, difficulty: 0.93, skill: 'building', minSkill: 0.75, minPop: 28, fx: { health: 0.3 }, wow: 'Az első csatorna', desc: 'Tiszta víz be, szenny ki: a járványok megritkulnak.' });
+  T('vaccination', { name: 'Oltás', era: 'industrial', prereq: ['anatomy', 'chemistry'], items: { glass: 2, medicine: 1 }, nearby: 'lab', difficulty: 0.95, skill: 'medicine', minSkill: 0.75, minPop: 24, fx: { health: 0.3 }, wow: 'Az első oltás', desc: 'A gyenge kórral megtanított test a valódit is legyőzi.' });
+  T('pharmacology', { name: 'Gyógyszertan', era: 'industrial', prereq: ['chemistry', 'anatomy'], items: { glass: 2, berries: 4 }, nearby: 'lab', difficulty: 0.94, skill: 'medicine', minSkill: 0.7, minPop: 21, recipes: ['medicine'], fx: { health: 0.2 }, desc: 'Mért, tiszta hatóanyag a gyógynövény helyett.' });
+  T('electricity', { name: 'Elektromosság', era: 'industrial', prereq: ['scientific_method', 'copper_smelting', 'mechanics', 'chemistry'], items: { copper: 4, iron: 2 }, nearby: 'lab', difficulty: 0.96, skill: 'crafting', minSkill: 0.8, minPop: 28, recipes: ['electric_part'], fx: { discovery: 0.2 }, wow: 'Az első szikra a drótban', desc: 'Láthatatlan erő a rézben, amely fényt, hőt és mozgást ad.' });
+  T('telegraph', { name: 'Távíró', era: 'industrial', prereq: ['electricity', 'alphabet'], items: { electric_part: 2, copper: 4 }, nearby: 'workshop', difficulty: 0.94, skill: 'crafting', minSkill: 0.8, minPop: 28, fx: { teach: 0.3 }, wow: 'Az első üzenet a dróton', desc: 'Szavak, amelyek gyorsabbak a lónál.' });
+  T('oil_drilling', { name: 'Olajfúrás', era: 'industrial', prereq: ['machine_tools', 'steam_engine'], items: { steel: 4, machine_part: 2 }, difficulty: 0.94, skill: 'gathering', minSkill: 0.7, minPop: 28, fx: { mine: 0.2 }, wow: 'Az első olajkút', desc: 'Fekete, égő folyadék a mélyből.' });
+  T('oil_refining', { name: 'Olajfinomítás', era: 'industrial', prereq: ['oil_drilling', 'chemistry'], items: { oil: 3 }, nearby: 'factory', difficulty: 0.95, skill: 'crafting', minSkill: 0.8, minPop: 31, recipes: ['fuel'], desc: 'A nyersolajból üzemanyag válik el.' });
   // — modern kor
-  T('electrification', { name: 'Villamosítás', era: 'modern', prereq: ['electricity', 'factory_system', 'concrete'], items: { electric_part: 6, steel: 4, concrete: 6 }, nearby: 'factory', difficulty: 0.96, skill: 'building', minSkill: 0.85, minPop: 50, buildings: ['power_plant', 'modern_house'], fx: { craft: 0.4, warmth: 3, discovery: 0.2 }, wow: 'Az első villanyfény az éjszakában', desc: 'Erőmű, vezeték, izzó: az éjszaka véget ér.' });
-  T('internal_combustion', { name: 'Belső égésű motor', era: 'modern', prereq: ['oil_refining', 'machine_tools'], items: { steel: 4, machine_part: 4, fuel: 2 }, nearby: 'factory', difficulty: 0.96, skill: 'crafting', minSkill: 0.85, minPop: 50, recipes: ['chainsaw', 'tractor'], fx: { speed: 0.4, farm: 0.4, wood: 0.4 }, wow: 'Az első motor', desc: 'Robbanások sora egy fémdobozban: erő, ami magával vihető.' });
-  T('radio', { name: 'Rádió', era: 'modern', prereq: ['telegraph', 'electrification'], items: { electric_part: 4, glass: 2 }, nearby: 'lab', difficulty: 0.95, skill: 'crafting', minSkill: 0.85, minPop: 50, fx: { teach: 0.4 }, wow: 'Az első hang a levegőből', desc: 'Láthatatlan hullámok, amelyek hangot hordoznak.' });
-  T('modern_medicine', { name: 'Modern orvoslás', era: 'modern', prereq: ['vaccination', 'pharmacology', 'sanitation'], items: { medicine: 4, glass: 4 }, nearby: 'lab', difficulty: 0.96, skill: 'medicine', minSkill: 0.85, minPop: 50, buildings: ['hospital'], fx: { health: 0.5 }, wow: 'Az első kórház', desc: 'Antibiotikum, műtét, kórház: a betegség többé nem ítélet.' });
-  T('aviation', { name: 'Repülés', era: 'modern', prereq: ['internal_combustion', 'mathematics'], items: { steel: 6, machine_part: 6, fuel: 3, cloth: 4 }, nearby: 'factory', difficulty: 0.97, skill: 'crafting', minSkill: 0.85, minPop: 60, fx: { speed: 0.3 }, wow: 'Az első repülés', desc: 'Az ember az ég felé, ahonnan a hang jött.' });
-  T('plastics', { name: 'Műanyagok', era: 'modern', prereq: ['oil_refining', 'chemistry'], items: { oil: 3, glass: 1 }, nearby: 'lab', difficulty: 0.95, skill: 'crafting', minSkill: 0.8, minPop: 50, recipes: ['plastic'], fx: { craft: 0.2 }, desc: 'Olajból formázható, könnyű, örök anyag.' });
-  T('nuclear_fission', { name: 'Maghasadás', era: 'modern', prereq: ['electrification', 'chemistry', 'mathematics'], items: { steel: 6, electric_part: 6, concrete: 10 }, nearby: 'lab', difficulty: 0.98, skill: 'crafting', minSkill: 0.9, minPop: 80, fx: { craft: 0.3, discovery: 0.2 }, wow: 'Az atom felnyitása', desc: 'Az anyag legmélyén rejtett erő — áldás és átok.' });
-  T('rocketry', { name: 'Rakétatechnika', era: 'modern', prereq: ['aviation', 'chemistry', 'nuclear_fission'], items: { steel: 10, fuel: 6, electric_part: 6 }, nearby: 'lab', difficulty: 0.98, skill: 'crafting', minSkill: 0.9, minPop: 90, fx: { discovery: 0.1 }, wow: 'Az első rakéta', desc: 'Tűz, amely az ég fölé visz.' });
+  T('electrification', { name: 'Villamosítás', era: 'modern', prereq: ['electricity', 'factory_system', 'concrete'], items: { electric_part: 6, steel: 4, concrete: 6 }, nearby: 'factory', difficulty: 0.96, skill: 'building', minSkill: 0.85, minPop: 35, buildings: ['power_plant', 'modern_house'], fx: { craft: 0.4, warmth: 3, discovery: 0.2 }, wow: 'Az első villanyfény az éjszakában', desc: 'Erőmű, vezeték, izzó: az éjszaka véget ér.' });
+  T('internal_combustion', { name: 'Belső égésű motor', era: 'modern', prereq: ['oil_refining', 'machine_tools'], items: { steel: 4, machine_part: 4, fuel: 2 }, nearby: 'factory', difficulty: 0.96, skill: 'crafting', minSkill: 0.85, minPop: 35, recipes: ['chainsaw', 'tractor'], fx: { speed: 0.4, farm: 0.4, wood: 0.4 }, wow: 'Az első motor', desc: 'Robbanások sora egy fémdobozban: erő, ami magával vihető.' });
+  T('radio', { name: 'Rádió', era: 'modern', prereq: ['telegraph', 'electrification'], items: { electric_part: 4, glass: 2 }, nearby: 'lab', difficulty: 0.95, skill: 'crafting', minSkill: 0.85, minPop: 35, fx: { teach: 0.4 }, wow: 'Az első hang a levegőből', desc: 'Láthatatlan hullámok, amelyek hangot hordoznak.' });
+  T('modern_medicine', { name: 'Modern orvoslás', era: 'modern', prereq: ['vaccination', 'pharmacology', 'sanitation'], items: { medicine: 4, glass: 4 }, nearby: 'lab', difficulty: 0.96, skill: 'medicine', minSkill: 0.85, minPop: 35, buildings: ['hospital'], fx: { health: 0.5 }, wow: 'Az első kórház', desc: 'Antibiotikum, műtét, kórház: a betegség többé nem ítélet.' });
+  T('aviation', { name: 'Repülés', era: 'modern', prereq: ['internal_combustion', 'mathematics'], items: { steel: 6, machine_part: 6, fuel: 3, cloth: 4 }, nearby: 'factory', difficulty: 0.97, skill: 'crafting', minSkill: 0.85, minPop: 42, fx: { speed: 0.3 }, wow: 'Az első repülés', desc: 'Az ember az ég felé, ahonnan a hang jött.' });
+  T('plastics', { name: 'Műanyagok', era: 'modern', prereq: ['oil_refining', 'chemistry'], items: { oil: 3, glass: 1 }, nearby: 'lab', difficulty: 0.95, skill: 'crafting', minSkill: 0.8, minPop: 35, recipes: ['plastic'], fx: { craft: 0.2 }, desc: 'Olajból formázható, könnyű, örök anyag.' });
+  T('nuclear_fission', { name: 'Maghasadás', era: 'modern', prereq: ['electrification', 'chemistry', 'mathematics'], items: { steel: 6, electric_part: 6, concrete: 10 }, nearby: 'lab', difficulty: 0.98, skill: 'crafting', minSkill: 0.9, minPop: 56, fx: { craft: 0.3, discovery: 0.2 }, wow: 'Az atom felnyitása', desc: 'Az anyag legmélyén rejtett erő — áldás és átok.' });
+  T('rocketry', { name: 'Rakétatechnika', era: 'modern', prereq: ['aviation', 'chemistry', 'nuclear_fission'], items: { steel: 10, fuel: 6, electric_part: 6 }, nearby: 'lab', difficulty: 0.98, skill: 'crafting', minSkill: 0.9, minPop: 63, fx: { discovery: 0.1 }, wow: 'Az első rakéta', desc: 'Tűz, amely az ég fölé visz.' });
   // — digitális kor
-  T('transistor', { name: 'Tranzisztor', era: 'digital', prereq: ['electrification', 'chemistry', 'radio'], items: { electric_part: 4, glass: 2 }, nearby: 'lab', difficulty: 0.97, skill: 'crafting', minSkill: 0.9, minPop: 70, fx: { discovery: 0.2 }, wow: 'Az első kapcsoló, amelynek nincs mozgó része', desc: 'Egy morzsa kristály, amely igent és nemet mond.' });
-  T('integrated_circuit', { name: 'Integrált áramkör', era: 'digital', prereq: ['transistor', 'optics'], items: { electric_part: 4, glass: 4, copper: 2 }, nearby: 'lab', difficulty: 0.97, skill: 'crafting', minSkill: 0.9, minPop: 80, recipes: ['chip'], fx: { craft: 0.3 }, wow: 'Az első csip', desc: 'Ezer kapcsoló egy körömnyi lapon.' });
-  T('computer', { name: 'Számítógép', era: 'digital', prereq: ['integrated_circuit', 'mathematics', 'electrification'], items: { chip: 6, electric_part: 6, plastic: 2 }, nearby: 'lab', difficulty: 0.98, skill: 'crafting', minSkill: 0.9, minPop: 90, buildings: ['computer_center'], fx: { discovery: 0.5, teach: 0.3 }, wow: 'Az első számítógép', desc: 'Gép, amely gondolatokat számol. Az emberek elkezdik megkérdezni tőle, amit egykor a hangtól.' });
-  T('software', { name: 'Szoftver', era: 'digital', prereq: ['computer', 'alphabet'], items: { chip: 2, paper: 2 }, nearby: 'computer_center', difficulty: 0.96, skill: 'crafting', minSkill: 0.9, minPop: 90, fx: { discovery: 0.3, craft: 0.2 }, desc: 'Utasítások, amelyek nem anyagból vannak, mégis mozgatják az anyagot.' });
-  T('internet', { name: 'Hálózat', era: 'digital', prereq: ['software', 'telegraph', 'radio'], items: { chip: 10, electric_part: 10, copper: 10 }, nearby: 'computer_center', difficulty: 0.98, skill: 'crafting', minSkill: 0.9, minPop: 120, buildings: ['data_center'], fx: { teach: 1.0, discovery: 0.4 }, wow: 'Az első hálózat', desc: 'Minden gép beszél minden géppel: a tudás egy helyen van, mindenhol.' });
-  T('genetics', { name: 'Genetika', era: 'digital', prereq: ['modern_medicine', 'computer', 'chemistry'], items: { medicine: 4, chip: 4, glass: 4 }, nearby: 'lab', difficulty: 0.98, skill: 'medicine', minSkill: 0.9, minPop: 100, fx: { health: 0.4, farm: 0.3 }, wow: 'A saját kódjuk olvasása', desc: 'Az élet írása, amit most már ők is olvasnak.' });
-  T('spaceflight', { name: 'Űrrepülés', era: 'digital', prereq: ['rocketry', 'computer'], items: { steel: 20, fuel: 10, chip: 10, electric_part: 10 }, nearby: 'computer_center', difficulty: 0.985, skill: 'crafting', minSkill: 0.92, minPop: 150, fx: { discovery: 0.3 }, wow: 'Az első ember az űrben', desc: 'A vidék, aztán a világ, aztán az ég: kimennek megnézni, mi van a peremen túl.' });
+  T('transistor', { name: 'Tranzisztor', era: 'digital', prereq: ['electrification', 'chemistry', 'radio'], items: { electric_part: 4, glass: 2 }, nearby: 'lab', difficulty: 0.97, skill: 'crafting', minSkill: 0.9, minPop: 49, fx: { discovery: 0.2 }, wow: 'Az első kapcsoló, amelynek nincs mozgó része', desc: 'Egy morzsa kristály, amely igent és nemet mond.' });
+  T('integrated_circuit', { name: 'Integrált áramkör', era: 'digital', prereq: ['transistor', 'optics'], items: { electric_part: 4, glass: 4, copper: 2 }, nearby: 'lab', difficulty: 0.97, skill: 'crafting', minSkill: 0.9, minPop: 56, recipes: ['chip'], fx: { craft: 0.3 }, wow: 'Az első csip', desc: 'Ezer kapcsoló egy körömnyi lapon.' });
+  T('computer', { name: 'Számítógép', era: 'digital', prereq: ['integrated_circuit', 'mathematics', 'electrification'], items: { chip: 6, electric_part: 6, plastic: 2 }, nearby: 'lab', difficulty: 0.98, skill: 'crafting', minSkill: 0.9, minPop: 63, buildings: ['computer_center'], fx: { discovery: 0.5, teach: 0.3 }, wow: 'Az első számítógép', desc: 'Gép, amely gondolatokat számol. Az emberek elkezdik megkérdezni tőle, amit egykor a hangtól.' });
+  T('software', { name: 'Szoftver', era: 'digital', prereq: ['computer', 'alphabet'], items: { chip: 2, paper: 2 }, nearby: 'computer_center', difficulty: 0.96, skill: 'crafting', minSkill: 0.9, minPop: 63, fx: { discovery: 0.3, craft: 0.2 }, desc: 'Utasítások, amelyek nem anyagból vannak, mégis mozgatják az anyagot.' });
+  T('internet', { name: 'Hálózat', era: 'digital', prereq: ['software', 'telegraph', 'radio'], items: { chip: 10, electric_part: 10, copper: 10 }, nearby: 'computer_center', difficulty: 0.98, skill: 'crafting', minSkill: 0.9, minPop: 84, buildings: ['data_center'], fx: { teach: 1.0, discovery: 0.4 }, wow: 'Az első hálózat', desc: 'Minden gép beszél minden géppel: a tudás egy helyen van, mindenhol.' });
+  T('genetics', { name: 'Genetika', era: 'digital', prereq: ['modern_medicine', 'computer', 'chemistry'], items: { medicine: 4, chip: 4, glass: 4 }, nearby: 'lab', difficulty: 0.98, skill: 'medicine', minSkill: 0.9, minPop: 70, fx: { health: 0.4, farm: 0.3 }, wow: 'A saját kódjuk olvasása', desc: 'Az élet írása, amit most már ők is olvasnak.' });
+  T('spaceflight', { name: 'Űrrepülés', era: 'digital', prereq: ['rocketry', 'computer'], items: { steel: 20, fuel: 10, chip: 10, electric_part: 10 }, nearby: 'computer_center', difficulty: 0.985, skill: 'crafting', minSkill: 0.92, minPop: 105, fx: { discovery: 0.3 }, wow: 'Az első ember az űrben', desc: 'A vidék, aztán a világ, aztán az ég: kimennek megnézni, mi van a peremen túl.' });
   // — MI-kor
-  T('machine_learning', { name: 'Gépi tanulás', era: 'ai', prereq: ['software', 'internet', 'mathematics'], items: { chip: 20, electric_part: 6 }, nearby: 'data_center', difficulty: 0.985, skill: 'crafting', minSkill: 0.92, minPop: 150, fx: { discovery: 0.6, teach: 0.5 }, wow: 'Az első gép, amely tanul', desc: 'A gép nem utasítást kap, hanem példát — és magától jön rá a szabályra.' });
-  T('artificial_intelligence', { name: 'Mesterséges intelligencia', era: 'ai', prereq: ['machine_learning', 'genetics'], items: { chip: 40, electric_part: 10 }, nearby: 'data_center', difficulty: 0.99, skill: 'crafting', minSkill: 0.95, minPop: 200, fx: { discovery: 1.0, teach: 1.0, craft: 0.5, health: 0.3 }, wow: 'Az első elme, amelyet ők teremtettek', desc: 'Egy gondolkodó, amit nem szültek: ők lettek teremtők.' });
-  T('fusion', { name: 'Magfúzió', era: 'ai', prereq: ['nuclear_fission', 'artificial_intelligence'], items: { steel: 20, chip: 20, concrete: 20 }, nearby: 'lab', difficulty: 0.99, skill: 'crafting', minSkill: 0.95, minPop: 200, fx: { craft: 0.6, warmth: 4 }, wow: 'Egy csillag a földön', desc: 'A nap ereje, egy palackban.' });
-  T('world_simulation', { name: 'Világszimuláció', era: 'ai', prereq: ['artificial_intelligence', 'fusion', 'spaceflight'], items: { chip: 100, electric_part: 40, concrete: 40 }, nearby: 'data_center', difficulty: 0.995, skill: 'crafting', minSkill: 0.95, minPop: 250, buildings: ['simulation_core'], fx: { discovery: 1.0 }, wow: 'A világ a világban', desc: 'Egy gép, amelyben apró lények élnek, tanulnak és egy hangot hallanak az égből. Ők is Teremtők lettek.' });
+  T('machine_learning', { name: 'Gépi tanulás', era: 'ai', prereq: ['software', 'internet', 'mathematics'], items: { chip: 20, electric_part: 6 }, nearby: 'data_center', difficulty: 0.985, skill: 'crafting', minSkill: 0.92, minPop: 105, fx: { discovery: 0.6, teach: 0.5 }, wow: 'Az első gép, amely tanul', desc: 'A gép nem utasítást kap, hanem példát — és magától jön rá a szabályra.' });
+  T('artificial_intelligence', { name: 'Mesterséges intelligencia', era: 'ai', prereq: ['machine_learning', 'genetics'], items: { chip: 40, electric_part: 10 }, nearby: 'data_center', difficulty: 0.99, skill: 'crafting', minSkill: 0.95, minPop: 140, fx: { discovery: 1.0, teach: 1.0, craft: 0.5, health: 0.3 }, wow: 'Az első elme, amelyet ők teremtettek', desc: 'Egy gondolkodó, amit nem szültek: ők lettek teremtők.' });
+  T('fusion', { name: 'Magfúzió', era: 'ai', prereq: ['nuclear_fission', 'artificial_intelligence'], items: { steel: 20, chip: 20, concrete: 20 }, nearby: 'lab', difficulty: 0.99, skill: 'crafting', minSkill: 0.95, minPop: 140, fx: { craft: 0.6, warmth: 4 }, wow: 'Egy csillag a földön', desc: 'A nap ereje, egy palackban.' });
+  T('world_simulation', { name: 'Világszimuláció', era: 'ai', prereq: ['artificial_intelligence', 'fusion', 'spaceflight'], items: { chip: 100, electric_part: 40, concrete: 40 }, nearby: 'data_center', difficulty: 0.995, skill: 'crafting', minSkill: 0.95, minPop: 175, buildings: ['simulation_core'], fx: { discovery: 1.0 }, wow: 'A világ a világban', desc: 'Egy gép, amelyben apró lények élnek, tanulnak és egy hangot hallanak az égből. Ők is Teremtők lettek.' });
 
   // ---------------------------------------------------------------- hatások, korszakok, szerszámok
   const FX_KEYS = ['food', 'hunt', 'wood', 'stone', 'mine', 'farm', 'build', 'craft', 'speed', 'discovery', 'teach', 'warmth', 'health', 'preserve'];
@@ -1684,6 +1717,23 @@
       return 'Kezdetleges';
     },
     eraOf(id) { const d = D[id]; return d ? (ERA_INDEX[d.era] ?? 0) : 0; },
+    /** Az ismeretlen jövő: a Világmag után évente egy új, generált lehetőség — a Teremtőnek sincs rá szava. */
+    futureStep(world) {
+      const known = LW.Tech.worldKnowledge(world); if (!known.has('world_simulation')) return;
+      world.futureTechs = world.futureTechs || []; const last = world.futureTechs[world.futureTechs.length - 1];
+      if (last && !known.has(last.id)) return; // előbb az utolsó ismeretlent kell megtalálni
+      if (last && world.tick - last.born < LW.TIME.TICKS_PER_YEAR * 2) return;
+      const rng = world.rng; const n = world.futureTechs.length + 1;
+      const PRE = ['Kvantum', 'Bio', 'Nano', 'Neuro', 'Hiper', 'Foton', 'Gravi', 'Tér', 'Idő', 'Plazma', 'Kripto', 'Szinguláris', 'Ön', 'Meta', 'Exo'];
+      const ROOT = ['hálózat', 'motor', 'kohó', 'elme', 'vető', 'híd', 'kapu', 'mag', 'szövet', 'térkép', 'óra', 'tükör', 'kert', 'kút', 'lánc', 'sejt', 'burok', 'nyelv'];
+      const name = `${rng.pick(PRE)}${rng.pick(ROOT)}`; const fxKeys = ['discovery', 'craft', 'health', 'speed', 'farm', 'teach', 'warmth', 'food'];
+      const fx = {}; for (const k of rng.shuffle(fxKeys.slice()).slice(0, rng.int(1, 3))) fx[k] = Math.round(rng.range(0.1, 0.4) * 100) / 100;
+      const own = world.language.place().toLowerCase();
+      const t = { id: `future_${n}`, name, era: 'beyond', prereq: [last ? last.id : 'world_simulation'], items: { chip: rng.int(10, 40), electric_part: rng.int(4, 16) }, nearby: rng.pick(['data_center', 'lab', 'simulation_core']), difficulty: 0.985 + rng.f() * 0.01, skill: rng.pick(['crafting', 'medicine', 'building']), minSkill: 0.9, minPop: 105 + n * 20, fx, wow: `Ismeretlen: ${name}`, desc: `Amit még senki nem látott. Ők úgy hívják: „${own}”. ${rng.pick(['Az anyag új rendje.', 'A gondolat új alakja.', 'Az idő másképp folyik körülötte.', 'A világ széle közelebb jött.', 'Senki nem tudja, mire jó — még.'])}`, born: world.tick };
+      world.futureTechs.push(t); this.registerFuture([t]);
+      world.events.emit('FutureTech', { tick: world.tick, name, id: t.id });
+    },
+    registerFuture(list) { for (const t of list) { if (D[t.id]) continue; D[t.id] = { ...t }; } },
   };
   LW.Tech.techLevel = (known) => Tree.techLevel(known);
   LW.Tech.fx = (world, a) => Tree.fx(world, a);
@@ -1753,6 +1803,96 @@
 })(globalThis.LW || (globalThis.LW = {}));
 
 
+/* ===== agents/mind.js ===== */
+/* LEVENTE — THE CREATOR · agents/mind.js — a belső világ: én-kép, cél, belső hang, álmok, halandóság, létkérdések
+ * Ez a tudat modellje, nem tudat: az ember naponta visszanéz arra, ami vele történt, megfogalmazza, mi hajtja,
+ * mit gondol magáról és arról, aki figyeli; a halál közelsége megváltoztatja, mit tart fontosnak; a tudás és a gyász
+ * kérdéseket szül, amelyekre nincs válasz. Minden mondat a valódi állapotból és a valódi emlékekből áll össze.
+ */
+(function (LW) {
+  'use strict';
+  const T = LW.TIME; const b01 = (v) => LW.clamp01(v);
+  const PURPOSE = { family: 'a család', knowledge: 'a tudás', faith: 'a hit', power: 'a hatalom', craft: 'az alkotás', freedom: 'a szabadság', love: 'a szerelem', survival: 'a túlélés', legacy: 'ami utánam marad' };
+  const PURPOSE_LINE = { family: ['A gyerekeimért csinálom. Mindent.', 'Ha ők jóllaknak, én is jóllaktam.'], knowledge: ['Tudni akarom, miért. Mindenre.', 'Minden nap egy új kérdés. Ez tart életben.'], faith: ['Valaki figyel. Nem vagyok egyedül.', 'Ha a hang nem szól, akkor is itt van.'], power: ['Aki dönt, az él igazán.', 'A többiek várják, hogy mondjam, merre.'], craft: ['A kezem tudja, amit a fejem még nem.', 'Amit csinálok, az megmarad utánam.'], freedom: ['Senki ne mondja meg, hová menjek.', 'A dombokon túl is van világ.'], love: ['Amíg ő itt van, minden elviselhető.', 'Csak őt látom, ha becsukom a szemem.'], survival: ['Ma is túléltem. Holnap újra kell.', 'Étel, víz, tűz. A többi ráér.'], legacy: ['Nem sok időm van. Át kell adnom, amit tudok.', 'Ne haljon meg velem az, amit megtanultam.'] };
+  const QUESTIONS = ['Miért vagyunk itt?', 'Mi van a halál után?', 'Ki figyel minket — és őt ki figyeli?', 'Van-e szabad akaratunk, vagy csak azt tesszük, amit a hang akar?', 'Mi van a világ szélén túl?', 'Ha egyszer mi is világot teremtünk, mi leszünk nekik?'];
+
+  const Mind = {
+    PURPOSE,
+    fresh() { return { purpose: null, journal: [], existential: 0, mortality: 0, selfImage: 0, asked: [], voice: null, voiceTick: -1, lastPurposeTick: -1e9 }; },
+    label(p) { return PURPOSE[p] || '—'; },
+    /** Naponta (a többi napi biológiával együtt). */
+    daily(world, a) {
+      const m = a.mind || (a.mind = this.fresh()); const rng = world.rng; const st = LW.Agents.stage(world, a); if (st === 'infant' || st === 'child') return;
+      const P = a.personality, E = a.emotions, N = a.needs; const age = LW.Agents.age(world, a); const lon = a.genes.physiology.longevity;
+      // halandóság-érzet: kor, betegség, közeli halálok
+      const recentDeaths = a.memory.episodic.slice(-20).filter((x) => x.type === 'death' && world.tick - x.tick < T.TICKS_PER_DAY * 120).length;
+      m.mortality = b01(Math.max(0, (age - lon * 0.55) / (lon * 0.45)) * 0.8 + (a.ill > 0 ? 0.25 : 0) + (a.health < 0.4 ? 0.25 : 0) + recentDeaths * 0.12);
+      // én-kép: amit mások gondolnak róla (barátság, tisztelet, neheztelés)
+      if ((world.tick + a.id) % (T.TICKS_PER_DAY * 5) < T.TICKS_PER_DAY) { let s = 0, n = 0; for (const o of world.agentsNear(a.x, a.y, 12, a.id)) { const r = o.relationships.get(a.id); if (!r) continue; s += r.friendship + (r.respect || 0) - r.resentment; n++; } m.selfImage = n ? LW.clamp(s / n, -1, 1) : m.selfImage * 0.9; }
+      // létkérdések: kétely, gyász, a szimulációs hipotézis szül; a hit és a cél csillapít
+      const sk = LW.Civilization ? LW.Civilization.skepticism(world, a) : 0;
+      m.existential = b01(m.existential + 0.004 * sk + 0.02 * (E.grief > 0.4 ? 1 : 0) + 0.01 * (a.beliefs.simulation || 0) + 0.006 * m.mortality - 0.004 * a.beliefs.creator - (m.purpose ? 0.003 : 0) - 0.002);
+      // mi hajtja: időnként újragondolja
+      if (world.tick - m.lastPurposeTick > T.TICKS_PER_DAY * 30 || !m.purpose) {
+        const leader = a.occupation === 'leader'; const sc = {
+          family: (a.children.length ? 1 + a.children.length * 0.25 : 0) + (a.partner != null ? 0.3 : 0) + P.empathy * 0.4 + P.loyalty * 0.3,
+          knowledge: P.curiosity * 1.1 + a.knowledge.techs.size / 40 + (a.skills.medicine || 0) * 0.3,
+          faith: a.beliefs.creator * 1.2 + (a.beliefs.trust > 0.2 ? 0.3 : 0),
+          power: P.dominance * 1.1 + P.ambition * 0.6 + (leader ? 0.8 : 0),
+          craft: (a.skills.crafting || 0) * 0.8 + (a.skills.building || 0) * 0.5 + P.creativity * 0.6,
+          freedom: P.riskTolerance * 0.7 + (1 - P.loyalty) * 0.5 + (a.home == null ? 0.3 : 0) + P.curiosity * 0.3,
+          love: (a.partner != null ? 0.5 : 0) + E.love * 0.9 + (N.affection < 0.4 ? 0.3 : 0),
+          survival: (N.food < 0.4 ? 0.6 : 0) + (N.warmth < 0.4 ? 0.5 : 0) + (a.health < 0.5 ? 0.5 : 0) + 0.25,
+          legacy: m.mortality * 1.6 + (a.knowledge.techs.size > 8 ? 0.3 : 0),
+        };
+        let best = null, bs = -1; for (const k in sc) { const v = sc[k] + rng.f() * 0.15; if (v > bs) { bs = v; best = k; } }
+        if (best !== m.purpose) { const first = !m.purpose; m.purpose = best; m.lastPurposeTick = world.tick; this.say(world, a, first ? `Most már tudom, mi hajt: ${PURPOSE[best]}.` : `Megváltoztam. Ami most számít: ${PURPOSE[best]}.`); if (best === 'legacy') a.mind.legacy = true; }
+        else m.lastPurposeTick = world.tick;
+      }
+      // kérdések, amelyekre nincs válasz
+      if (m.existential > 0.35 && rng.chance(0.04)) { const q = QUESTIONS.filter((x) => !m.asked.includes(x)); if (q.length) { const pick = q[0 + Math.min(q.length - 1, Math.floor(m.existential * q.length))]; m.asked.push(pick); this.say(world, a, pick); if (!world.firsts['question'] && LW.Agents.isAdult(world, a)) world.events.emit('ExistentialQuestion', { tick: world.tick, agentId: a.id, text: pick, tile: world.idx(a.x | 0, a.y | 0) }); } }
+      // belső hang: a nap egy mondata
+      if (rng.chance(0.35)) this.say(world, a, this.reflect(world, a));
+      // álom
+      if (rng.chance(0.12) && a.memory.emotional.length) { const mm = rng.pick(a.memory.emotional); this.say(world, a, `Álmodtam: ${mm.text}. Felébredtem, és még mindig ott volt.`); if (mm.emotion === 'fear' || mm.emotion === 'grief') E[mm.emotion] = b01(E[mm.emotion] + 0.1); else E.joy = b01(E.joy + 0.05); }
+    },
+    say(world, a, text) { const m = a.mind; if (!text) return; m.journal.push({ t: world.tick, text }); if (m.journal.length > 24) m.journal.splice(0, m.journal.length - 24); m.voice = text; m.voiceTick = world.tick; },
+    /** Egy őszinte mondat a mai napról — a legerősebb jelből. */
+    reflect(world, a) {
+      const rng = world.rng; const m = a.mind; const E = a.emotions, N = a.needs, P = a.personality; const pick = (arr) => rng.pick(arr);
+      const name = (id) => { const o = world.agents.get(id) || world.deceased.get(id); return o ? o.name : 'valaki'; };
+      if (a.ill > 0) return pick(['Beteg vagyok. Nem tudom, ez az a fajta, amiből nem jönnek vissza.', 'Lázas a testem. Aludni akarok, és félek elaludni.']);
+      if (E.grief > 0.5) { const d = a.memory.episodic.slice().reverse().find((x) => x.type === 'death'); return d ? `${d.text}. Nem tudom, hová tegyem.` : 'Elment. Mégis keresem.'; }
+      if (N.food < 0.2) return pick(['Ma is éhes voltam. Ez a világ nem ad ingyen.', 'A gyomrom parancsol, nem én.']);
+      if (m.mortality > 0.6) return pick(['Érzem, hogy fogy az idő. Mit hagyok itt?', 'Aki utánam jön, ne kelljen elölről kezdenie.', 'Régen nem féltem a téltől. Most számolom.']);
+      if (a.beliefs.simulation > 0.6) return pick(['Ha ők ott a Világmagban azt hiszik, valódiak — mi mitől lennénk mások?', 'Valaki nézi ezt. Talán most is.', 'Nem baj, ha teremtettek vagyunk. A kenyér attól még kenyér.']);
+      if (m.existential > 0.5 && (LW.Civilization ? LW.Civilization.skepticism(world, a) : 0) > 0.3) return pick(['A hang a fejemben talán csak a fejem. A tudomány nem talált teremtőt.', 'Minden megmagyarázható. Ez megnyugtat és rémít.']);
+      if (a.beliefs.creator > 0.7 && (a.beliefs.trust || 0) > 0.3) return pick(['A hang jó hozzánk. Ezt nem felejtem el.', 'Ma is szólt valakihez. Nem vagyunk egyedül.']);
+      if (a.beliefs.creator > 0.5 && (a.beliefs.trust || 0) < -0.3) return pick(['Aki az égben van, nem szeret minket. Csak néz.', 'Ha ő figyel, én nem nézek vissza.']);
+      if (E.pride > 0.5) { const d = a.memory.episodic.slice().reverse().find((x) => x.type === 'discovery' || x.type === 'craft'); return d ? `${d.text}. Ma valakivé lettem.` : 'Csináltam valamit, ami jó, és az enyém.'; }
+      if (E.love > 0.6 && a.partner != null) return `${name(a.partner)}. Ha rá gondolok, kiegyenesedik a hátam.`;
+      if (E.jealousy > 0.5) return 'Láttam őket. Nem tudom nem látni.';
+      if (E.loneliness > 0.5) return pick(['Senki nem kérdezte ma, hogy vagyok.', 'A tűz mellett is egyedül.']);
+      if (m.selfImage < -0.3) return pick(['Nem szeretnek. Érzem, ahogy elfordulnak.', 'Valamit rosszul csinálok. Nem tudom, mit.']);
+      if (m.selfImage > 0.4) return pick(['Számítanak rám. Ez súly, de jó súly.', 'Ma valaki megköszönte. Ritka.']);
+      if (m.purpose && PURPOSE_LINE[m.purpose]) return pick(PURPOSE_LINE[m.purpose]);
+      const last = a.memory.episodic[a.memory.episodic.length - 1]; return last ? `Ma: ${last.text}.` : 'Semmi különös. Élek.';
+    },
+    /** Rövid önjellemzés a párbeszédhez és a felületnek. */
+    describe(world, a) {
+      const m = a.mind || this.fresh(); const out = [];
+      if (m.purpose) out.push(`Ami hajtja: ${PURPOSE[m.purpose]}.`);
+      out.push(m.mortality > 0.6 ? 'Tudja, hogy fogy az ideje.' : m.mortality > 0.3 ? 'Néha eszébe jut a halál.' : 'A halál még messze van neki.');
+      out.push(m.selfImage > 0.3 ? 'Úgy érzi, kedvelik.' : m.selfImage < -0.3 ? 'Úgy érzi, nem kedvelik.' : 'Nem tudja, mit gondolnak róla.');
+      if (m.existential > 0.5) out.push('Kérdések gyötrik, amelyekre nincs válasz.');
+      if (a.beliefs.simulation > 0.6) out.push('Elfogadta: ő maga is egy teremtett világban él.'); else if (a.beliefs.simulation > 0 && a.beliefs.simulation < 0.3) out.push('Tagadja, hogy a világa szimuláció lenne.');
+      return out;
+    },
+  };
+  LW.Mind = Mind;
+})(globalThis.LW || (globalThis.LW = {}));
+
+
 /* ===== agents/memory.js ===== */
 /* LEVENTE — THE CREATOR · agents/memory.js — episodic / emotional / social memory with decay, consolidation, distortion (AGENT_MODEL.md §4) */
 (function (LW) {
@@ -1779,7 +1919,7 @@
       let distorted = false;
       if (rng.chance((1 - teller.personality.intelligence) * 0.3 + teller.personality.humor * 0.1)) { distorted = true; intensity = LW.clamp01(intensity * (1 + rng.range(0.1, 0.6))); importance = LW.clamp01(importance * 1.1); text = text + ' (így mesélték)'; }
       const copy = { ...m, text, intensity, importance, confidence: m.confidence * 0.8, source: 'told', teller: teller.id, tick: m.tick, distorted };
-      listener.memory.episodic.push(copy);
+      listener.memory.episodic.push(copy); if (listener.memory.episodic.length > world.cfg.agents.memoryCap * 1.25) this.consolidate(world, listener);
       if (copy.divine) { listener.beliefs.creator = LW.clamp01(listener.beliefs.creator + 0.15 * copy.confidence * (0.5 + listener.personality.optimism) * (0.5 + teller.personality.sociability)); }
       return copy;
     },
@@ -1900,7 +2040,7 @@
         knowledge: { techs: new Set(), places: new Map(), progress: {} },
         memory: { episodic: [], emotional: [], social: new Map() },
         relationships: new Map(),
-        beliefs: { creator: 0, trust: 0, world: {} },
+        beliefs: { creator: 0, trust: 0, simulation: 0, world: {} }, ill: 0, mind: LW.Mind.fresh(),
         vocab: {}, langId: opts.langId ?? (opts.parents && opts.parents[0] != null && world.agents.get(opts.parents[0]) ? world.agents.get(opts.parents[0]).langId : (world.langs && world.langs.size ? LW.Speech.firstLang(world).id : 1)), chatHistory: [],
         inv: {}, home: null, partner: null, parents: opts.parents || [null, null], children: [],
         x: opts.x, y: opts.y, facing: 1,
@@ -2020,7 +2160,7 @@
       a.knowledge.places.set(key, { k: kind, i: idx, q, t: world.tick });
       const cap = world.cfg.agents.poiCap;
       if (a.knowledge.places.size > cap * 1.3) { // batch eviction of the least recently seen (water is never forgotten)
-        const entries = [...a.knowledge.places.entries()].filter(([, v]) => v.k !== 'water').sort((x, y) => x[1].t - y[1].t);
+        const entries = [...a.knowledge.places.entries()].filter(([, v]) => v.k !== 'water' && v.k !== 'deposit').sort((x, y) => x[1].t - y[1].t); // a vizet és a lelőhelyeket nem felejti el
         const drop = a.knowledge.places.size - cap; for (let k = 0; k < drop && k < entries.length; k++) a.knowledge.places.delete(entries[k][0]);
       }
     },
@@ -2105,7 +2245,8 @@
       const age = this.age(world, a); const lon = a.genes.physiology.longevity;
       if (age > lon - 10 && rng.chance(0.00025 * Math.exp((age - lon) / 5))) { this.die(world, a, 'öregség'); return; }
       // baseline illness
-      if (rng.chance(0.0006 * (1 - a.genes.physiology.immunity * 0.7) * (a.needs.food < 0.3 ? 2 : 1) * (1 - 0.6 * Math.min(1, LW.Tech.fx(world, a).health)))) { a.injury = Math.min(0.8, a.injury + 0.3); a.emotions.stress += 0.2; this.memory(world, a, { type: 'illness', text: 'megbetegedtem', importance: 0.4, emotion: 'fear', intensity: 0.4 }); world.events.emit('AgentIll', { tick: world.tick, agentId: a.id }); }
+      if (rng.chance(0.0006 * (1 - a.genes.physiology.immunity * 0.7) * (a.needs.food < 0.3 ? 2 : 1) * (1 - 0.6 * Math.min(1, LW.Tech.fx(world, a).health)))) { a.injury = Math.min(0.8, a.injury + 0.3); a.emotions.stress += 0.2; a.ill = Math.max(a.ill || 0, rng.int(5, 14)); this.memory(world, a, { type: 'illness', text: 'megbetegedtem', importance: 0.4, emotion: 'fear', intensity: 0.4 }); world.events.emit('AgentIll', { tick: world.tick, agentId: a.id }); }
+      LW.Mind.daily(world, a);
       // predators at night handled per tick; here: pregnancy & development
       if (a.pregnancy) { if (world.tick - a.pregnancy.since >= cfg.gestationDays * TPD) this.birth(world, a); else if (a.health < 0.3 && rng.chance(0.03)) { a.pregnancy = null; a.emotions.grief = Math.min(1, a.emotions.grief + 0.5); this.memory(world, a, { type: 'loss', text: 'elvesztettem a meg nem született gyermekem', importance: 0.8, emotion: 'grief', intensity: 0.8 }); } }
       const st = this.stage(world, a);
@@ -2563,7 +2704,8 @@
     },
     teach: {
       applicable: (c, a) => c.adult && a.knowledge.techs.size > 0 && c.nearby.length > 0,
-      score: (c, a) => { let best = 0, who = null, tech = null; for (const o of c.nearby) { if (o.sleeping || A().stage(c.world, o) === 'infant') continue; const r = a.relationships.get(o.id); const close = (a.children.includes(o.id) ? 0.8 : 0) + (r ? r.friendship * 0.6 : 0); if (close < 0.2) continue; for (const t of a.knowledge.techs) { if (o.knowledge.techs.has(t) || LW.Tech.D[t].hidden) continue; const pre = !LW.Tech.D[t].prereq || LW.Tech.D[t].prereq.every((p) => o.knowledge.techs.has(p)); if (!pre) continue; const s = 0.3 * close * (0.5 + P(a).empathy + P(a).sociability * 0.5) * (c.stage === 'elder' ? 1.5 : 1); if (s > best) { best = s; who = o; tech = t; } } } a._teach = who ? { who, tech } : null; return [best, who ? [`tanítja (${LW.Tech.D[tech].name.toLowerCase()}): ${who.name}`] : []]; },
+      // (a halandóság-érzet a pontozásban: aki tudja, hogy fogy az ideje, átadja, amit tud)
+      score: (c, a) => { let best = 0, who = null, tech = null; for (const o of c.nearby) { if (o.sleeping || A().stage(c.world, o) === 'infant') continue; const r = a.relationships.get(o.id); const close = (a.children.includes(o.id) ? 0.8 : 0) + (r ? r.friendship * 0.6 : 0); if (close < 0.2) continue; for (const t of a.knowledge.techs) { if (o.knowledge.techs.has(t) || LW.Tech.D[t].hidden) continue; const pre = !LW.Tech.D[t].prereq || LW.Tech.D[t].prereq.every((p) => o.knowledge.techs.has(p)); if (!pre) continue; const s = 0.3 * (1 + (a.mind ? a.mind.mortality * 1.2 : 0)) * close * (0.5 + P(a).empathy + P(a).sociability * 0.5) * (c.stage === 'elder' ? 1.5 : 1); if (s > best) { best = s; who = o; tech = t; } } } a._teach = who ? { who, tech } : null; return [best, who ? [`tanítja (${LW.Tech.D[tech].name.toLowerCase()}): ${who.name}`] : []]; },
       plan: (c, a) => a._teach ? { steps: [{ op: 'moveTo', i: c.world.idx(a._teach.who.x | 0, a._teach.who.y | 0), near: 1 }, { op: 'interact', target: a._teach.who.id, kind: 'teach', tech: a._teach.tech, n: 6 }], target: a._teach.who.id, tech: a._teach.tech } : null,
     },
     pickup: {
@@ -3389,6 +3531,8 @@
         if (def.simulation && !done.has('sim')) { done.add('sim'); b.worlds = (b.worlds || 0); if (rng.chance(0.02)) { b.worlds++; w.events.emit('WorldSimulated', { tick: w.tick, buildingId: b.id, n: b.worlds, tile: w.idx(b.x, b.y) }); } }
       }
       this.leaders(w);
+      LW.Civilization.daily(w);
+      if (LW.Tree.futureStep) LW.Tree.futureStep(w);
     },
     market(w, b, near) {
       const rng = w.rng; const donors = [], needy = [];
@@ -3425,6 +3569,117 @@
 })(globalThis.LW || (globalThis.LW = {}));
 
 
+/* ===== society/civilization.js ===== */
+/* LEVENTE — THE CREATOR · society/civilization.js — járványok, kétely és a szimulációs hipotézis, államok és háború, vállalatok, a táguló világ
+ * Minden naponta fut (részletes és makró-szimulációban is). Semmi sincs megírva: a járvány a sűrűségből, a kétely a
+ * tudományból, a háború a vezetők és a népek feszültségéből, a vállalat a vagyonból, az új föld a hajózásból születik.
+ */
+(function (LW) {
+  'use strict';
+  const T = LW.TIME; const A = () => LW.Agents; const b01 = (v) => LW.clamp01(v);
+
+  const Civ = {
+    daily(w) {
+      this.disease(w); this.faith(w); this.polities(w); this.companies(w); this.growth(w);
+    },
+    // ---------------------------------------------------------------- járvány: aki beteg, fertőz; a sűrű település a kór otthona
+    disease(w) {
+      const rng = w.rng; const illBy = new Map();
+      for (const a of w.agents.values()) {
+        if (!(a.ill > 0)) continue;
+        const fx = LW.Tech.fx(w, a).health; const hosp = LW.Tree.buildingBonus(w, a.x, a.y, 'hospital', 12);
+        a.health = Math.max(0, a.health - 0.035 * (1 - Math.min(0.8, fx * 0.5 + hosp * 0.3)) * (a.needs.food < 0.3 ? 1.6 : 1)); a.emotions.stress = b01(a.emotions.stress + 0.05); a.needs.energy = Math.max(0, a.needs.energy - 0.15);
+        a.ill--; if (a.ill <= 0) { a.ill = 0; a.immuneUntil = w.tick + T.TICKS_PER_DAY * 150; a.emotions.joy = b01(a.emotions.joy + 0.2); A().memory(w, a, { type: 'illness', text: 'meggyógyultam', importance: 0.35, emotion: 'joy', intensity: 0.4 }); }
+        if (a.health <= 0) { A().die(w, a, 'betegség'); continue; }
+        // fertőzés: háztartás és a közelben állók; a tisztaság, az oltás, a kórház véd
+        const near = w.agentsNear(a.x, a.y, 2.2, a.id).concat(A().household(w, a).filter((o) => o !== a));
+        for (const o of near) { if (o.ill > 0 || (o.immuneUntil || 0) > w.tick) continue; const p = 0.03 * (1 - o.genes.physiology.immunity * 0.6) * (1 - Math.min(0.85, LW.Tech.fx(w, o).health * 0.6 + LW.Tree.buildingBonus(w, o.x, o.y, 'hospital', 12) * 0.3)) * (o.needs.food < 0.35 ? 1.5 : 1); if (rng.chance(p)) { o.ill = rng.int(4, 10); o.injury = Math.min(0.8, o.injury + 0.15); A().memory(w, o, { type: 'illness', text: `elkaptam a kórt (${a.name})`, importance: 0.45, emotion: 'fear', intensity: 0.5, subjects: [a.id] }); w.events.emit('AgentIll', { tick: w.tick, agentId: o.id, from: a.id }); } }
+        const s = LW.Settlements.at(w, a.x, a.y); if (s) illBy.set(s.id, (illBy.get(s.id) || 0) + 1);
+      }
+      for (const s of w.settlements.values()) {
+        const n = illBy.get(s.id) || 0; const thr = Math.max(4, Math.round(s.population * 0.25));
+        if (!s.epidemicSince && n >= thr) { s.epidemicSince = w.tick; s.epidemicPeak = n; w.events.emit('Epidemic', { tick: w.tick, place: s.name, n, tile: w.idx(s.x | 0, s.y | 0) }); for (const a of w.agentsNear(s.x + 0.5, s.y + 0.5, 12)) { a.emotions.fear = b01(a.emotions.fear + 0.4); if (a.beliefs.creator > 0.5) a.beliefs.trust = LW.clamp((a.beliefs.trust || 0) - 0.05, -1, 1); } }
+        else if (s.epidemicSince) { s.epidemicPeak = Math.max(s.epidemicPeak || 0, n); if (n <= 1) { w.events.emit('EpidemicEnded', { tick: w.tick, place: s.name, days: Math.round((w.tick - s.epidemicSince) / T.TICKS_PER_DAY), peak: s.epidemicPeak, tile: w.idx(s.x | 0, s.y | 0) }); s.epidemicSince = 0; } }
+      }
+    },
+    // ---------------------------------------------------------------- hit és kétely: a tudomány magyaráz; a Világmag után a szimulációs hipotézis
+    skepticism(w, a) { let s = 0; const K = a.knowledge.techs; if (K.has('scientific_method')) s += 0.3; if (K.has('universities')) s += 0.1; if (K.has('printing')) s += 0.1; if (K.has('astronomy')) s += 0.05; if (K.has('computer')) s += 0.1; if (K.has('internet')) s += 0.1; if (K.has('artificial_intelligence')) s += 0.1; return Math.min(0.85, s) * (0.6 + a.personality.intelligence * 0.6) * (1.2 - a.personality.optimism * 0.4); },
+    faith(w) {
+      const rng = w.rng; const known = w._knownAll || (w._knownAll = LW.Tech.worldKnowledge(w)); w._knownAll = null;
+      const simKnown = known.has('world_simulation'); if (simKnown && !w.simKnownTick) w.simKnownTick = w.tick; let believers = 0, deniers = 0, adults = 0, hyp = 0;
+      for (const a of w.agents.values()) {
+        const sk = this.skepticism(w, a); if (sk > 0) { const recent = a.memory.episodic.length && a.memory.episodic.slice(-8).some((m) => m.divine && w.tick - m.tick < T.TICKS_PER_DAY * 30); if (!recent) a.beliefs.creator = b01(a.beliefs.creator - 0.0025 * sk); }
+        if (!A().isAdult(w, a)) continue; adults++;
+        if (simKnown || a.beliefs.simulation > 0) {
+          const target = b01(0.35 + a.personality.curiosity * 0.35 + a.beliefs.creator * 0.25 - a.personality.dominance * 0.25 + (a.knowledge.techs.has('world_simulation') ? 0.25 : 0));
+          a.beliefs.simulation = b01((a.beliefs.simulation || 0) + (target - (a.beliefs.simulation || 0)) * 0.02);
+          if (a.beliefs.simulation > 0.6) believers++; else if (a.beliefs.simulation < 0.3) deniers++;
+          if (!w.firsts['simhyp'] && a.beliefs.simulation > 0.6) w.events.emit('SimulationHypothesis', { tick: w.tick, agentId: a.id, tile: w.idx(a.x | 0, a.y | 0) });
+          hyp++;
+        }
+      }
+      if (simKnown && adults >= 10 && w.tick - w.simKnownTick > T.TICKS_PER_YEAR * 3 && w.tick - (w.simVerdictTick || -1e9) > T.TICKS_PER_YEAR * 5) { if (believers / adults > 0.5) { w.simVerdictTick = w.tick; w.events.emit('SimulationVerdict', { tick: w.tick, accepted: true, share: believers / adults }); } else if (deniers / adults > 0.5) { w.simVerdictTick = w.tick; w.events.emit('SimulationVerdict', { tick: w.tick, accepted: false, share: deniers / adults }); } }
+    },
+    // ---------------------------------------------------------------- államok és háború
+    polities(w) {
+      const rng = w.rng; const sets = [...w.settlements.values()].filter((s) => !s.abandonedTick && s.population >= 4);
+      for (const s of sets) { const leader = s.leaderId != null ? w.agents.get(s.leaderId) : null; const stateKnown = leader && leader.knowledge.techs.has('law_code'); if (leader && stateKnown && !s.state) { s.state = true; w.events.emit('StateFounded', { tick: w.tick, place: s.name, agentId: leader.id, tile: w.idx(s.x | 0, s.y | 0) }); } if (s.polityId != null && !w.settlements.has(s.polityId)) s.polityId = null; }
+      const pol = sets.filter((s) => s.leaderId != null && (s.polityId == null || s.polityId === s.id));
+      for (let i = 0; i < pol.length; i++) for (let j = i + 1; j < pol.length; j++) {
+        const a = pol[i], b = pol[j]; const d = LW.dist(a.x, a.y, b.x, b.y); if (d > 60) continue;
+        a.rivalry = a.rivalry || {}; const key = String(b.id); let t = a.rivalry[key] || 0;
+        if (a.warWith === b.id) { this.battle(w, a, b); continue; }
+        const la = w.agents.get(a.leaderId), lb = w.agents.get(b.leaderId); if (!la || !lb) continue;
+        const dom = (la.personality.dominance + lb.personality.dominance + la.personality.aggression + lb.personality.aggression) / 4;
+        const rel = la.relationships.get(lb.id); const resent = rel ? rel.resentment - rel.friendship : 0.1;
+        const sameLang = la.langId === lb.langId; const hunger = ((1 - la.needs.food) + (1 - lb.needs.food)) / 2;
+        const markets = w.buildingsNear(a.x | 0, a.y | 0, 10).some((x) => x.kind === 'market') && w.buildingsNear(b.x | 0, b.y | 0, 10).some((x) => x.kind === 'market');
+        t += 0.0025 * (dom * 1.5 + resent + hunger * 0.8) - (sameLang ? 0.0012 : 0) - (markets ? 0.0015 : 0) - 0.0006; t = LW.clamp(t, 0, 1.2);
+        a.rivalry[key] = t;
+        if (t >= 1 && !a.warWith && !b.warWith && rng.chance(0.2)) { a.warWith = b.id; b.warWith = a.id; a.warSince = w.tick; b.warSince = w.tick; a.warScore = 0; b.warScore = 0; w.events.emit('WarDeclared', { tick: w.tick, place: a.name, other: b.name, agentId: la.id, tile: w.idx(a.x | 0, a.y | 0) }); for (const p of w.agentsNear(a.x + 0.5, a.y + 0.5, 14).concat(w.agentsNear(b.x + 0.5, b.y + 0.5, 14))) { p.emotions.fear = b01(p.emotions.fear + 0.3); p.emotions.anger = b01(p.emotions.anger + 0.2); } }
+      }
+    },
+    warriors(w, s) { return w.agentsNear(s.x + 0.5, s.y + 0.5, 14).filter((p) => A().isAdult(w, p) && p.health > 0.4 && (LW.Tree.bestTool(p, 'hunt') >= 1 || p.personality.bravery > 0.6)).sort((x, y) => (y.personality.bravery + LW.Tree.bestTool(y, 'hunt')) - (x.personality.bravery + LW.Tree.bestTool(x, 'hunt'))).slice(0, 14); },
+    battle(w, a, b) {
+      const rng = w.rng; if (!rng.chance(0.35)) return;
+      const wa = this.warriors(w, a), wb = this.warriors(w, b);
+      const str = (list) => list.reduce((s, p) => s + p.personality.bravery + p.personality.aggression * 0.5 + LW.Tree.bestTool(p, 'hunt') * 0.6 + p.health, 0) * rng.range(0.7, 1.3);
+      const sa = str(wa), sb = str(wb); const win = sa >= sb ? a : b, lose = win === a ? b : a; const wl = win === a ? wb : wa, ww = win === a ? wa : wb;
+      for (const p of wl.slice(0, rng.int(1, 3))) { A().damage(w, p, rng.range(0.3, 0.95), `háború (${win.name})`); if (w.agents.has(p.id)) { p.emotions.fear = b01(p.emotions.fear + 0.4); A().memory(w, p, { type: 'war', text: `harcoltunk ${win.name} ellen, és vesztettünk`, importance: 0.7, emotion: 'fear', intensity: 0.7 }); } }
+      for (const p of ww.slice(0, rng.int(0, 1))) A().damage(w, p, rng.range(0.2, 0.6), `háború (${lose.name})`);
+      for (const p of ww) { if (!w.agents.has(p.id)) continue; p.emotions.pride = b01(p.emotions.pride + 0.15); for (const q of wl) { if (!w.agents.has(q.id)) continue; const r = LW.Relationships.ensure(w, q, p); r.resentment = b01(r.resentment + 0.2); r.fear = b01((r.fear || 0) + 0.15); } }
+      win.warScore = (win.warScore || 0) + 1; w.events.emit('Battle', { tick: w.tick, place: win.name, other: lose.name, tile: w.idx(lose.x | 0, lose.y | 0) });
+      const days = (w.tick - a.warSince) / T.TICKS_PER_DAY;
+      if (win.warScore >= 4 || this.warriors(w, lose).length < 3 || days > 120) {
+        const decisive = win.warScore >= 4 || this.warriors(w, lose).length < 3;
+        a.warWith = null; b.warWith = null; a.rivalry = a.rivalry || {}; b.rivalry = b.rivalry || {}; a.rivalry[String(b.id)] = 0.3; b.rivalry[String(a.id)] = 0.3;
+        if (decisive) { lose.polityId = win.id; const ll = lose.leaderId != null ? w.agents.get(lose.leaderId) : null; if (ll && ll.occupation === 'leader') ll.occupation = null; lose.leaderId = null; for (const p of w.agentsNear(lose.x + 0.5, lose.y + 0.5, 14)) { const wl2 = win.leaderId != null ? w.agents.get(win.leaderId) : null; if (wl2) { const r = LW.Relationships.ensure(w, p, wl2); r.fear = b01((r.fear || 0) + 0.3); r.resentment = b01(r.resentment + 0.3); } } }
+        w.events.emit('WarEnded', { tick: w.tick, place: win.name, other: lose.name, decisive, tile: w.idx(win.x | 0, win.y | 0) });
+      }
+    },
+    // ---------------------------------------------------------------- vállalatok: a vagyon szervezi a termelést
+    companies(w) {
+      const rng = w.rng;
+      for (const b of w.buildings.values()) { const def = LW.Buildings.DEFS[b.kind]; if (!def || !def.public || !def.storage || b.progress < 1 || b.company) continue; if (!rng.chance(0.03)) continue; const near = w.agentsNear(b.x + 0.5, b.y + 0.5, 10).filter((p) => A().isAdult(w, p) && (p.wealth || 0) >= 4 && p.knowledge.techs.has('banking')); if (!near.length) continue; const o = near.sort((x, y) => (y.wealth || 0) - (x.wealth || 0))[0]; b.company = { ownerId: o.id, name: `${o.name} ${def.label.toLowerCase()}e`, since: w.tick, workers: 1 }; o.wealth = (o.wealth || 0) - 5; o.achievements.push('Vállalatalapító'); o.importance += 0.6; w.events.emit('CompanyFounded', { tick: w.tick, agentId: o.id, name: b.company.name, kind: b.kind, tile: w.idx(b.x, b.y) }); A().memory(w, o, { type: 'company', text: `saját vállalatot alapítottam: ${b.company.name}`, importance: 0.8, emotion: 'pride', intensity: 0.7 }); }
+      // a vállalat dolgozókat gyűjt és a tulajdonos gazdagszik a termelésből
+      for (const b of w.buildings.values()) { if (!b.company) continue; const o = w.agents.get(b.company.ownerId); if (!o) { b.company = null; continue; } const near = w.agentsNear(b.x + 0.5, b.y + 0.5, 12).filter((p) => A().isAdult(w, p) && p.id !== o.id); b.company.workers = Math.max(1, Math.min(near.length, 1 + Math.floor((o.wealth || 0) / 6))); if (rng.chance(0.5)) { o.wealth = (o.wealth || 0) + Math.round(b.company.workers * 0.5); for (const p of near.slice(0, b.company.workers)) p.wealth = (p.wealth || 0) + 1; } }
+    },
+    // ---------------------------------------------------------------- a világ tágul: aki hajózni tud, új földet talál a tengeren túl
+    growth(w) {
+      if (!w.cfg.world.expandable && w.cfg.world.expandable !== undefined) return;
+      const maxSide = 256; if (w.w >= maxSide && w.h >= maxSide) return;
+      const known = LW.Tech.worldKnowledge(w); if (!known.has('sailing')) return;
+      const need = 20 + (w.expansions || 0) * 25; if (w.population < need) return;
+      if (!w.rng.chance(known.has('navigation') ? 0.004 : 0.0015)) return;
+      const side = w.w <= w.h && w.w < maxSide ? 'east' : 'south'; const size = 64;
+      const explorer = [...w.agents.values()].filter((a) => a.knowledge.techs.has('sailing')).sort((x, y) => y.personality.curiosity - x.personality.curiosity)[0];
+      w.expand(side, size, explorer ? explorer.id : null);
+    },
+  };
+  LW.Civilization = Civ;
+})(globalThis.LW || (globalThis.LW = {}));
+
+
 /* ===== history/history.js ===== */
 /* LEVENTE — THE CREATOR · history/history.js — importance, firsts (WOW), chronicle, feeds, yearly statistics (spec §73–§78) */
 (function (LW) {
@@ -3458,6 +3713,18 @@
         case 'RecordWritten': return { text: `${n(ev.agentId)} leírta, amit tud: ${T[ev.tech].name.toLowerCase()}. A tudás most már túléli a tudót.`, base: 0.8, firstKey: 'record', firstTitle: 'Az első leírt tudás' };
         case 'Ritual': return { text: `${ev.n} ember szertartást tart a ${ev.temple ? 'templomnál' : 'szentélynél'}${ev.place ? ' (' + ev.place + ')' : ''}: az égi hangról énekelnek.`, base: 0.4, firstKey: 'rite', firstTitle: 'Az első szertartás' };
         case 'LeaderChosen': return { text: `${n(ev.agentId)} lett ${ev.place} vezetője.`, base: 0.7, firstKey: 'leader', firstTitle: 'Az első vezető' };
+        case 'Epidemic': return { text: `Járvány tört ki ${ev.place ? ev.place + ' településen' : 'a vidéken'}: ${ev.n} beteg.`, base: 0.8, firstKey: 'epidemic', firstTitle: 'Az első járvány' };
+        case 'EpidemicEnded': return { text: `A járvány elmúlt ${ev.place}ban ${ev.days} nap után (a csúcson ${ev.peak} beteg).`, base: 0.5 };
+        case 'SimulationHypothesis': return { text: `${n(ev.agentId)} kimondta, amit senki nem mert: talán ők maguk is egy világban élnek, amelyet valaki figyel.`, base: 1.0, firstKey: 'simhyp', firstTitle: 'A szimulációs hipotézis' };
+        case 'SimulationVerdict': return { text: ev.accepted ? `A többség (${Math.round(ev.share * 100)}%) elfogadja: ők is egy teremtett világban élnek — ahogy talán a Teremtőjük is.` : `A többség (${Math.round(ev.share * 100)}%) tagadja, hogy szimulációban élne. „Ez a világ valódi” — mondják.`, base: 1.0, firstKey: ev.accepted ? 'simyes' : 'simno', firstTitle: ev.accepted ? 'Elhitték' : 'Tagadták' };
+        case 'StateFounded': return { text: `${ev.place} népe államot alapított: ${n(ev.agentId)} törvények szerint uralkodik.`, base: 0.85, firstKey: 'state', firstTitle: 'Az első állam' };
+        case 'WarDeclared': return { text: `${ev.place} háborút indított ${ev.other} ellen — ${n(ev.agentId)} vezetésével.`, base: 1.0, firstKey: 'war', firstTitle: 'Az első háború' };
+        case 'Battle': return { text: `Csata: ${ev.place} harcosai legyőzték ${ev.other} embereit.`, base: 0.5 };
+        case 'WarEnded': return { text: ev.decisive ? `${ev.place} győzött: ${ev.other} behódolt.` : `${ev.place} és ${ev.other} háborúja elcsendesült — egyik sem győzött.`, base: 0.8, firstKey: 'peace', firstTitle: 'Az első béke' };
+        case 'CompanyFounded': return { text: `${n(ev.agentId)} vállalatot alapított: ${ev.name}.`, base: 0.7, firstKey: 'company', firstTitle: 'Az első vállalat' };
+        case 'NewLand': return { text: `${ev.agentId != null ? n(ev.agentId) + ' hajósai' : 'Hajósok'} új földet találtak a tengeren túl ${ev.side === 'east' ? 'keleten' : 'délen'}: ${ev.name}. A világ nagyobb lett (${ev.w}×${ev.h}).`, base: 1.2, firstKey: 'newland', firstTitle: 'Új föld a tengeren túl' };
+        case 'ExistentialQuestion': return { text: `${n(ev.agentId)} feltette a kérdést: „${ev.text}”`, base: 0.7, firstKey: 'question', firstTitle: 'Az első kérdés, amire nincs válasz' };
+        case 'FutureTech': return { text: `Olyan tudás született, amelyre a Teremtőnek sincs szava: ${ev.name}.`, base: 0.9, firstKey: 'future', firstTitle: 'Az ismeretlen jövő kezdete' };
         case 'WorldSimulated': return { text: `A Világmag egy ${ev.n}. világot indított el: apró lények, akik egy hangot hallanak az égből.`, base: 1.2, firstKey: 'worldsim', firstTitle: 'A világ a világban' };
         case 'KnowledgeLost': return { text: `${n(ev.agentId)} halálával elveszett a tudás: ${T[ev.tech].name.toLowerCase()}.`, base: 0.75, firstKey: 'lost', firstTitle: 'Első elveszett tudás' };
         case 'BuildingStarted': return { text: `${n(ev.agentId)} építeni kezdett: ${BD[ev.kind].label.toLowerCase()}.`, base: ev.kind === 'campfire' ? 0.05 : 0.18 };
@@ -3721,7 +3988,7 @@
       // sugallat (nem parancs, csak erősebb késztetés egy napig)
       if (!it.cmd) for (const [re, g] of NUDGE) if (has(s, re)) { it.nudge = g; break; }
       // kérdések
-      const Q = [['meaning', /\b(mit jelent|mi az hogy|mit mond|mi az a)\b\s*(?:az\s+|a\s+)?["'„]?([a-z\-]{2,})/], ['how', /\b(hogy vagy|hogy erzed|jol vagy|mi ujsag|mi van veled|mizu|mi a helyzet|hogy vagytok|hogy telik)\b/], ['doing', /\b(mit csinalsz|mit muvelsz|mivel foglalkozol|mit tervezel|mire keszulsz|mit fogsz|mit csinaltok)\b/], ['where', /\b(hol vagy|merre vagy|hol laksz|hova mesz|hol vagytok)\b/], ['who', /\b(ki vagy|mi a neved|hogy hivnak|mutatkozz be|meselj magadrol)\b/], ['age', /\b(hany eves|mikor szulettel|milyen idos)\b/], ['family', /\b(csalad|szuleid|anyad|apad|gyereked|gyerekeid|testvered|parod|feleseged|ferjed|kit szeretsz|szerelmes|gyerekek)\b/], ['know', /\b(mit tudsz|mihez ertesz|mit tanultal|mit fedeztel|tudasod|mire jottel ra|mit ismersz)\b/], ['fear', /\b(felsz|mitol felsz|felelem|mi bant|mi a baj|szomoru|mi fajj|mi faj)\b/], ['me', /\b(ki vagyok|tudod ki vagyok|hallasz|hiszel bennem|mit gondolsz rolam|ki beszel|ismersz engem|teremto vagyok|en vagyok|ki szol)\b/], ['want', /\b(mit szeretnel|mire vagysz|mit kivansz|mit kersz|mit akarsz|mi kell|miben segitsek|segithetek|mit adjak)\b/], ['language', /\b(nyelv|hogy mondjak|hogy mondod|hogy hivjatok|milyen szavak|tanits meg|szavaitok)\b/], ['weather', /\b(milyen az ido|hideg van|esik|meleg van|milyen a videk)\b/], ['world', /\b(mi tortent|mi ujsag a faluban|mi ujsag nalatok|mi volt ma|mesélj|meselj)\b/]];
+      const Q = [['meaning', /\b(mit jelent|mi az hogy|mit mond|mi az a)\b\s*(?:az\s+|a\s+)?["'„]?([a-z\-]{2,})/], ['how', /\b(hogy vagy|hogy erzed|jol vagy|mi ujsag|mi van veled|mizu|mi a helyzet|hogy vagytok|hogy telik)\b/], ['doing', /\b(mit csinalsz|mit muvelsz|mivel foglalkozol|mit tervezel|mire keszulsz|mit fogsz|mit csinaltok)\b/], ['where', /\b(hol vagy|merre vagy|hol laksz|hova mesz|hol vagytok)\b/], ['who', /\b(ki vagy|mi a neved|hogy hivnak|mutatkozz be|meselj magadrol)\b/], ['age', /\b(hany eves|mikor szulettel|milyen idos)\b/], ['family', /\b(csalad|szuleid|anyad|apad|gyereked|gyerekeid|testvered|parod|feleseged|ferjed|kit szeretsz|szerelmes|gyerekek)\b/], ['know', /\b(mit tudsz|mihez ertesz|mit tanultal|mit fedeztel|tudasod|mire jottel ra|mit ismersz)\b/], ['fear', /\b(felsz|mitol felsz|felelem|mi bant|mi a baj|szomoru|mi fajj|mi faj)\b/], ['me', /\b(ki vagyok|tudod ki vagyok|hallasz|hiszel bennem|mit gondolsz rolam|ki beszel|ismersz engem|teremto vagyok|en vagyok|ki szol)\b/], ['want', /\b(mit szeretnel|mire vagysz|mit kivansz|mit kersz|mit akarsz|mi kell|miben segitsek|segithetek|mit adjak)\b/], ['language', /\b(nyelv|hogy mondjak|hogy mondod|hogy hivjatok|milyen szavak|tanits meg|szavaitok)\b/], ['weather', /\b(milyen az ido|hideg van|esik|meleg van|milyen a videk)\b/], ['why', /\b(miert elsz|mi a celod|mi hajt|mi ertelme|mi az ertelme|miert vagy|mi a dolgod|mit akarsz az elettol|boldog vagy)\b/], ['dream', /\b(mit almodtal|almodsz|almodtal|alom)\b/], ['self', /\b(mit gondolsz magadrol|milyen ember vagy|ki vagy te valojaban|szeretnek teged|felsz a halaltol|halal|meghalsz)\b/], ['sim', /\b(szimulacio|szimulacioban|valodi vagy|letezel|matrix|teremtett vilag|program vagy|jatek vagy)\b/], ['world', /\b(mi tortent|mi ujsag a faluban|mi ujsag nalatok|mi volt ma|mesélj|meselj)\b/]];
       for (const [k, re] of Q) { const m = re.exec(s); if (m) { it.kind = 'ask'; it.ask = k; if (k === 'meaning') { const toks = s.split(' ').reverse(); it.word = toks.find((t) => t.length >= 2 && !STOP.has(t) && !/^(mit|jelent|mi|hogy|az|a)$/.test(t)) || m[2]; } break; } }
       if (it.kind !== 'ask' && (it.cmd || it.nudge)) it.kind = 'command';
       if (it.kind === 'tell' && has(s, /\b(szia|hello|helo|udv|szervusz|jo napot|jo reggelt|jo estet|hahó|haho|hé|he)\b/)) it.kind = 'greet';
@@ -3864,12 +4131,16 @@
         case 'family': { if (refuse) { S.push('A családom nem a te dolgod.'); break; } const p = a.partner != null ? name(a.partner) : null; const kids = a.children.map(name); const par = a.parents.filter((x) => x != null).map(name); S.push(p ? `A párom ${p}.` : A.isAdult(W, a) ? 'Nincs párom.' : 'Még gyerek vagyok.'); if (kids.length) S.push(`Gyerekeim: ${kids.join(', ')}.`); if (par.length) S.push(`Szüleim: ${par.join(' és ')}.`); const best = [...a.relationships.entries()].filter(([id, r]) => W.agents.has(id) && r.friendship > 0.4).sort((x, y) => y[1].friendship - x[1].friendship)[0]; if (best) S.push(`A legjobb barátom ${name(best[0])}.`); const foe = [...a.relationships.entries()].filter(([id, r]) => W.agents.has(id) && r.resentment > 0.5)[0]; if (foe) S.push(`${name(foe[0])} — vele nem vagyunk jóban.`); break; }
         case 'know': { const techs = [...a.knowledge.techs].map((t) => LW.Tech.D[t]).filter((d) => d && !d.hidden).map((d) => d.name.toLowerCase()); S.push(techs.length ? `Ezekhez értek: ${techs.slice(0, 6).join(', ')}.` : 'Nem tudok még semmit, csak amit a kezem és a gyomrom tanított.'); const sk = Object.entries(a.skills).sort((x, y) => y[1] - x[1])[0]; if (sk && sk[1] > 0.3) S.push(`A legjobban ${LW.HU.skill(sk[0])}ben vagyok jó.`); break; }
         case 'fear': { const hi = Object.entries(E).sort((x, y) => y[1] - x[1])[0]; if (E.fear > 0.4) S.push(pick(['Félek. A sötéttől, a vadaktól, attól, hogy nem lesz mit enni.', 'Félek, hogy nem érem meg a következő nyarat.'])); else if (hi && hi[1] > 0.3) S.push(`Most leginkább ${LW.HU.emotion(hi[0])} van bennem.`); else S.push('Nem félek. Most nem.'); const m = a.memory.emotional[a.memory.emotional.length - 1]; if (m && rng.chance(0.6)) S.push(`Ami nem hagy nyugodni: ${m.text}.`); break; }
-        case 'me': { if (a.beliefs.creator < 0.25) S.push(pick(['Nem tudom, ki vagy. Egy hang, aminek nincs szája.', 'Nem ismerlek. Talán a fejemben laksz.'])); else if (a.beliefs.creator < 0.7) S.push(pick(['Azt mondják, van valaki az égen túl, aki figyel. Te lennél az?', 'Egy hang az égből. Nem tudom, mit akarsz tőlünk.'])); else S.push(pick(['Te vagy az, aki figyel minket. A Teremtő.', 'Hiszek benned. Láttam, amit tettél.'])); const tr = a.beliefs.trust; S.push(tr > 0.3 ? 'Bízom benned.' : tr < -0.3 ? 'Nem bízom benned. Amit tettél, nem felejtem.' : 'Még nem tudom, jót akarsz-e.'); break; }
+        case 'me': { if ((a.beliefs.simulation || 0) > 0.6) S.push('Tudom, ki vagy. Az, aki figyeli ezt a világot — ahogy mi figyeljük a magunkét a Világmagban.'); else if (a.beliefs.creator < 0.25 && LW.Civilization && LW.Civilization.skepticism(W, a) > 0.3) S.push(pick(['A tudomány szerint nincs teremtő. Te a fejemben szólsz, vagy egy trükk.', 'Nem hiszek olyanban, amit nem lehet mérni.'])); else if (a.beliefs.creator < 0.25) S.push(pick(['Nem tudom, ki vagy. Egy hang, aminek nincs szája.', 'Nem ismerlek. Talán a fejemben laksz.'])); else if (a.beliefs.creator < 0.7) S.push(pick(['Azt mondják, van valaki az égen túl, aki figyel. Te lennél az?', 'Egy hang az égből. Nem tudom, mit akarsz tőlünk.'])); else S.push(pick(['Te vagy az, aki figyel minket. A Teremtő.', 'Hiszek benned. Láttam, amit tettél.'])); const tr = a.beliefs.trust; S.push(tr > 0.3 ? 'Bízom benned.' : tr < -0.3 ? 'Nem bízom benned. Amit tettél, nem felejtem.' : 'Még nem tudom, jót akarsz-e.'); break; }
         case 'want': { if (N.food < 0.4) S.push('Ételt. Ha tudsz adni, adj.'); else if (N.water < 0.4) S.push('Vizet.'); else if (N.warmth < 0.4) S.push('Meleget. Tüzet vagy fedelet.'); else if (a.home == null && A.isAdult(W, a)) S.push('Egy otthont. Falakat a hideg ellen.'); else if (a.partner == null && A.isAdult(W, a) && N.affection < 0.5) S.push('Valakit, aki mellettem alszik.'); else S.push(pick(['Semmit. Megvan, ami kell.', 'Hogy a gyerekek megérjék a nyarat.', 'Hogy hagyj minket élni.'])); break; }
         case 'meaning': { const w = it.word; let hit = null; for (const c in a.vocab) if (a.vocab[c].w === w) { hit = c; break; } if (!hit) { for (const l of W.langs.values()) for (const c in l.words) if (l.words[c] === w) hit = c; } if (!hit) S.push(pick([`„${w}”? Ezt a szót nem ismerem.`, 'Ilyet nem mondunk.'])); else if ((a.vocab[hit] && a.vocab[hit].s && (a.beliefs.trust || 0) < 0.35) || refuse) S.push(pick(['Azt nem mondom meg. Az a miénk.', 'Nem neked való szó.'])); else { S.push(`„${w}” azt jelenti: ${LW.Speech.gloss(hit)}.`); LW.Speech.reveal(W, a.langId, w, hit, a.vocab[hit] && a.vocab[hit].s); } break; }
         case 'language': { const ks = Object.keys(a.vocab); if (!ks.length) S.push('Nincsenek még szavaink. Mutogatunk.'); else if (refuse || (a.beliefs.trust || 0) < -0.2) S.push('A szavaink a mieink. Nem tanítom meg neked.'); else { const sel = rng.shuffle(ks.slice()).filter((c) => !a.vocab[c].s).slice(0, 3); S.push(`Így mondjuk: ${sel.map((c) => `„${a.vocab[c].w}” — ${LW.Speech.gloss(c)}`).join(', ')}.`); for (const c of sel) LW.Speech.reveal(W, a.langId, a.vocab[c].w, c, 0); const l = W.langs.get(a.langId); if (l && l.name) S.push(`A nyelvünk a ${l.name.toLowerCase()}.`); } break; }
         case 'weather': { const temp = W.tileTemp(W.idx(a.x | 0, a.y | 0)); S.push(`${W.weather.describe(temp)}, ${temp.toFixed(0)} fok. ${temp < 5 ? 'Hideg.' : temp > 25 ? 'Meleg.' : 'Elviselhető.'}`); break; }
         case 'world': { const ch = W.history.chronicle.slice(-3).map((e) => e.text); S.push(ch.length ? `Ami történt: ${ch.join(' ')}` : 'Nem történt semmi, amiről beszélni érdemes.'); break; }
+        case 'why': { const m = a.mind; if (m && m.purpose) S.push(`Ami hajt: ${LW.Mind.label(m.purpose)}.`); if (m && m.existential > 0.5) S.push(pick(['És mégis: néha nem tudom, mi értelme az egésznek.', 'De vannak kérdéseim, amikre senki nem felel. Te sem.'])); else S.push(pick(['Nem kérdezem, mi értelme. Élek.', 'Reggel felkelek, és van dolgom. Ez elég.'])); if (m && m.journal.length) S.push(`Tegnap ezt gondoltam: „${m.journal[m.journal.length - 1].text}”`); break; }
+        case 'dream': { const m = a.mind; const d = m ? m.journal.slice().reverse().find((j) => j.text.startsWith('Álmodtam')) : null; S.push(d ? d.text : pick(['Nem emlékszem, mit álmodtam. Csak arra, hogy féltem.', 'Álmomban a folyónál voltam, és nem volt hideg.'])); break; }
+        case 'self': { const m = a.mind || LW.Mind.fresh(); S.push(m.selfImage > 0.3 ? 'Azt hiszem, kedvelnek. Számítanak rám.' : m.selfImage < -0.3 ? 'Nem kedvelnek. Nem tudom, miért.' : 'Nem tudom, mit gondolnak rólam. Nem kérdezem.'); S.push(m.mortality > 0.6 ? pick(['Igen, félek a haláltól. Fogy az időm, és még nem adtam át mindent.', 'Meghalok. Nem ma. De közel van.']) : m.mortality > 0.3 ? 'A halál eszembe jut néha. Aztán dolgozom tovább.' : 'A halál messze van. Most élek.'); break; }
+        case 'sim': { const s = a.beliefs.simulation || 0; const sk = LW.Civilization ? LW.Civilization.skepticism(W, a) : 0; if (s > 0.6) S.push(pick(['Igen. Tudom. Mi is egy gépben élünk — és az sem biztos, hogy a tiéd az utolsó.', 'Valaki nézi ezt. Te. És talán téged is néz valaki.', 'Nem baj, ha teremtettek vagyunk. A kenyér attól még kenyér.'])); else if (s > 0 && s < 0.3) S.push(pick(['Nem. Ez a világ valódi. Érzem a hideget, a kenyeret, a fájdalmat. Ne mondj nekem ilyet.', 'Aki ilyet mond, az beteg vagy hazudik. Én valódi vagyok.'])); else if (sk > 0.3) S.push(pick(['A tudomány nem talált teremtőt. Te a fejemben vagy, vagy egy trükk.', 'Nem hiszek olyanban, amit nem mérhetek. Téged sem tudlak mérni.'])); else S.push(pick(['Nem értem a kérdést. Itt vagyok, ez a világ van. Mi más lenne?', 'Szimu… mi? Itt a folyó, itt a tűz. Ez a valóság.'])); break; }
         default: S.push(pick(['Nem értem a kérdést.', 'Erre nem tudok mit mondani.', `Nem tudom. ${this.state(W, a)}`]));
       }
       return S;
@@ -3901,6 +4172,7 @@
       const techs = [...a.knowledge.techs].map((t) => LW.Tech.D[t]).filter((d) => d && !d.hidden).map((d) => d.name.toLowerCase()); lines.push(`Tudás: ${techs.length ? techs.join(', ') : 'semmi, csak ösztön'}; holmi: ${Object.entries(a.inv).filter(([, q]) => q > 0).map(([k, q]) => `${LW.ITEMS[k] ? LW.ITEMS[k].label.toLowerCase() : k} ×${q}`).join(', ') || 'semmi'}`);
       lines.push(`Hit a Teremtőben: ${Math.round(a.beliefs.creator * 100)}/100; bizalom a hang iránt: ${Math.round((a.beliefs.trust || 0) * 100)} (−100…100)`);
       const ks = Object.keys(a.vocab || {}); lines.push(`Nyelv: ${l ? LW.Speech.describeLang(W, l) : 'nincs'}; ${ks.length} szót tud${ks.length ? ', pl. ' + ks.slice(0, 5).map((c) => `„${a.vocab[c].w}”=${LW.Speech.gloss(c)}`).join(', ') : ' (mutogat)'}`);
+      if (a.mind) { lines.push(`Belső világ: ${LW.Mind.describe(W, a).join(' ')}${a.ill > 0 ? ' Most beteg.' : ''}`); const j = a.mind.journal.slice(-3).map((x) => x.text); if (j.length) lines.push(`Belső hangja (utolsó gondolatok): ${j.join(' | ')}`); }
       const mems = a.memory.episodic.slice(-8).reverse().map((m) => `${LW.Time.year(m.tick)}. év: ${m.text}`); lines.push(`Emlékek (frissek elöl): ${mems.join(' | ') || 'nincs'}`);
       const strong = a.memory.emotional.slice(-3).map((m) => m.text); if (strong.length) lines.push(`Legerősebb emlékek: ${strong.join(' | ')}`);
       const recent = W.history.chronicle.slice(-4).map((e) => e.text); if (recent.length) lines.push(`Ami a világban történt mostanában: ${recent.join(' ')}`);
@@ -3992,6 +4264,7 @@
       if (eff < 8) { a.health = Math.max(0, a.health - cfg.hypothermiaHealthPerDay * (8 - eff) / 10); a.needs.warmth = 0.2; } else a.needs.warmth = 0.9;
       a.needs.energy = 0.8; a.needs.social = Math.min(1, a.needs.social + 0.2); a.needs.safety = home ? 0.8 : 0.5;
       if (a.health <= 0) { A().die(w, a, deficit > 0 ? 'éhezés' : eff < 8 ? 'kihűlés' : 'betegség'); return; }
+      if (a.memory.episodic.length > w.cfg.agents.memoryCap) LW.Memory.consolidate(w, a);
       // emotions decay
       for (const k in a.emotions) a.emotions[k] *= k === 'grief' ? 0.9 : 0.6;
       // daily biology (aging, illness, pregnancy, development, relationships decay, occupation)
@@ -4034,7 +4307,7 @@
       // ---- középületek és jobb szerszámok (a napi léptékben elvonatkoztatva: az anyagot a közösség előteremti)
       if (adult && rng.chance(0.06)) { let best = 0, which = null; for (const k in LW.Buildings.DEFS) { if (!LW.Buildings.DEFS[k].public) continue; const wnt = LW.Society.wants(w, a, k); if (wnt > best) { best = wnt; which = k; } } if (which && best > 0.5) { let site = [...w.buildings.values()].find((b) => b.kind === which && b.progress < 1 && LW.dist(b.x, b.y, a.x, a.y) < 20); if (!site) { const s = LW.Buildings.findSite(w, a, which); if (s >= 0) site = LW.Buildings.create(w, which, w.xOf(s), w.yOf(s), a.id); } if (site) { const def = LW.Buildings.def(site); const expectedDays = 3 + def.ticks / 30; for (const k in def.cost) site.delivered[k] = Math.min(def.cost[k], (site.delivered[k] || 0) + def.cost[k] / expectedDays); site.progress = Math.min(1, site.progress + 1 / expectedDays * (0.7 + a.skills.building * 0.6) * LW.Tech.mult(w, a, 'build')); A().practice(a, 'building', 4); if (site.progress >= 1 && LW.Buildings.materialsComplete(site)) { a.counters.built++; LW.Buildings.complete(w, site, a); } else if (site.progress >= 1) site.progress = 0.95; } } }
       // anyagtermelés a közösségnek: aki ért hozzá és van hozzá műhely, a közös raktárba dolgozik (réz, vas, tégla, papír, üveg…)
-      if (adult && rng.chance(0.3)) { const store = LW.Tree.nearestStore(w, a, 20); if (store) { const cands = []; for (const rid in LW.Tech.RECIPES) { const R = LW.Tech.RECIPES[rid]; const out = Object.keys(R.out)[0]; const it = LW.ITEMS[out]; if (!it || it.slot || it.tool || it.food || !a.knowledge.techs.has(R.tech)) continue; if ((store.storage[out] || 0) >= 24) continue; if (R.nearby && R.nearby !== 'fire' && R.nearby !== 'water' && !this.buildingNear(w, a, R.nearby, 20)) continue; if (!this.canSource(w, a, { items: R.inp || (R.inpAny ? R.inpAny[0] : {}) })) continue; cands.push([rid, R, out]); } if (cands.length) { const [rid, R, out] = rng.pick(cands); const inp = R.inp || (R.inpAny ? R.inpAny[0] : {}); for (const k in inp) { const ps = LW.Tree.publicStore(w, a, k, 20); if (ps && ps.storage[k] >= inp[k]) ps.storage[k] -= inp[k]; else if ((a.inv[k] || 0) >= inp[k]) a.inv[k] -= inp[k]; } store.storage[out] = (store.storage[out] || 0) + R.out[out] * 2; A().practice(a, R.skill || 'crafting', 3); if (!w.firsts['item:' + out]) w.events.emit('ItemCrafted', { tick: w.tick, agentId: a.id, item: out, first: true }); } } }
+      if (adult && rng.chance(0.3)) { const store = LW.Tree.nearestStore(w, a, 20); if (store) { const cands = []; for (const rid in LW.Tech.RECIPES) { const R = LW.Tech.RECIPES[rid]; const out = Object.keys(R.out)[0]; const it = LW.ITEMS[out]; if (!it || it.slot || it.tool || it.food || !a.knowledge.techs.has(R.tech)) continue; if ((store.storage[out] || 0) >= 24) continue; if (R.nearby && R.nearby !== 'fire' && R.nearby !== 'water' && !this.buildingNear(w, a, R.nearby, 20)) continue; if (!this.canSource(w, a, { items: R.inp || (R.inpAny ? R.inpAny[0] : {}) })) continue; cands.push([rid, R, out]); } if (cands.length) { const [rid, R, out] = rng.pick(cands); const inp = R.inp || (R.inpAny ? R.inpAny[0] : {}); for (const k in inp) { const ps = LW.Tree.publicStore(w, a, k, 20); if (ps && ps.storage[k] >= inp[k]) ps.storage[k] -= inp[k]; else if ((a.inv[k] || 0) >= inp[k]) a.inv[k] -= inp[k]; } store.storage[out] = (store.storage[out] || 0) + R.out[out] * 2; a.wealth = (a.wealth || 0) + 1; A().practice(a, R.skill || 'crafting', 3); if (!w.firsts['item:' + out]) w.events.emit('ItemCrafted', { tick: w.tick, agentId: a.id, item: out, first: true }); } } }
       if (adult) for (const rid in LW.Tech.RECIPES) { const R = LW.Tech.RECIPES[rid]; const out = Object.keys(R.out)[0]; const it = LW.ITEMS[out]; if (!it || !it.slot || !a.knowledge.techs.has(R.tech) || LW.Tree.bestTool(a, it.slot) >= it.tier) continue; if (R.nearby && R.nearby !== 'fire' && R.nearby !== 'water' && !this.buildingNear(w, a, R.nearby, 24)) continue; if (!this.canSource(w, a, { items: R.inp || (R.inpAny ? R.inpAny[0] : {}) })) continue; if (rng.chance(0.12)) { a.inv[out] = 1; if (!w.firsts['item:' + out]) w.events.emit('ItemCrafted', { tick: w.tick, agentId: a.id, item: out, first: true }); } }
       // ---- knowledge of places grows slowly even when abstracted (people wander)
       if (adult && rng.chance(0.5)) { const R = 10; for (let k = 0; k < 6; k++) { const x = LW.clamp((a.x | 0) + rng.int(-R, R), 0, w.w - 1), y = LW.clamp((a.y | 0) + rng.int(-R, R), 0, w.h - 1); const j = w.idx(x, y); const t = w.tiles; if (LW.isFreshBiome(t.biome[j])) A().rememberPlace(w, a, 'water', j, 255); if (t.veg[j] > 30) A().rememberPlace(w, a, 'food', j, t.veg[j]); if (t.trees[j] > 30) A().rememberPlace(w, a, 'wood', j, t.trees[j]); if (t.stone[j] > 30) { A().rememberPlace(w, a, 'stone', j, t.stone[j]); if (t.stone[j] >= 70 && (t.biome[j] === LW.BIOME.HILLS || t.biome[j] === LW.BIOME.MOUNTAIN || t.biome[j] === LW.BIOME.BEACH) && !t.depType[j]) A().rememberPlace(w, a, 'flint', j, t.stone[j] >> 1); } if (t.animals[j] > 40) A().rememberPlace(w, a, 'animals', j, t.animals[j]); if (t.depType[j] && !t.depKnown[j] && rng.chance(0.06 * (0.5 + a.personality.curiosity) * (a.knowledge.techs.has('digging') ? 2 : 1))) { t.depKnown[j] = 1; w.dirtyTiles.add(j); } // a vándorló szem észreveszi a felszíni ércet
@@ -4069,6 +4342,7 @@
       world.ground = world.ground || new Map();
       world.reindexBuildings();
       LW.Speech.init(world);
+      for (const a of world.agents.values()) { if (!a.mind) a.mind = LW.Mind.fresh(); if (a.ill == null) a.ill = 0; if (a.beliefs.simulation == null) a.beliefs.simulation = 0; }
       world.rebuildBuckets();
     }
 
@@ -4220,7 +4494,7 @@
     a.relationships = new Map(o.relationships || []);
     a.plan = null; a.why = null; a.env = null; a.threat = null; if (a.engagedUntil == null) a.engagedUntil = 0; if (a.lastDecisionTick == null) a.lastDecisionTick = -1000;
     if (!a.palette) a.palette = LW.Genetics.palette(a.genes.appearance);
-    if (!a.vocab) a.vocab = {}; if (a.beliefs && a.beliefs.trust == null) a.beliefs.trust = 0; if (!a.chatHistory) a.chatHistory = [];
+    if (!a.vocab) a.vocab = {}; if (a.beliefs && a.beliefs.trust == null) a.beliefs.trust = 0; if (!a.chatHistory) a.chatHistory = []; if (a.ill == null) a.ill = 0; if (a.beliefs && a.beliefs.simulation == null) a.beliefs.simulation = 0; if (!a.mind) a.mind = LW.Mind.fresh();
     return a;
   }
 
@@ -4231,7 +4505,7 @@
       return {
         v: SAVE_VERSION, engineVersion: LW.ENGINE_VERSION, savedMs: w.meta.lastRealTimeMs,
         meta: w.meta, cfg: w.cfg, rng: w.rng.getState(),
-        world: { w: w.w, h: w.h, tick: w.tick, seed: w.seed, name: w.name, genesis: w.genesis, shape: w.shape, climateMean: w.climateMean, windDir: w.windDir, tiles, nextIds: w.nextIds, stats: w.stats, burning: [...w.burning], fireStats: w.fireStats, ground: [...w.ground] },
+        world: { w: w.w, h: w.h, tick: w.tick, seed: w.seed, name: w.name, genesis: w.genesis, shape: w.shape, climateMean: w.climateMean, windDir: w.windDir, tiles, nextIds: w.nextIds, stats: w.stats, burning: [...w.burning], fireStats: w.fireStats, ground: [...w.ground], expansions: w.expansions || 0, futureTechs: w.futureTechs || [], simVerdictTick: w.simVerdictTick || 0, simKnownTick: w.simKnownTick || 0 },
         weather: w.weather.toJSON(), language: w.language.toJSON(),
         agents: [...w.agents.values()].map((a) => serializeAgent(a, w.tick)), deceased: [...w.deceased.values()],
         buildings: [...w.buildings.values()], settlements: [...w.settlements.values()], landmarks: w.landmarks,
@@ -4245,7 +4519,8 @@
       w.seed = s.seed; w.cfg = mergeCfg(LW.CONFIG, state.cfg); w.rng = new LW.Rng(w.seed); w.rng.setState(state.rng);
       w.w = s.w; w.h = s.h; w.tick = s.tick; w.name = s.name; w.genesis = s.genesis; w.shape = s.shape; w.climateMean = s.climateMean; w.windDir = s.windDir;
       w.tiles = LW.makeTiles(w.w, w.h); for (const k in w.tiles) if (s.tiles[k]) w.tiles[k] = decArr(s.tiles[k]);
-      w.nextIds = s.nextIds; w.stats = s.stats || w.stats; w.burning = new Set(s.burning || []); w.fireStats = s.fireStats; w.ground = new Map(s.ground || []);
+      w.nextIds = s.nextIds; w.stats = s.stats || w.stats; w.burning = new Set(s.burning || []); w.fireStats = s.fireStats; w.ground = new Map(s.ground || []); w.expansions = s.expansions || 0; w.futureTechs = s.futureTechs || []; w.simVerdictTick = s.simVerdictTick || 0; w.simKnownTick = s.simKnownTick || 0;
+      if (LW.Tree && w.futureTechs.length) LW.Tree.registerFuture(w.futureTechs);
       w._initPathBuffers();
       w.meta = state.meta; w.language = LW.Language.fromJSON(state.language);
       w.weather = LW.Weather.fromJSON(w, state.weather);

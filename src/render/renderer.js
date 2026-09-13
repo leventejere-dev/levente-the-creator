@@ -50,6 +50,7 @@
     draw(sim, audioEnv) {
       const t0 = performance.now(); const w = this.world, c = this.ctx, cv = this.canvas; const z = this.cam.zoom; this.frame++;
       if (cv.width !== cv.clientWidth || cv.height !== cv.clientHeight) { cv.width = cv.clientWidth; cv.height = cv.clientHeight; this.light.width = cv.width; this.light.height = cv.height; }
+      if (this.terrain.width !== w.w * PX || this.terrain.height !== w.h * PX) { this.terrain.width = w.w * PX; this.terrain.height = w.h * PX; this.bakeAll(); } // a világ tágult
       if (this.follow) { const a = w.agents.get(this.follow); if (a) { this.cam.x += (a.x - this.cam.x) * 0.15; this.cam.y += (a.y - this.cam.y) * 0.15; } else this.follow = null; }
       // re-bake dirty tiles (bounded per frame)
       let n = 0; for (const i of w.dirtyTiles) { this.bakeTile(i); w.dirtyTiles.delete(i); if (++n > 3000) break; }
@@ -66,6 +67,8 @@
       const lod = this.lodLevel();
       // ground items
       if (lod !== 'region' && w.ground) for (const [i, g] of w.ground) { const gx = w.xOf(i), gy = w.yOf(i); if (gx < tx0 || gx > tx1 || gy < ty0 || gy > ty1) continue; const s = this.worldToScreen(gx, gy); c.save(); c.translate(s.x, s.y); c.scale(S, S); LW.Sprites.itemPile(c, 0, 0, g); c.restore(); }
+      // víz-csillogás: a napfény mozog a hullámokon
+      if (lod !== 'region') { const t = w.tiles; const ph = this.frame >> 2; c.fillStyle = 'rgba(255,255,255,0.35)'; for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) { const i = w.idx(tx, ty); if (!w.isWater(i)) continue; const hh = hashi(i * 7 + (ph >> 2)); if ((hh & 7) !== 0) continue; const ox = ((hh >> 3) + ph) & 15, oy = (hh >> 7) & 15; const s2 = this.worldToScreen(tx + ox / 16, ty + oy / 16); c.fillRect(s2.x, s2.y, Math.max(1, S * 3), Math.max(1, S)); } }
       // vadak: a mezők állatállománya látható (legelő csapatok; éjjel ragadozók a veszélyes helyeken)
       if (lod !== 'region') { const B = LW.BIOME; const t = w.tiles; const night = LW.Time.isNight(w.tick); const step = w.tick >> 3;
         for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) { const i = w.idx(tx, ty); const an = t.animals[i]; const hi = hashi(i);

@@ -45,6 +45,13 @@ anyagláncok, közös raktárak, vezetők, írott tudás, amely túléli a tudó
 találják meg (kísérlet, véletlen, tanítás, olvasás), a maguk sorrendjében, vagy soha. „Parancs” bekapcsolva a szavad
 parancs: megteszik, amit mondasz.
 
+**Tudat, kétely, államok, járvány, új földek, ismeretlen jövő.** Minden embernek van belső világa (`Tudat` a vizsgálóban):
+mi hajtja, mit gondol magáról, mennyire érzi közel a halált, milyen kérdéseket tesz fel, mit álmodott — a saját
+emlékeiből. A tudomány kételyt szül: a beavatkozásaidat elkezdik megmagyarázni, a hit apad; a Világmag után megszületik
+a szimulációs hipotézis, és eldől, hisznek-e benne. Vezetők és törvények államot alapítanak; a feszültség háborúba
+torkollhat; a vagyon vállalatot; a sűrűség járványt. Aki hajózik, új földet talál: a világ tágul. A Világmag után
+minden évben olyan lehetőség születik, amelyre nekünk sincs szavunk. *Ez a tudat modellje, nem tudat.*
+
 A felület és minden esemény, emlék, gondolat magyar. A dokumentáció (`docs/`) angol, mert a forráskód nyelve is az.
 
 ## Status
@@ -55,9 +62,10 @@ A felület és minden esemény, emlék, gondolat magyar. A dokumentáció (`docs
 | 1 | **Genesis MVP** | ✅ playable — `dist/levente-world.html` |
 | 1½ | **Speech** — emergent languages, the shared chat with the Creator (text + voice), free Gemini phrasing | ✅ |
 | 2–6 | **The possibility space** — 105 discoveries from fire to world simulation, 35 building kinds (some multi-tile), materials chains (charcoal → copper → bronze → iron → steel → machine parts → chips), records that outlive the knower, leaders, shrines/temples, markets, schools/universities/labs, hospitals, factories, power plants, computer centres, the *Világmag* — all discoverable, none scripted | ✅ engine + content |
-| 3 | States: politics, currency in depth, companies, wars | next |
-| 7 | Unknown Future (procedural post-contemporary tech) | planned |
-| — | Growing / infinite map | next |
+| 3 | States, wars, companies, epidemics — emergent from leaders, tension, wealth, density | ✅ |
+| 7 | Unknown Future — after the Világmag the world generates new possibilities itself, endlessly | ✅ |
+| — | Growing map — sailors find new land beyond the sea (up to 256×256 for now) | ✅ |
+| — | Mind — self-model: purpose, inner voice, dreams, mortality, existential questions, doubt, the simulation hypothesis | ✅ |
 
 ## Run it
 

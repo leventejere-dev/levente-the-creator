@@ -38,6 +38,8 @@
         if (def.simulation && !done.has('sim')) { done.add('sim'); b.worlds = (b.worlds || 0); if (rng.chance(0.02)) { b.worlds++; w.events.emit('WorldSimulated', { tick: w.tick, buildingId: b.id, n: b.worlds, tile: w.idx(b.x, b.y) }); } }
       }
       this.leaders(w);
+      LW.Civilization.daily(w);
+      if (LW.Tree.futureStep) LW.Tree.futureStep(w);
     },
     market(w, b, near) {
       const rng = w.rng; const donors = [], needy = [];

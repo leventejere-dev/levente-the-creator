@@ -6,6 +6,8 @@
     get ttsSupported() { return typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined'; },
     get sttSupported() { return typeof window !== 'undefined' && !!(window.SpeechRecognition || window.webkitSpeechRecognition); },
     get speakOn() { try { return localStorage.getItem(this.speakKey) !== '0'; } catch (e) { return true; } },
+    choice(kind) { try { return localStorage.getItem('lw.voice.' + kind) || ''; } catch (e) { return ''; } },
+    setChoice(kind, name) { try { if (name) localStorage.setItem('lw.voice.' + kind, name); else localStorage.removeItem('lw.voice.' + kind); } catch (e) { /* ignore */ } },
     setSpeak(on) { try { localStorage.setItem(this.speakKey, on ? '1' : '0'); } catch (e) { /* ignore */ } if (!on && this.ttsSupported) speechSynthesis.cancel(); },
     loadVoices() {
       if (!this.ttsSupported) return; const vs = speechSynthesis.getVoices() || []; if (!vs.length) return;
@@ -23,7 +25,9 @@
       let pitch = a.sex === 'f' ? 1.2 : 0.85; if (age < 14) pitch += 0.4; else if (age > 55) pitch -= 0.15; pitch += ((h >> 8) % 20 - 10) / 60;
       const rate = 0.92 + ((h >> 4) % 10) / 45 - (age > 55 ? 0.1 : 0);
       let pool;
-      if (purpose === 'own') pool = this.ownPool && this.ownPool.length ? this.ownPool : this.anyVoices;
+      const chosen = this.choice(purpose === 'own' ? 'own' : 'hu'); const cv = chosen ? this.anyVoices.find((v) => v.name === chosen) : null;
+      if (cv) pool = [cv];
+      else if (purpose === 'own') pool = this.ownPool && this.ownPool.length ? this.ownPool : this.anyVoices;
       else pool = this.huNatural && this.huNatural.length ? this.huNatural : this.huVoices.length ? this.huVoices : this.anyVoices;
       // ha van női/férfi név a hangban, a nem szerint válogat; különben a hangmagasság adja a különbséget
       const fem = /no[eé]mi|zsuzsa|szabina|female|woman|nő|zira|eva|anna|laura|elsa|maria|sofia|mia|eda|emel|noora|paulina|alina|elena|zofia|vlasta/i, masc = /szabolcs|tam[aá]s|male|man|férfi|david|mark|george|diego|luca|giorgio|harri|ahmet|emre|marek|antonin|emil/i;

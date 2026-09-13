@@ -22,7 +22,7 @@
         knowledge: { techs: new Set(), places: new Map(), progress: {} },
         memory: { episodic: [], emotional: [], social: new Map() },
         relationships: new Map(),
-        beliefs: { creator: 0, trust: 0, world: {} },
+        beliefs: { creator: 0, trust: 0, simulation: 0, world: {} }, ill: 0, mind: LW.Mind.fresh(),
         vocab: {}, langId: opts.langId ?? (opts.parents && opts.parents[0] != null && world.agents.get(opts.parents[0]) ? world.agents.get(opts.parents[0]).langId : (world.langs && world.langs.size ? LW.Speech.firstLang(world).id : 1)), chatHistory: [],
         inv: {}, home: null, partner: null, parents: opts.parents || [null, null], children: [],
         x: opts.x, y: opts.y, facing: 1,
@@ -142,7 +142,7 @@
       a.knowledge.places.set(key, { k: kind, i: idx, q, t: world.tick });
       const cap = world.cfg.agents.poiCap;
       if (a.knowledge.places.size > cap * 1.3) { // batch eviction of the least recently seen (water is never forgotten)
-        const entries = [...a.knowledge.places.entries()].filter(([, v]) => v.k !== 'water').sort((x, y) => x[1].t - y[1].t);
+        const entries = [...a.knowledge.places.entries()].filter(([, v]) => v.k !== 'water' && v.k !== 'deposit').sort((x, y) => x[1].t - y[1].t); // a vizet és a lelőhelyeket nem felejti el
         const drop = a.knowledge.places.size - cap; for (let k = 0; k < drop && k < entries.length; k++) a.knowledge.places.delete(entries[k][0]);
       }
     },
@@ -227,7 +227,8 @@
       const age = this.age(world, a); const lon = a.genes.physiology.longevity;
       if (age > lon - 10 && rng.chance(0.00025 * Math.exp((age - lon) / 5))) { this.die(world, a, 'öregség'); return; }
       // baseline illness
-      if (rng.chance(0.0006 * (1 - a.genes.physiology.immunity * 0.7) * (a.needs.food < 0.3 ? 2 : 1) * (1 - 0.6 * Math.min(1, LW.Tech.fx(world, a).health)))) { a.injury = Math.min(0.8, a.injury + 0.3); a.emotions.stress += 0.2; this.memory(world, a, { type: 'illness', text: 'megbetegedtem', importance: 0.4, emotion: 'fear', intensity: 0.4 }); world.events.emit('AgentIll', { tick: world.tick, agentId: a.id }); }
+      if (rng.chance(0.0006 * (1 - a.genes.physiology.immunity * 0.7) * (a.needs.food < 0.3 ? 2 : 1) * (1 - 0.6 * Math.min(1, LW.Tech.fx(world, a).health)))) { a.injury = Math.min(0.8, a.injury + 0.3); a.emotions.stress += 0.2; a.ill = Math.max(a.ill || 0, rng.int(5, 14)); this.memory(world, a, { type: 'illness', text: 'megbetegedtem', importance: 0.4, emotion: 'fear', intensity: 0.4 }); world.events.emit('AgentIll', { tick: world.tick, agentId: a.id }); }
+      LW.Mind.daily(world, a);
       // predators at night handled per tick; here: pregnancy & development
       if (a.pregnancy) { if (world.tick - a.pregnancy.since >= cfg.gestationDays * TPD) this.birth(world, a); else if (a.health < 0.3 && rng.chance(0.03)) { a.pregnancy = null; a.emotions.grief = Math.min(1, a.emotions.grief + 0.5); this.memory(world, a, { type: 'loss', text: 'elvesztettem a meg nem született gyermekem', importance: 0.8, emotion: 'grief', intensity: 0.8 }); } }
       const st = this.stage(world, a);

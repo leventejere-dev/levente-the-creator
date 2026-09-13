@@ -72,7 +72,7 @@
       if (a.needs.energy < 0.15) rate *= 0.5;
       st.acc += rate;
       while (st.acc >= 1 && st.got < st.n) {
-        if (field) { const have = t[field][i]; if (have < cost) { if (item === 'flint' && field === 'stone') break; break; } t[field][i] = have - cost; if (field === 'veg' || field === 'trees') { if ((have >> 5) !== ((have - cost) >> 5)) world.dirtyTiles.add(i); } if (field === 'depAmt' && t.depAmt[i] === 0) { t.depType[i] = 0; } }
+        if (field) { const have = t[field][i]; const floor = field === 'veg' ? 10 : 0; if (have < cost + floor) { break; } /* a bokrot nem szedik tövig: marad mag a jövőre */ t[field][i] = have - cost; if (field === 'veg' || field === 'trees') { if ((have >> 5) !== ((have - cost) >> 5)) world.dirtyTiles.add(i); } if (field === 'depAmt' && t.depAmt[i] === 0) { t.depType[i] = 0; } }
         st.acc -= 1;
         if (st.direct && LW.ITEMS[item].food) { a.needs.food = Math.min(1, a.needs.food + LW.ITEMS[item].food); if (LW.ITEMS[item].water) a.needs.water = Math.min(1, a.needs.water + LW.ITEMS[item].water); a.lastMeal = world.tick; st.got++; a.counters.gathered++; if (a.needs.food >= 0.95) { st.got = st.n; } A().practice(a, 'gathering', 1); continue; }
         let added = A().addItem(world, a, item, 1);

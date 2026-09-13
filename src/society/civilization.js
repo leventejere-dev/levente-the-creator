@@ -71,8 +71,9 @@
     battle(w, a, b) {
       const rng = w.rng; if (!rng.chance(0.35)) return;
       const wa = this.warriors(w, a), wb = this.warriors(w, b);
-      const str = (list) => list.reduce((s, p) => s + p.personality.bravery + p.personality.aggression * 0.5 + LW.Tree.bestTool(p, 'hunt') * 0.6 + p.health, 0) * rng.range(0.7, 1.3);
-      const sa = str(wa), sb = str(wb); const win = sa >= sb ? a : b, lose = win === a ? b : a; const wl = win === a ? wb : wa, ww = win === a ? wa : wb;
+      const wallOf = (s) => { let best = 0; for (const x of w.buildingsNear(s.x | 0, s.y | 0, 12)) { const d = LW.Buildings.DEFS[x.kind]; if (x.progress >= 1 && d && d.wall > best) best = d.wall; } return best; };
+      const str = (list, s) => list.reduce((acc, p) => acc + p.personality.bravery + p.personality.aggression * 0.5 + LW.Tree.bestTool(p, 'hunt') * 0.6 + p.health, 0) * rng.range(0.7, 1.3) * (1 + wallOf(s) * 0.25); // a fal védi az otthon harcolókat
+      const sa = str(wa, a), sb = str(wb, b); const win = sa >= sb ? a : b, lose = win === a ? b : a; const wl = win === a ? wb : wa, ww = win === a ? wa : wb;
       for (const p of wl.slice(0, rng.int(1, 3))) { A().damage(w, p, rng.range(0.3, 0.95), `háború (${win.name})`); if (w.agents.has(p.id)) { p.emotions.fear = b01(p.emotions.fear + 0.4); A().memory(w, p, { type: 'war', text: `harcoltunk ${win.name} ellen, és vesztettünk`, importance: 0.7, emotion: 'fear', intensity: 0.7 }); } }
       for (const p of ww.slice(0, rng.int(0, 1))) A().damage(w, p, rng.range(0.2, 0.6), `háború (${lose.name})`);
       for (const p of ww) { if (!w.agents.has(p.id)) continue; p.emotions.pride = b01(p.emotions.pride + 0.15); for (const q of wl) { if (!w.agents.has(q.id)) continue; const r = LW.Relationships.ensure(w, q, p); r.resentment = b01(r.resentment + 0.2); r.fear = b01((r.fear || 0) + 0.15); } }

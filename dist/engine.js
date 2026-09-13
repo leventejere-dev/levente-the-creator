@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 22:06 */
+/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 22:54 */
 
 /* ===== core/rng.js ===== */
 /* LEVENTE — THE CREATOR · core/rng.js
@@ -151,7 +151,7 @@
       emotionalCap: 12,
       poiCap: 200,
       carryCapacity: 12,
-      needDrainPerDay: { food: 0.75, water: 0.8, energy: 1.2, social: 0.55, affection: 0.12, curiosity: 0.2 },
+      needDrainPerDay: { food: 0.75, water: 0.8, energy: 1.2, social: 0.45, affection: 0.12, curiosity: 0.2 },
       starvationHealthPerDay: 0.06,
       dehydrationHealthPerDay: 0.2,
       hypothermiaHealthPerDay: 0.08,
@@ -1054,8 +1054,8 @@
         const cap = t.vegCap[i] * seasonVeg * (0.45 + 0.55 * t.moist[i] / 255);
         if (cap > 0) {
           let v = t.veg[i];
-          if (v < 3) { if (rng.chance(0.25 * seasonVeg)) v += 1; }
-          else v += cfg.vegRegrowth * v * (1 - v / Math.max(1, cap));
+          // logisztikus növekedés + a szomszédos földek magjai: a lelegelt föld is újraéled (nem ragad nullán)
+          v += cfg.vegRegrowth * v * (1 - v / Math.max(1, cap)) + (v < cap ? 0.7 * seasonVeg : 0);
           if (v > cap) v -= (v - cap) * 0.15;
           t.veg[i] = LW.clamp(Math.round(v), 0, 255);
         }
@@ -1496,7 +1496,7 @@
     bow: { weight: 1, label: 'Íj', tool: true, slot: 'hunt', tier: 2 }, bronze_spear: { weight: 1.3, label: 'Bronzlándzsa', tool: true, slot: 'hunt', tier: 2 }, iron_spear: { weight: 1.4, label: 'Vaslándzsa', tool: true, slot: 'hunt', tier: 3 }, rifle: { weight: 3, label: 'Puska', tool: true, slot: 'hunt', tier: 5 },
     wooden_plow: { weight: 3, label: 'Faeke', tool: true, slot: 'plow', tier: 1 }, bronze_plow: { weight: 3, label: 'Bronzeke', tool: true, slot: 'plow', tier: 2 }, iron_plow: { weight: 3.5, label: 'Vaseke', tool: true, slot: 'plow', tier: 3 }, tractor: { weight: 10, label: 'Traktor', tool: true, slot: 'plow', tier: 6 },
     pickaxe: { weight: 2, label: 'Csákány', tool: true, slot: 'mine', tier: 2 }, iron_pickaxe: { weight: 2.2, label: 'Vascsákány', tool: true, slot: 'mine', tier: 3 }, drill: { weight: 4, label: 'Fúrógép', tool: true, slot: 'mine', tier: 5 },
-    wool_clothes: { weight: 1, label: 'Gyapjúruha', tool: true, warmth: 11, slot: 'clothes', tier: 2 }, coat: { weight: 1.2, label: 'Kabát', tool: true, warmth: 14, slot: 'clothes', tier: 3 },
+    wool_clothes: { weight: 1, label: 'Gyapjúruha', tool: true, warmth: 11, slot: 'clothes', tier: 2 }, boat: { weight: 0, label: 'Csónak', tool: true, slot: 'boat', tier: 1 }, car: { weight: 0, label: 'Gépkocsi', tool: true, slot: 'vehicle', tier: 1 }, coat: { weight: 1.2, label: 'Kabát', tool: true, warmth: 14, slot: 'clothes', tier: 3 },
   });
   I.clothes.slot = 'clothes'; I.clothes.tier = 1; I.handaxe.slot = 'axe'; I.handaxe.tier = 0.5; I.spear.slot = 'hunt'; I.spear.tier = 1;
   LW.DEPOSIT_ITEM[10] = 'oil';
@@ -1545,6 +1545,8 @@
     drill: { out: { drill: 1 }, inp: { steel: 2, machine_part: 2 }, ticks: 40, tech: 'machine_tools', nearby: 'factory', skill: 'crafting', tag: 'craft:tool' },
     chainsaw: { out: { chainsaw: 1 }, inp: { steel: 2, machine_part: 2, fuel: 1 }, ticks: 40, tech: 'internal_combustion', nearby: 'factory', skill: 'crafting', tag: 'craft:tool' },
     tractor: { out: { tractor: 1 }, inp: { steel: 6, machine_part: 6, fuel: 2 }, ticks: 120, tech: 'internal_combustion', nearby: 'factory', skill: 'crafting', tag: 'craft:tool' },
+    boat: { out: { boat: 1 }, inp: { wood: 8, fiber: 4 }, ticks: 80, tech: 'boatbuilding', skill: 'building', tag: 'craft:boat' },
+    car: { out: { car: 1 }, inp: { steel: 6, machine_part: 4, fuel: 2 }, ticks: 120, tech: 'automobile', nearby: 'factory', skill: 'crafting', tag: 'craft:tool' },
   });
 
   // ---------------------------------------------------------------- épületek
@@ -1577,6 +1579,10 @@
     hospital: pub({ label: 'Kórház', cost: { brick: 50, glass: 10, medicine: 10 }, ticks: 1400, hospital: 1, tech: 'modern_medicine', lifeDays: 20000, light: 0.8, minPop: 28, want: 'health', size: [2, 2] }),
     computer_center: pub({ label: 'Számítóközpont', cost: { concrete: 40, electric_part: 30, chip: 20 }, ticks: 2400, computer: 1, discovery: 0.6, records: 4, tech: 'computer', lifeDays: 20000, light: 1, minPop: 42, want: 'knowledge', size: [2, 2] }),
     data_center: pub({ label: 'Adatközpont', cost: { concrete: 60, chip: 80, electric_part: 40 }, ticks: 3000, computer: 2, records: 5, discovery: 0.8, teach: 1, tech: 'internet', lifeDays: 20000, light: 1, minPop: 70, want: 'knowledge', size: [3, 2] }),
+    palisade: pub({ label: 'Palánk', cost: { wood: 20, fiber: 4 }, ticks: 300, safety: 0.6, wall: 1, tech: 'fortification', lifeDays: 5000, minPop: 5, want: 'safety' }),
+    stone_wall: pub({ label: 'Kőfal', cost: { stone: 40, clay: 8 }, ticks: 700, safety: 0.8, wall: 2, tech: 'stone_walls', lifeDays: 30000, minPop: 10, want: 'safety', size: [2, 1] }),
+    castle: pub({ label: 'Vár', cost: { stone: 90, brick: 30, wood: 30, iron: 6 }, ticks: 2600, safety: 0.95, wall: 3, records: 1, storage: 200, tech: 'castles', lifeDays: 60000, light: 0.6, minPop: 20, want: 'safety', size: [3, 3] }),
+    harbor: pub({ label: 'Kikötő', cost: { wood: 30, stone: 10, cloth: 4 }, ticks: 600, harbor: 1, storage: 120, tech: 'sailing', lifeDays: 12000, minPop: 8, want: 'food', size: [2, 1] }),
     simulation_core: pub({ label: 'Világmag', cost: { chip: 200, concrete: 80, electric_part: 80 }, ticks: 5000, simulation: 1, tech: 'world_simulation', lifeDays: 1e6, light: 1.5, minPop: 105, want: 'knowledge', size: [3, 3] }),
   });
   B.lean_to.tier = 1; B.hut.tier = 2; B.stone_house.tier = 3;
@@ -1614,6 +1620,10 @@
   T('sailing', { name: 'Hajózás', era: 'bronze', prereq: ['carpentry', 'weaving', 'fishing'], items: { wood: 10, cloth: 2 }, nearby: 'water', difficulty: 0.9, skill: 'building', minSkill: 0.6, fx: { food: 0.1, speed: 0.05 }, wow: 'Az első hajó', desc: 'Vászon a szélben: a víz többé nem határ.' });
   T('calendar', { name: 'Naptár', era: 'bronze', prereq: ['counting', 'ritual'], items: {}, difficulty: 0.88, skill: 'farming', minSkill: 0.5, fx: { farm: 0.1 }, boosts: { astronomy: 0.1 }, desc: 'A csillagok járásából tudni, mikor kell vetni.' });
   T('tailoring', { name: 'Szabóság', era: 'bronze', prereq: ['weaving', 'hide_working', 'carpentry'], items: { cloth: 2, hide: 1 }, nearby: 'workshop', difficulty: 0.85, need: 'warmth', skill: 'crafting', minSkill: 0.6, recipes: ['coat'], fx: { warmth: 1 }, desc: 'Szabott, varrott kabát a tél ellen.' });
+  T('fortification', { name: 'Palánképítés', era: 'neolithic', prereq: ['hut_construction', 'tribal_council'], items: { wood: 10 }, difficulty: 0.86, need: 'safety', skill: 'building', minSkill: 0.5, minPop: 5, buildings: ['palisade'], wow: 'Az első palánk', desc: 'Hegyezett cölöpök a tábor körül: a vad és az idegen kint marad.' });
+  T('stone_walls', { name: 'Kőfalak', era: 'bronze', prereq: ['fortification', 'stone_masonry'], items: { stone: 16 }, difficulty: 0.9, need: 'safety', skill: 'building', minSkill: 0.65, minPop: 10, buildings: ['stone_wall'], wow: 'Az első kőfal', desc: 'Fal, amelyet tűz nem éget és kar nem dönt.' });
+  T('dyeing', { name: 'Kelmefestés', era: 'bronze', prereq: ['weaving', 'herbal_medicine'], items: { cloth: 2, berries: 4 }, difficulty: 0.84, skill: 'crafting', minSkill: 0.5, wow: 'Az első festett ruha', desc: 'Növényből és földből szín: a ruha többé nem csak melegít, hanem beszél is arról, ki viseli.' });
+  T('boatbuilding', { name: 'Csónaképítés', era: 'neolithic', prereq: ['woodworking', 'fishing'], items: { wood: 8, fiber: 4 }, nearby: 'water', difficulty: 0.84, need: 'food', skill: 'building', minSkill: 0.45, recipes: ['boat'], fx: { food: 0.1 }, wow: 'Az első csónak', desc: 'Kivájt törzs a vízen: a hal ott is elérhető, ahová a part nem ér.' });
   // — vaskor
   T('iron_smelting', { name: 'Vasolvasztás', era: 'iron', prereq: ['charcoal_making', 'kiln_building', 'ore_lore_iron'], boosts: { bronze_alloy: 0.15, copper_smelting: 0.1 }, items: { ore_iron: 3, charcoal: 3 }, nearby: 'kiln', difficulty: 0.95, skill: 'crafting', minSkill: 0.7, minPop: 8, recipes: ['iron'], wow: 'Az első vas', desc: 'A vörös kő makacsabb a réznél, de a fémje keményebb.' });
   T('iron_working', { name: 'Kovácsolás', era: 'iron', prereq: ['iron_smelting', 'carpentry'], items: { iron: 3, wood: 4 }, difficulty: 0.92, skill: 'crafting', minSkill: 0.7, minPop: 8, buildings: ['forge'], recipes: ['iron_axe', 'iron_spear', 'iron_pickaxe', 'iron_plow'], fx: { wood: 0.3, hunt: 0.2, farm: 0.2, mine: 0.3, build: 0.15 }, wow: 'Az első kovács', desc: 'Izzó vas az üllőn: minden szerszám újjászületik.' });
@@ -1632,6 +1642,7 @@
   T('astronomy', { name: 'Csillagászat', era: 'classical', prereq: ['calendar', 'mathematics'], items: {}, difficulty: 0.92, skill: 'exploring', minSkill: 0.5, minPop: 12, fx: { speed: 0.05 }, boosts: { navigation: 0.15, scientific_method: 0.1 }, desc: 'Az égbolt rendje: a világ nagyobb, mint amit a szem lát.' });
   T('steel_making', { name: 'Acélgyártás', era: 'classical', prereq: ['iron_working', 'ore_lore_coal'], items: { iron: 3, coal: 2 }, nearby: 'forge', difficulty: 0.94, skill: 'crafting', minSkill: 0.75, minPop: 15, recipes: ['steel', 'steel_axe'], fx: { wood: 0.2, build: 0.1, mine: 0.2 }, wow: 'Az első acél', desc: 'Szénnel edzett vas: rugalmas és kemény egyszerre.' });
   T('mechanics', { name: 'Gépezetek', era: 'classical', prereq: ['milling', 'mathematics', 'iron_working'], items: { iron: 2, wood: 4 }, nearby: 'workshop', difficulty: 0.93, skill: 'crafting', minSkill: 0.7, minPop: 15, recipes: ['machine_part'], fx: { craft: 0.2, build: 0.1 }, wow: 'Az első gép', desc: 'Fogaskerék, csiga, emelő: az erő megsokszorozható.' });
+  T('castles', { name: 'Várépítés', era: 'medieval', prereq: ['stone_walls', 'architecture', 'law_code'], items: { stone: 30, brick: 10 }, difficulty: 0.93, need: 'safety', skill: 'building', minSkill: 0.75, minPop: 20, buildings: ['castle'], wow: 'Az első vár', desc: 'Tornyok, kapu, falak: a hatalom kőbe zárva.' });
   // — középkor
   T('paper_making', { name: 'Papírkészítés', era: 'medieval', prereq: ['weaving', 'writing', 'carpentry'], items: { fiber: 6, wood: 2 }, nearby: 'workshop', difficulty: 0.9, skill: 'crafting', minSkill: 0.65, minPop: 12, recipes: ['paper'], buildings: ['library'], fx: { teach: 0.2 }, wow: 'Az első papír', desc: 'Rostból préselt vékony lap: könnyű, olcsó, tele lehet írni.' });
   T('crop_rotation', { name: 'Vetésforgó', era: 'medieval', prereq: ['plowing', 'writing'], items: {}, difficulty: 0.88, need: 'food', skill: 'farming', minSkill: 0.65, minPop: 10, fx: { farm: 0.3 }, desc: 'A föld pihen, ha váltogatják, mit vetnek belé.' });
@@ -1660,6 +1671,7 @@
   T('telegraph', { name: 'Távíró', era: 'industrial', prereq: ['electricity', 'alphabet'], items: { electric_part: 2, copper: 4 }, nearby: 'workshop', difficulty: 0.94, skill: 'crafting', minSkill: 0.8, minPop: 28, fx: { teach: 0.3 }, wow: 'Az első üzenet a dróton', desc: 'Szavak, amelyek gyorsabbak a lónál.' });
   T('oil_drilling', { name: 'Olajfúrás', era: 'industrial', prereq: ['machine_tools', 'steam_engine'], items: { steel: 4, machine_part: 2 }, difficulty: 0.94, skill: 'gathering', minSkill: 0.7, minPop: 28, fx: { mine: 0.2 }, wow: 'Az első olajkút', desc: 'Fekete, égő folyadék a mélyből.' });
   T('oil_refining', { name: 'Olajfinomítás', era: 'industrial', prereq: ['oil_drilling', 'chemistry'], items: { oil: 3 }, nearby: 'factory', difficulty: 0.95, skill: 'crafting', minSkill: 0.8, minPop: 31, recipes: ['fuel'], desc: 'A nyersolajból üzemanyag válik el.' });
+  T('automobile', { name: 'Gépkocsi', era: 'modern', prereq: ['internal_combustion', 'road_building', 'steel_making'], items: { steel: 6, machine_part: 4, fuel: 2 }, nearby: 'factory', difficulty: 0.96, skill: 'crafting', minSkill: 0.85, minPop: 35, recipes: ['car'], fx: { speed: 0.5 }, wow: 'Az első gépkocsi', desc: 'Négy kerék és egy motor: a távolság elveszti a jelentését.' });
   // — modern kor
   T('electrification', { name: 'Villamosítás', era: 'modern', prereq: ['electricity', 'factory_system', 'concrete'], items: { electric_part: 6, steel: 4, concrete: 6 }, nearby: 'factory', difficulty: 0.96, skill: 'building', minSkill: 0.85, minPop: 35, buildings: ['power_plant', 'modern_house'], fx: { craft: 0.4, warmth: 3, discovery: 0.2 }, wow: 'Az első villanyfény az éjszakában', desc: 'Erőmű, vezeték, izzó: az éjszaka véget ér.' });
   T('internal_combustion', { name: 'Belső égésű motor', era: 'modern', prereq: ['oil_refining', 'machine_tools'], items: { steel: 4, machine_part: 4, fuel: 2 }, nearby: 'factory', difficulty: 0.96, skill: 'crafting', minSkill: 0.85, minPop: 35, recipes: ['chainsaw', 'tractor'], fx: { speed: 0.4, farm: 0.4, wood: 0.4 }, wow: 'Az első motor', desc: 'Robbanások sora egy fémdobozban: erő, ami magával vihető.' });
@@ -1694,7 +1706,7 @@
       if (a._fx && a._fxTick === (world.tick / TPD | 0) && a._fxN === a.knowledge.techs.size) return a._fx;
       const f = {}; for (const k of FX_KEYS) f[k] = 0;
       for (const id of a.knowledge.techs) { const d = D[id]; if (d && d.fx) for (const k in d.fx) f[k] = (f[k] || 0) + d.fx[k]; }
-      f.wood += this.bestTool(a, 'axe') * 0.25; f.hunt += this.bestTool(a, 'hunt') * 0.25; f.farm += this.bestTool(a, 'plow') * 0.25; f.mine += this.bestTool(a, 'mine') * 0.3; f.stone += this.bestTool(a, 'mine') * 0.2;
+      f.wood += this.bestTool(a, 'axe') * 0.25; f.hunt += this.bestTool(a, 'hunt') * 0.25; f.farm += this.bestTool(a, 'plow') * 0.25; f.mine += this.bestTool(a, 'mine') * 0.3; f.stone += this.bestTool(a, 'mine') * 0.2; f.food += this.bestTool(a, 'boat') * 0.15; f.speed += this.bestTool(a, 'vehicle') * 0.5;
       a._fx = f; a._fxTick = world.tick / TPD | 0; a._fxN = a.knowledge.techs.size; return f;
     },
     mult(world, a, key) { return 1 + (this.fx(world, a)[key] || 0); },
@@ -2159,8 +2171,10 @@
       if (a.avoid && a.avoid[key] > world.tick) return;
       a.knowledge.places.set(key, { k: kind, i: idx, q, t: world.tick });
       const cap = world.cfg.agents.poiCap;
-      if (a.knowledge.places.size > cap * 1.3) { // batch eviction of the least recently seen (water is never forgotten)
-        const entries = [...a.knowledge.places.entries()].filter(([, v]) => v.k !== 'water' && v.k !== 'deposit').sort((x, y) => x[1].t - y[1].t); // a vizet és a lelőhelyeket nem felejti el
+      // a víz és a lelőhely nem felejtődik el az idő múlásával, de csak a legközelebbi néhány tucat marad meg — különben a partvidék kiszorítaná az ételt a fejéből
+      if (kind === 'water' || kind === 'deposit') { const capK = 36; let n = 0; for (const v of a.knowledge.places.values()) if (v.k === kind) n++; if (n > capK) { const same = []; for (const v of a.knowledge.places.values()) if (v.k === kind) same.push(v); same.sort((p, q) => LW.dist(a.x, a.y, world.xOf(q.i), world.yOf(q.i)) - LW.dist(a.x, a.y, world.xOf(p.i), world.yOf(p.i))); for (let k = 0; k < n - capK; k++) a.knowledge.places.delete(this.poiKey(kind, same[k].i)); } }
+      if (a.knowledge.places.size > cap * 1.3) { // a többiből a régen látottak felejtődnek el
+        const entries = [...a.knowledge.places.entries()].filter(([, v]) => v.k !== 'water' && v.k !== 'deposit').sort((x, y) => x[1].t - y[1].t);
         const drop = a.knowledge.places.size - cap; for (let k = 0; k < drop && k < entries.length; k++) a.knowledge.places.delete(entries[k][0]);
       }
     },
@@ -2510,12 +2524,12 @@
     },
     drink: {
       applicable: (c, a) => !c.infant && N(a).water < 0.75 && !!c.water,
-      score: (c, a) => [u(N(a).water) * 1.9 + (c.water.d < 3 ? 0.15 : 0), [`szomj ${LW.pct(1 - N(a).water)}`, `víz ${Math.round(c.water.d)} mezőre`]],
+      score: (c, a) => [u(N(a).water) * 2.4 + (N(a).water < 0.4 ? 0.5 : 0) + (c.water.d < 6 ? 0.2 : 0), [`szomj ${LW.pct(1 - N(a).water)}`, `víz ${Math.round(c.water.d)} mezőre`]],
       plan: (c, a) => { const t = tileNear(c.world, c.water.i); return t == null ? null : { steps: [{ op: 'moveTo', i: t, poi: { k: 'water', i: c.water.i } }, { op: 'drink', i: c.water.i }] }; },
     },
     sleep: {
       applicable: (c, a) => N(a).energy < 0.7 || (c.night && N(a).energy < 0.9),
-      score: (c, a) => { let s = u(N(a).energy) * 1.3 * (c.night ? 1.7 : 0.5) + (N(a).energy < 0.1 ? 1.5 : 0); if (c.night && N(a).energy < 0.6) s += 0.4; if (E(a).grief > 0.3) s += 0.2; const f = [`fáradtság ${LW.pct(1 - N(a).energy)}`, c.night ? 'éjszaka' : 'nappal']; if (N(a).food < 0.12 && (c.foodInv || c.food || c.storeFood > 0)) { s *= 0.4; f.push('túl éhes az alváshoz'); } if (N(a).water < 0.12 && c.water) { s *= 0.3; f.push('túl szomjas az alváshoz'); } return [s, f]; },
+      score: (c, a) => { let s = u(N(a).energy) * 1.3 * (c.night ? 1.7 : 0.5) + (N(a).energy < 0.1 ? 1.5 : 0); if (c.night && N(a).energy < 0.6) s += 0.4; if (E(a).grief > 0.3) s += 0.2; const f = [`fáradtság ${LW.pct(1 - N(a).energy)}`, c.night ? 'éjszaka' : 'nappal']; if (N(a).food < 0.12 && (c.foodInv || c.food || c.storeFood > 0)) { s *= 0.4; f.push('túl éhes az alváshoz'); } else if (N(a).food < 0.3 && c.foodInv) { s *= 0.6; f.push('előbb eszik'); } if (N(a).water < 0.12 && c.water) { s *= 0.3; f.push('túl szomjas az alváshoz'); } else if (N(a).water < 0.42 && c.water && c.water.d < 12) { s *= 0.5; f.push('előbb iszik'); } return [s, f]; },
       plan: (c, a) => { const sh = c.shelter; if (sh && LW.dist(a.x, a.y, sh.x, sh.y) < 30) return { steps: [{ op: 'moveTo', i: c.world.idx(sh.x, sh.y) }, { op: 'sleep', bid: sh.id }], priority: 1 }; if (c.fire && LW.dist(a.x, a.y, c.fire.x, c.fire.y) < 20) return { steps: [{ op: 'moveTo', i: c.world.randomNear(c.fire.x, c.fire.y, 1) }, { op: 'sleep' }], priority: 1 }; return { steps: [{ op: 'sleep' }], priority: 1 }; },
     },
     getWarm: {
@@ -2555,7 +2569,7 @@
     socialize: {
       applicable: (c, a) => !c.infant && N(a).social < 0.85 && (c.nearby.length > 0 || N(a).social < 0.5),
       score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { if (A().stage(c.world, o) === 'infant' || o.sleeping) continue; const r = a.relationships.get(o.id); if (r && c.tick - r.last < 20) continue; const aff = r ? 0.3 + r.friendship * 0.7 + (r.status === 'family' ? 0.3 : 0) + (a.partner === o.id ? 0.4 : 0) - r.resentment : 0.35; const d = LW.dist(a.x, a.y, o.x, o.y); const s = u(N(a).social) * 0.95 * (0.5 + P(a).sociability) * Math.max(0.1, aff) * (1 - d / 25); if (s > best) { best = s; who = o; } } a._socialTarget = who; a._socialSeek = null;
-        if (!who && N(a).social < 0.5) { // senki sincs a közelben: elindul oda, ahol utoljára látott valakit, akit ismer
+        if (!who && N(a).social < 0.5 && N(a).water > 0.45 && N(a).food > 0.35) { // senki sincs a közelben: elindul oda, ahol utoljára látott valakit, akit ismer
           let seek = null, bs = 0; for (const [id, m] of a.memory.social) { if (m.lastTile < 0 || !c.world.agents.has(id) || c.tick - m.lastSeen > LW.TIME.TICKS_PER_DAY * 30) continue; const o = c.world.agents.get(id); const r = a.relationships.get(id); const aff = r ? 0.3 + r.friendship * 0.7 + (a.partner === id ? 0.5 : 0) - r.resentment : 0.3; const d = LW.dist(a.x, a.y, c.world.xOf(m.lastTile), c.world.yOf(m.lastTile)); if (d < 2 || d > 60) continue; const s = aff * (1 - d / 80); if (s > bs) { bs = s; seek = { id, tile: m.lastTile, name: o.name }; } }
           if (seek) { a._socialSeek = seek; return [u(N(a).social) * 0.8 * (0.5 + P(a).sociability) * Math.max(0.3, bs * 2) + E(a).loneliness * 0.3, [`magány ${LW.pct(1 - N(a).social)}`, `keresi: ${seek.name}`]]; }
         }
@@ -2610,7 +2624,7 @@
       plan: (c, a) => buildPlan(c, a, a._buildKind || 'lean_to'),
     },
     buildPublic: {
-      applicable: (c, a) => c.adult && !c.night && a.knowledge.techs.size >= 3,
+      applicable: (c, a) => c.adult && !c.night && a.knowledge.techs.size >= 3 && N(a).water > 0.45 && N(a).food > 0.4,
       score: (c, a) => { let best = 0, which = null; const DEFS = Bld().DEFS; for (const k in DEFS) { if (!DEFS[k].public) continue; const w = LW.Society.wants(c.world, a, k); if (w > best) { best = w; which = k; } } a._pubKind = which; if (!which) return [0, []]; return [best * (0.45 + P(a).ambition * 0.4 + P(a).discipline * 0.25) * (c.season === 3 ? 0.6 : 1), [`a közösségnek kellene: ${DEFS[which].label.toLowerCase()}`]]; },
       plan: (c, a) => a._pubKind ? buildPlan(c, a, a._pubKind) : null,
     },
@@ -2665,7 +2679,7 @@
       },
     },
     experiment: {
-      applicable: (c, a) => (c.adult || c.stage === 'adolescent') && N(a).food > 0.25 && N(a).water > 0.25 && N(a).energy > 0.2 && N(a).warmth > 0.12,
+      applicable: (c, a) => (c.adult || c.stage === 'adolescent') && N(a).food > 0.25 && (N(a).water > 0.3 || !c.water) && N(a).energy > 0.2 && N(a).warmth > 0.12,
       score: (c, a) => {
         const el = LW.Tech.eligible(c.world, a); if (!el.length) return [0, ['nincs mit kipróbálni']];
         let best = 0, which = null;
@@ -2693,7 +2707,7 @@
       plan: (c, a) => { const farm = a._farm; if (!farm) return buildPlan(c, a, 'farm_plot'); if (farm.progress < 1) return buildPlanFor(c, a, farm); if (!farm.planted) { const seeds = (a.inv.roots || 0) + (a.inv.berries || 0) >= 2 ? [] : acquireSteps(c.world, a, { berries: 2 }, c); if (!seeds) return null; return { steps: [...seeds, { op: 'moveTo', i: c.world.idx(farm.x, farm.y) }, { op: 'plant', bid: farm.id }], tag: 'farm:plant' }; } if (farm.crop >= 1) return { steps: [{ op: 'moveTo', i: c.world.idx(farm.x, farm.y) }, { op: 'harvest', bid: farm.id }], tag: 'farm:harvest' }; return null; },
     },
     explore: {
-      applicable: (c, a) => !c.infant && c.stage !== 'child',
+      applicable: (c, a) => !c.infant && c.stage !== 'child' && !(c.water && N(a).water < 0.4) && !(N(a).food < 0.3 && (c.food || c.foodInv)),
       score: (c, a) => { let s = P(a).curiosity * (1 - E(a).fear) * 0.55 + u(N(a).curiosity) * 0.45; const f = [`kíváncsiság ${LW.pct(P(a).curiosity)}`]; if (!c.water) { s += 1.0; f.push('nem ismer vizet'); } if (!c.food) { s += 0.8; f.push('nem ismer ételt'); } else if (c.food.d > 10) { s += 0.4; f.push('messze az étel'); } if (a.knowledge.places.size < 20) { s += 0.3; f.push('keveset ismer'); } if (c.night) s *= 0.25; if (N(a).warmth < 0.5) s *= 0.3; if (N(a).food < 0.3 || N(a).water < 0.3) s *= (c.water && c.food) ? 0.3 : 1.2; return [s, f]; },
       plan: (c, a) => { const t = exploreTarget(c.world, a); return t == null ? null : { steps: [{ op: 'moveTo', i: t, explore: true }], tag: 'explore:walk' }; },
     },
@@ -2881,7 +2895,7 @@
       if (a.needs.energy < 0.15) rate *= 0.5;
       st.acc += rate;
       while (st.acc >= 1 && st.got < st.n) {
-        if (field) { const have = t[field][i]; if (have < cost) { if (item === 'flint' && field === 'stone') break; break; } t[field][i] = have - cost; if (field === 'veg' || field === 'trees') { if ((have >> 5) !== ((have - cost) >> 5)) world.dirtyTiles.add(i); } if (field === 'depAmt' && t.depAmt[i] === 0) { t.depType[i] = 0; } }
+        if (field) { const have = t[field][i]; const floor = field === 'veg' ? 10 : 0; if (have < cost + floor) { break; } /* a bokrot nem szedik tövig: marad mag a jövőre */ t[field][i] = have - cost; if (field === 'veg' || field === 'trees') { if ((have >> 5) !== ((have - cost) >> 5)) world.dirtyTiles.add(i); } if (field === 'depAmt' && t.depAmt[i] === 0) { t.depType[i] = 0; } }
         st.acc -= 1;
         if (st.direct && LW.ITEMS[item].food) { a.needs.food = Math.min(1, a.needs.food + LW.ITEMS[item].food); if (LW.ITEMS[item].water) a.needs.water = Math.min(1, a.needs.water + LW.ITEMS[item].water); a.lastMeal = world.tick; st.got++; a.counters.gathered++; if (a.needs.food >= 0.95) { st.got = st.n; } A().practice(a, 'gathering', 1); continue; }
         let added = A().addItem(world, a, item, 1);
@@ -3560,7 +3574,7 @@
       if ((def.minPop || 1) > pop) return 0;
       for (const b of world.buildingsNear(a.x | 0, a.y | 0, 16)) if (b.kind === kind) return b.progress < 1 ? 0.9 : 0; // a félkész középületet be kell fejezni
       let want = 0.5;
-      if (def.want === 'food') want += (1 - a.needs.food) * 0.6; if (def.want === 'water') want += (LW.Agents.nearestPoi(world, a, 'water') ? (LW.Agents.nearestPoi(world, a, 'water').d > 8 ? 0.6 : 0.1) : 1); if (def.want === 'belief') want += a.beliefs.creator * 0.8; if (def.want === 'knowledge') want += a.personality.curiosity * 0.6 + a.personality.intelligence * 0.3; if (def.want === 'health') want += (1 - a.health) * 0.8;
+      if (def.want === 'food') want += (1 - a.needs.food) * 0.6; if (def.want === 'water') want += (LW.Agents.nearestPoi(world, a, 'water') ? (LW.Agents.nearestPoi(world, a, 'water').d > 8 ? 0.6 : 0.1) : 1); if (def.want === 'belief') want += a.beliefs.creator * 0.8; if (def.want === 'knowledge') want += a.personality.curiosity * 0.6 + a.personality.intelligence * 0.3; if (def.want === 'health') want += (1 - a.health) * 0.8; if (def.want === 'safety') { want += (1 - a.needs.safety) * 0.5 + a.emotions.fear * 0.5; const s2 = LW.Settlements.at(world, a.x, a.y); if (s2 && (s2.warWith || (s2.rivalry && Object.values(s2.rivalry).some((v) => v > 0.5)))) want += 0.6; }
       if (def.furnace || def.workshop || def.lab || def.factory || def.computer) want += a.personality.creativity * 0.5 + a.personality.ambition * 0.3;
       return want;
     },
@@ -3643,8 +3657,9 @@
     battle(w, a, b) {
       const rng = w.rng; if (!rng.chance(0.35)) return;
       const wa = this.warriors(w, a), wb = this.warriors(w, b);
-      const str = (list) => list.reduce((s, p) => s + p.personality.bravery + p.personality.aggression * 0.5 + LW.Tree.bestTool(p, 'hunt') * 0.6 + p.health, 0) * rng.range(0.7, 1.3);
-      const sa = str(wa), sb = str(wb); const win = sa >= sb ? a : b, lose = win === a ? b : a; const wl = win === a ? wb : wa, ww = win === a ? wa : wb;
+      const wallOf = (s) => { let best = 0; for (const x of w.buildingsNear(s.x | 0, s.y | 0, 12)) { const d = LW.Buildings.DEFS[x.kind]; if (x.progress >= 1 && d && d.wall > best) best = d.wall; } return best; };
+      const str = (list, s) => list.reduce((acc, p) => acc + p.personality.bravery + p.personality.aggression * 0.5 + LW.Tree.bestTool(p, 'hunt') * 0.6 + p.health, 0) * rng.range(0.7, 1.3) * (1 + wallOf(s) * 0.25); // a fal védi az otthon harcolókat
+      const sa = str(wa, a), sb = str(wb, b); const win = sa >= sb ? a : b, lose = win === a ? b : a; const wl = win === a ? wb : wa, ww = win === a ? wa : wb;
       for (const p of wl.slice(0, rng.int(1, 3))) { A().damage(w, p, rng.range(0.3, 0.95), `háború (${win.name})`); if (w.agents.has(p.id)) { p.emotions.fear = b01(p.emotions.fear + 0.4); A().memory(w, p, { type: 'war', text: `harcoltunk ${win.name} ellen, és vesztettünk`, importance: 0.7, emotion: 'fear', intensity: 0.7 }); } }
       for (const p of ww.slice(0, rng.int(0, 1))) A().damage(w, p, rng.range(0.2, 0.6), `háború (${lose.name})`);
       for (const p of ww) { if (!w.agents.has(p.id)) continue; p.emotions.pride = b01(p.emotions.pride + 0.15); for (const q of wl) { if (!w.agents.has(q.id)) continue; const r = LW.Relationships.ensure(w, q, p); r.resentment = b01(r.resentment + 0.2); r.fear = b01((r.fear || 0) + 0.15); } }

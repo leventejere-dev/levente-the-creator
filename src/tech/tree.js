@@ -20,7 +20,7 @@
     bow: { weight: 1, label: 'Íj', tool: true, slot: 'hunt', tier: 2 }, bronze_spear: { weight: 1.3, label: 'Bronzlándzsa', tool: true, slot: 'hunt', tier: 2 }, iron_spear: { weight: 1.4, label: 'Vaslándzsa', tool: true, slot: 'hunt', tier: 3 }, rifle: { weight: 3, label: 'Puska', tool: true, slot: 'hunt', tier: 5 },
     wooden_plow: { weight: 3, label: 'Faeke', tool: true, slot: 'plow', tier: 1 }, bronze_plow: { weight: 3, label: 'Bronzeke', tool: true, slot: 'plow', tier: 2 }, iron_plow: { weight: 3.5, label: 'Vaseke', tool: true, slot: 'plow', tier: 3 }, tractor: { weight: 10, label: 'Traktor', tool: true, slot: 'plow', tier: 6 },
     pickaxe: { weight: 2, label: 'Csákány', tool: true, slot: 'mine', tier: 2 }, iron_pickaxe: { weight: 2.2, label: 'Vascsákány', tool: true, slot: 'mine', tier: 3 }, drill: { weight: 4, label: 'Fúrógép', tool: true, slot: 'mine', tier: 5 },
-    wool_clothes: { weight: 1, label: 'Gyapjúruha', tool: true, warmth: 11, slot: 'clothes', tier: 2 }, coat: { weight: 1.2, label: 'Kabát', tool: true, warmth: 14, slot: 'clothes', tier: 3 },
+    wool_clothes: { weight: 1, label: 'Gyapjúruha', tool: true, warmth: 11, slot: 'clothes', tier: 2 }, boat: { weight: 0, label: 'Csónak', tool: true, slot: 'boat', tier: 1 }, car: { weight: 0, label: 'Gépkocsi', tool: true, slot: 'vehicle', tier: 1 }, coat: { weight: 1.2, label: 'Kabát', tool: true, warmth: 14, slot: 'clothes', tier: 3 },
   });
   I.clothes.slot = 'clothes'; I.clothes.tier = 1; I.handaxe.slot = 'axe'; I.handaxe.tier = 0.5; I.spear.slot = 'hunt'; I.spear.tier = 1;
   LW.DEPOSIT_ITEM[10] = 'oil';
@@ -69,6 +69,8 @@
     drill: { out: { drill: 1 }, inp: { steel: 2, machine_part: 2 }, ticks: 40, tech: 'machine_tools', nearby: 'factory', skill: 'crafting', tag: 'craft:tool' },
     chainsaw: { out: { chainsaw: 1 }, inp: { steel: 2, machine_part: 2, fuel: 1 }, ticks: 40, tech: 'internal_combustion', nearby: 'factory', skill: 'crafting', tag: 'craft:tool' },
     tractor: { out: { tractor: 1 }, inp: { steel: 6, machine_part: 6, fuel: 2 }, ticks: 120, tech: 'internal_combustion', nearby: 'factory', skill: 'crafting', tag: 'craft:tool' },
+    boat: { out: { boat: 1 }, inp: { wood: 8, fiber: 4 }, ticks: 80, tech: 'boatbuilding', skill: 'building', tag: 'craft:boat' },
+    car: { out: { car: 1 }, inp: { steel: 6, machine_part: 4, fuel: 2 }, ticks: 120, tech: 'automobile', nearby: 'factory', skill: 'crafting', tag: 'craft:tool' },
   });
 
   // ---------------------------------------------------------------- épületek
@@ -101,6 +103,10 @@
     hospital: pub({ label: 'Kórház', cost: { brick: 50, glass: 10, medicine: 10 }, ticks: 1400, hospital: 1, tech: 'modern_medicine', lifeDays: 20000, light: 0.8, minPop: 28, want: 'health', size: [2, 2] }),
     computer_center: pub({ label: 'Számítóközpont', cost: { concrete: 40, electric_part: 30, chip: 20 }, ticks: 2400, computer: 1, discovery: 0.6, records: 4, tech: 'computer', lifeDays: 20000, light: 1, minPop: 42, want: 'knowledge', size: [2, 2] }),
     data_center: pub({ label: 'Adatközpont', cost: { concrete: 60, chip: 80, electric_part: 40 }, ticks: 3000, computer: 2, records: 5, discovery: 0.8, teach: 1, tech: 'internet', lifeDays: 20000, light: 1, minPop: 70, want: 'knowledge', size: [3, 2] }),
+    palisade: pub({ label: 'Palánk', cost: { wood: 20, fiber: 4 }, ticks: 300, safety: 0.6, wall: 1, tech: 'fortification', lifeDays: 5000, minPop: 5, want: 'safety' }),
+    stone_wall: pub({ label: 'Kőfal', cost: { stone: 40, clay: 8 }, ticks: 700, safety: 0.8, wall: 2, tech: 'stone_walls', lifeDays: 30000, minPop: 10, want: 'safety', size: [2, 1] }),
+    castle: pub({ label: 'Vár', cost: { stone: 90, brick: 30, wood: 30, iron: 6 }, ticks: 2600, safety: 0.95, wall: 3, records: 1, storage: 200, tech: 'castles', lifeDays: 60000, light: 0.6, minPop: 20, want: 'safety', size: [3, 3] }),
+    harbor: pub({ label: 'Kikötő', cost: { wood: 30, stone: 10, cloth: 4 }, ticks: 600, harbor: 1, storage: 120, tech: 'sailing', lifeDays: 12000, minPop: 8, want: 'food', size: [2, 1] }),
     simulation_core: pub({ label: 'Világmag', cost: { chip: 200, concrete: 80, electric_part: 80 }, ticks: 5000, simulation: 1, tech: 'world_simulation', lifeDays: 1e6, light: 1.5, minPop: 105, want: 'knowledge', size: [3, 3] }),
   });
   B.lean_to.tier = 1; B.hut.tier = 2; B.stone_house.tier = 3;
@@ -138,6 +144,10 @@
   T('sailing', { name: 'Hajózás', era: 'bronze', prereq: ['carpentry', 'weaving', 'fishing'], items: { wood: 10, cloth: 2 }, nearby: 'water', difficulty: 0.9, skill: 'building', minSkill: 0.6, fx: { food: 0.1, speed: 0.05 }, wow: 'Az első hajó', desc: 'Vászon a szélben: a víz többé nem határ.' });
   T('calendar', { name: 'Naptár', era: 'bronze', prereq: ['counting', 'ritual'], items: {}, difficulty: 0.88, skill: 'farming', minSkill: 0.5, fx: { farm: 0.1 }, boosts: { astronomy: 0.1 }, desc: 'A csillagok járásából tudni, mikor kell vetni.' });
   T('tailoring', { name: 'Szabóság', era: 'bronze', prereq: ['weaving', 'hide_working', 'carpentry'], items: { cloth: 2, hide: 1 }, nearby: 'workshop', difficulty: 0.85, need: 'warmth', skill: 'crafting', minSkill: 0.6, recipes: ['coat'], fx: { warmth: 1 }, desc: 'Szabott, varrott kabát a tél ellen.' });
+  T('fortification', { name: 'Palánképítés', era: 'neolithic', prereq: ['hut_construction', 'tribal_council'], items: { wood: 10 }, difficulty: 0.86, need: 'safety', skill: 'building', minSkill: 0.5, minPop: 5, buildings: ['palisade'], wow: 'Az első palánk', desc: 'Hegyezett cölöpök a tábor körül: a vad és az idegen kint marad.' });
+  T('stone_walls', { name: 'Kőfalak', era: 'bronze', prereq: ['fortification', 'stone_masonry'], items: { stone: 16 }, difficulty: 0.9, need: 'safety', skill: 'building', minSkill: 0.65, minPop: 10, buildings: ['stone_wall'], wow: 'Az első kőfal', desc: 'Fal, amelyet tűz nem éget és kar nem dönt.' });
+  T('dyeing', { name: 'Kelmefestés', era: 'bronze', prereq: ['weaving', 'herbal_medicine'], items: { cloth: 2, berries: 4 }, difficulty: 0.84, skill: 'crafting', minSkill: 0.5, wow: 'Az első festett ruha', desc: 'Növényből és földből szín: a ruha többé nem csak melegít, hanem beszél is arról, ki viseli.' });
+  T('boatbuilding', { name: 'Csónaképítés', era: 'neolithic', prereq: ['woodworking', 'fishing'], items: { wood: 8, fiber: 4 }, nearby: 'water', difficulty: 0.84, need: 'food', skill: 'building', minSkill: 0.45, recipes: ['boat'], fx: { food: 0.1 }, wow: 'Az első csónak', desc: 'Kivájt törzs a vízen: a hal ott is elérhető, ahová a part nem ér.' });
   // — vaskor
   T('iron_smelting', { name: 'Vasolvasztás', era: 'iron', prereq: ['charcoal_making', 'kiln_building', 'ore_lore_iron'], boosts: { bronze_alloy: 0.15, copper_smelting: 0.1 }, items: { ore_iron: 3, charcoal: 3 }, nearby: 'kiln', difficulty: 0.95, skill: 'crafting', minSkill: 0.7, minPop: 8, recipes: ['iron'], wow: 'Az első vas', desc: 'A vörös kő makacsabb a réznél, de a fémje keményebb.' });
   T('iron_working', { name: 'Kovácsolás', era: 'iron', prereq: ['iron_smelting', 'carpentry'], items: { iron: 3, wood: 4 }, difficulty: 0.92, skill: 'crafting', minSkill: 0.7, minPop: 8, buildings: ['forge'], recipes: ['iron_axe', 'iron_spear', 'iron_pickaxe', 'iron_plow'], fx: { wood: 0.3, hunt: 0.2, farm: 0.2, mine: 0.3, build: 0.15 }, wow: 'Az első kovács', desc: 'Izzó vas az üllőn: minden szerszám újjászületik.' });
@@ -156,6 +166,7 @@
   T('astronomy', { name: 'Csillagászat', era: 'classical', prereq: ['calendar', 'mathematics'], items: {}, difficulty: 0.92, skill: 'exploring', minSkill: 0.5, minPop: 12, fx: { speed: 0.05 }, boosts: { navigation: 0.15, scientific_method: 0.1 }, desc: 'Az égbolt rendje: a világ nagyobb, mint amit a szem lát.' });
   T('steel_making', { name: 'Acélgyártás', era: 'classical', prereq: ['iron_working', 'ore_lore_coal'], items: { iron: 3, coal: 2 }, nearby: 'forge', difficulty: 0.94, skill: 'crafting', minSkill: 0.75, minPop: 15, recipes: ['steel', 'steel_axe'], fx: { wood: 0.2, build: 0.1, mine: 0.2 }, wow: 'Az első acél', desc: 'Szénnel edzett vas: rugalmas és kemény egyszerre.' });
   T('mechanics', { name: 'Gépezetek', era: 'classical', prereq: ['milling', 'mathematics', 'iron_working'], items: { iron: 2, wood: 4 }, nearby: 'workshop', difficulty: 0.93, skill: 'crafting', minSkill: 0.7, minPop: 15, recipes: ['machine_part'], fx: { craft: 0.2, build: 0.1 }, wow: 'Az első gép', desc: 'Fogaskerék, csiga, emelő: az erő megsokszorozható.' });
+  T('castles', { name: 'Várépítés', era: 'medieval', prereq: ['stone_walls', 'architecture', 'law_code'], items: { stone: 30, brick: 10 }, difficulty: 0.93, need: 'safety', skill: 'building', minSkill: 0.75, minPop: 20, buildings: ['castle'], wow: 'Az első vár', desc: 'Tornyok, kapu, falak: a hatalom kőbe zárva.' });
   // — középkor
   T('paper_making', { name: 'Papírkészítés', era: 'medieval', prereq: ['weaving', 'writing', 'carpentry'], items: { fiber: 6, wood: 2 }, nearby: 'workshop', difficulty: 0.9, skill: 'crafting', minSkill: 0.65, minPop: 12, recipes: ['paper'], buildings: ['library'], fx: { teach: 0.2 }, wow: 'Az első papír', desc: 'Rostból préselt vékony lap: könnyű, olcsó, tele lehet írni.' });
   T('crop_rotation', { name: 'Vetésforgó', era: 'medieval', prereq: ['plowing', 'writing'], items: {}, difficulty: 0.88, need: 'food', skill: 'farming', minSkill: 0.65, minPop: 10, fx: { farm: 0.3 }, desc: 'A föld pihen, ha váltogatják, mit vetnek belé.' });
@@ -184,6 +195,7 @@
   T('telegraph', { name: 'Távíró', era: 'industrial', prereq: ['electricity', 'alphabet'], items: { electric_part: 2, copper: 4 }, nearby: 'workshop', difficulty: 0.94, skill: 'crafting', minSkill: 0.8, minPop: 28, fx: { teach: 0.3 }, wow: 'Az első üzenet a dróton', desc: 'Szavak, amelyek gyorsabbak a lónál.' });
   T('oil_drilling', { name: 'Olajfúrás', era: 'industrial', prereq: ['machine_tools', 'steam_engine'], items: { steel: 4, machine_part: 2 }, difficulty: 0.94, skill: 'gathering', minSkill: 0.7, minPop: 28, fx: { mine: 0.2 }, wow: 'Az első olajkút', desc: 'Fekete, égő folyadék a mélyből.' });
   T('oil_refining', { name: 'Olajfinomítás', era: 'industrial', prereq: ['oil_drilling', 'chemistry'], items: { oil: 3 }, nearby: 'factory', difficulty: 0.95, skill: 'crafting', minSkill: 0.8, minPop: 31, recipes: ['fuel'], desc: 'A nyersolajból üzemanyag válik el.' });
+  T('automobile', { name: 'Gépkocsi', era: 'modern', prereq: ['internal_combustion', 'road_building', 'steel_making'], items: { steel: 6, machine_part: 4, fuel: 2 }, nearby: 'factory', difficulty: 0.96, skill: 'crafting', minSkill: 0.85, minPop: 35, recipes: ['car'], fx: { speed: 0.5 }, wow: 'Az első gépkocsi', desc: 'Négy kerék és egy motor: a távolság elveszti a jelentését.' });
   // — modern kor
   T('electrification', { name: 'Villamosítás', era: 'modern', prereq: ['electricity', 'factory_system', 'concrete'], items: { electric_part: 6, steel: 4, concrete: 6 }, nearby: 'factory', difficulty: 0.96, skill: 'building', minSkill: 0.85, minPop: 35, buildings: ['power_plant', 'modern_house'], fx: { craft: 0.4, warmth: 3, discovery: 0.2 }, wow: 'Az első villanyfény az éjszakában', desc: 'Erőmű, vezeték, izzó: az éjszaka véget ér.' });
   T('internal_combustion', { name: 'Belső égésű motor', era: 'modern', prereq: ['oil_refining', 'machine_tools'], items: { steel: 4, machine_part: 4, fuel: 2 }, nearby: 'factory', difficulty: 0.96, skill: 'crafting', minSkill: 0.85, minPop: 35, recipes: ['chainsaw', 'tractor'], fx: { speed: 0.4, farm: 0.4, wood: 0.4 }, wow: 'Az első motor', desc: 'Robbanások sora egy fémdobozban: erő, ami magával vihető.' });
@@ -218,7 +230,7 @@
       if (a._fx && a._fxTick === (world.tick / TPD | 0) && a._fxN === a.knowledge.techs.size) return a._fx;
       const f = {}; for (const k of FX_KEYS) f[k] = 0;
       for (const id of a.knowledge.techs) { const d = D[id]; if (d && d.fx) for (const k in d.fx) f[k] = (f[k] || 0) + d.fx[k]; }
-      f.wood += this.bestTool(a, 'axe') * 0.25; f.hunt += this.bestTool(a, 'hunt') * 0.25; f.farm += this.bestTool(a, 'plow') * 0.25; f.mine += this.bestTool(a, 'mine') * 0.3; f.stone += this.bestTool(a, 'mine') * 0.2;
+      f.wood += this.bestTool(a, 'axe') * 0.25; f.hunt += this.bestTool(a, 'hunt') * 0.25; f.farm += this.bestTool(a, 'plow') * 0.25; f.mine += this.bestTool(a, 'mine') * 0.3; f.stone += this.bestTool(a, 'mine') * 0.2; f.food += this.bestTool(a, 'boat') * 0.15; f.speed += this.bestTool(a, 'vehicle') * 0.5;
       a._fx = f; a._fxTick = world.tick / TPD | 0; a._fxN = a.knowledge.techs.size; return f;
     },
     mult(world, a, key) { return 1 + (this.fx(world, a)[key] || 0); },

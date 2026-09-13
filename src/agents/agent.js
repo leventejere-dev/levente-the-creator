@@ -141,8 +141,10 @@
       if (a.avoid && a.avoid[key] > world.tick) return;
       a.knowledge.places.set(key, { k: kind, i: idx, q, t: world.tick });
       const cap = world.cfg.agents.poiCap;
-      if (a.knowledge.places.size > cap * 1.3) { // batch eviction of the least recently seen (water is never forgotten)
-        const entries = [...a.knowledge.places.entries()].filter(([, v]) => v.k !== 'water' && v.k !== 'deposit').sort((x, y) => x[1].t - y[1].t); // a vizet és a lelőhelyeket nem felejti el
+      // a víz és a lelőhely nem felejtődik el az idő múlásával, de csak a legközelebbi néhány tucat marad meg — különben a partvidék kiszorítaná az ételt a fejéből
+      if (kind === 'water' || kind === 'deposit') { const capK = 36; let n = 0; for (const v of a.knowledge.places.values()) if (v.k === kind) n++; if (n > capK) { const same = []; for (const v of a.knowledge.places.values()) if (v.k === kind) same.push(v); same.sort((p, q) => LW.dist(a.x, a.y, world.xOf(q.i), world.yOf(q.i)) - LW.dist(a.x, a.y, world.xOf(p.i), world.yOf(p.i))); for (let k = 0; k < n - capK; k++) a.knowledge.places.delete(this.poiKey(kind, same[k].i)); } }
+      if (a.knowledge.places.size > cap * 1.3) { // a többiből a régen látottak felejtődnek el
+        const entries = [...a.knowledge.places.entries()].filter(([, v]) => v.k !== 'water' && v.k !== 'deposit').sort((x, y) => x[1].t - y[1].t);
         const drop = a.knowledge.places.size - cap; for (let k = 0; k < drop && k < entries.length; k++) a.knowledge.places.delete(entries[k][0]);
       }
     },

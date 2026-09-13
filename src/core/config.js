@@ -33,7 +33,7 @@
       emotionalCap: 12,
       poiCap: 200,
       carryCapacity: 12,
-      needDrainPerDay: { food: 0.75, water: 0.8, energy: 1.2, social: 0.55, affection: 0.12, curiosity: 0.2 },
+      needDrainPerDay: { food: 0.75, water: 0.8, energy: 1.2, social: 0.45, affection: 0.12, curiosity: 0.2 },
       starvationHealthPerDay: 0.06,
       dehydrationHealthPerDay: 0.2,
       hypothermiaHealthPerDay: 0.08,

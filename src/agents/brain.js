@@ -93,12 +93,12 @@
     },
     drink: {
       applicable: (c, a) => !c.infant && N(a).water < 0.75 && !!c.water,
-      score: (c, a) => [u(N(a).water) * 1.9 + (c.water.d < 3 ? 0.15 : 0), [`szomj ${LW.pct(1 - N(a).water)}`, `víz ${Math.round(c.water.d)} mezőre`]],
+      score: (c, a) => [u(N(a).water) * 2.4 + (N(a).water < 0.4 ? 0.5 : 0) + (c.water.d < 6 ? 0.2 : 0), [`szomj ${LW.pct(1 - N(a).water)}`, `víz ${Math.round(c.water.d)} mezőre`]],
       plan: (c, a) => { const t = tileNear(c.world, c.water.i); return t == null ? null : { steps: [{ op: 'moveTo', i: t, poi: { k: 'water', i: c.water.i } }, { op: 'drink', i: c.water.i }] }; },
     },
     sleep: {
       applicable: (c, a) => N(a).energy < 0.7 || (c.night && N(a).energy < 0.9),
-      score: (c, a) => { let s = u(N(a).energy) * 1.3 * (c.night ? 1.7 : 0.5) + (N(a).energy < 0.1 ? 1.5 : 0); if (c.night && N(a).energy < 0.6) s += 0.4; if (E(a).grief > 0.3) s += 0.2; const f = [`fáradtság ${LW.pct(1 - N(a).energy)}`, c.night ? 'éjszaka' : 'nappal']; if (N(a).food < 0.12 && (c.foodInv || c.food || c.storeFood > 0)) { s *= 0.4; f.push('túl éhes az alváshoz'); } if (N(a).water < 0.12 && c.water) { s *= 0.3; f.push('túl szomjas az alváshoz'); } return [s, f]; },
+      score: (c, a) => { let s = u(N(a).energy) * 1.3 * (c.night ? 1.7 : 0.5) + (N(a).energy < 0.1 ? 1.5 : 0); if (c.night && N(a).energy < 0.6) s += 0.4; if (E(a).grief > 0.3) s += 0.2; const f = [`fáradtság ${LW.pct(1 - N(a).energy)}`, c.night ? 'éjszaka' : 'nappal']; if (N(a).food < 0.12 && (c.foodInv || c.food || c.storeFood > 0)) { s *= 0.4; f.push('túl éhes az alváshoz'); } else if (N(a).food < 0.3 && c.foodInv) { s *= 0.6; f.push('előbb eszik'); } if (N(a).water < 0.12 && c.water) { s *= 0.3; f.push('túl szomjas az alváshoz'); } else if (N(a).water < 0.42 && c.water && c.water.d < 12) { s *= 0.5; f.push('előbb iszik'); } return [s, f]; },
       plan: (c, a) => { const sh = c.shelter; if (sh && LW.dist(a.x, a.y, sh.x, sh.y) < 30) return { steps: [{ op: 'moveTo', i: c.world.idx(sh.x, sh.y) }, { op: 'sleep', bid: sh.id }], priority: 1 }; if (c.fire && LW.dist(a.x, a.y, c.fire.x, c.fire.y) < 20) return { steps: [{ op: 'moveTo', i: c.world.randomNear(c.fire.x, c.fire.y, 1) }, { op: 'sleep' }], priority: 1 }; return { steps: [{ op: 'sleep' }], priority: 1 }; },
     },
     getWarm: {
@@ -138,7 +138,7 @@
     socialize: {
       applicable: (c, a) => !c.infant && N(a).social < 0.85 && (c.nearby.length > 0 || N(a).social < 0.5),
       score: (c, a) => { let best = 0, who = null; for (const o of c.nearby) { if (A().stage(c.world, o) === 'infant' || o.sleeping) continue; const r = a.relationships.get(o.id); if (r && c.tick - r.last < 20) continue; const aff = r ? 0.3 + r.friendship * 0.7 + (r.status === 'family' ? 0.3 : 0) + (a.partner === o.id ? 0.4 : 0) - r.resentment : 0.35; const d = LW.dist(a.x, a.y, o.x, o.y); const s = u(N(a).social) * 0.95 * (0.5 + P(a).sociability) * Math.max(0.1, aff) * (1 - d / 25); if (s > best) { best = s; who = o; } } a._socialTarget = who; a._socialSeek = null;
-        if (!who && N(a).social < 0.5) { // senki sincs a közelben: elindul oda, ahol utoljára látott valakit, akit ismer
+        if (!who && N(a).social < 0.5 && N(a).water > 0.45 && N(a).food > 0.35) { // senki sincs a közelben: elindul oda, ahol utoljára látott valakit, akit ismer
           let seek = null, bs = 0; for (const [id, m] of a.memory.social) { if (m.lastTile < 0 || !c.world.agents.has(id) || c.tick - m.lastSeen > LW.TIME.TICKS_PER_DAY * 30) continue; const o = c.world.agents.get(id); const r = a.relationships.get(id); const aff = r ? 0.3 + r.friendship * 0.7 + (a.partner === id ? 0.5 : 0) - r.resentment : 0.3; const d = LW.dist(a.x, a.y, c.world.xOf(m.lastTile), c.world.yOf(m.lastTile)); if (d < 2 || d > 60) continue; const s = aff * (1 - d / 80); if (s > bs) { bs = s; seek = { id, tile: m.lastTile, name: o.name }; } }
           if (seek) { a._socialSeek = seek; return [u(N(a).social) * 0.8 * (0.5 + P(a).sociability) * Math.max(0.3, bs * 2) + E(a).loneliness * 0.3, [`magány ${LW.pct(1 - N(a).social)}`, `keresi: ${seek.name}`]]; }
         }
@@ -193,7 +193,7 @@
       plan: (c, a) => buildPlan(c, a, a._buildKind || 'lean_to'),
     },
     buildPublic: {
-      applicable: (c, a) => c.adult && !c.night && a.knowledge.techs.size >= 3,
+      applicable: (c, a) => c.adult && !c.night && a.knowledge.techs.size >= 3 && N(a).water > 0.45 && N(a).food > 0.4,
       score: (c, a) => { let best = 0, which = null; const DEFS = Bld().DEFS; for (const k in DEFS) { if (!DEFS[k].public) continue; const w = LW.Society.wants(c.world, a, k); if (w > best) { best = w; which = k; } } a._pubKind = which; if (!which) return [0, []]; return [best * (0.45 + P(a).ambition * 0.4 + P(a).discipline * 0.25) * (c.season === 3 ? 0.6 : 1), [`a közösségnek kellene: ${DEFS[which].label.toLowerCase()}`]]; },
       plan: (c, a) => a._pubKind ? buildPlan(c, a, a._pubKind) : null,
     },
@@ -248,7 +248,7 @@
       },
     },
     experiment: {
-      applicable: (c, a) => (c.adult || c.stage === 'adolescent') && N(a).food > 0.25 && N(a).water > 0.25 && N(a).energy > 0.2 && N(a).warmth > 0.12,
+      applicable: (c, a) => (c.adult || c.stage === 'adolescent') && N(a).food > 0.25 && (N(a).water > 0.3 || !c.water) && N(a).energy > 0.2 && N(a).warmth > 0.12,
       score: (c, a) => {
         const el = LW.Tech.eligible(c.world, a); if (!el.length) return [0, ['nincs mit kipróbálni']];
         let best = 0, which = null;
@@ -276,7 +276,7 @@
       plan: (c, a) => { const farm = a._farm; if (!farm) return buildPlan(c, a, 'farm_plot'); if (farm.progress < 1) return buildPlanFor(c, a, farm); if (!farm.planted) { const seeds = (a.inv.roots || 0) + (a.inv.berries || 0) >= 2 ? [] : acquireSteps(c.world, a, { berries: 2 }, c); if (!seeds) return null; return { steps: [...seeds, { op: 'moveTo', i: c.world.idx(farm.x, farm.y) }, { op: 'plant', bid: farm.id }], tag: 'farm:plant' }; } if (farm.crop >= 1) return { steps: [{ op: 'moveTo', i: c.world.idx(farm.x, farm.y) }, { op: 'harvest', bid: farm.id }], tag: 'farm:harvest' }; return null; },
     },
     explore: {
-      applicable: (c, a) => !c.infant && c.stage !== 'child',
+      applicable: (c, a) => !c.infant && c.stage !== 'child' && !(c.water && N(a).water < 0.4) && !(N(a).food < 0.3 && (c.food || c.foodInv)),
       score: (c, a) => { let s = P(a).curiosity * (1 - E(a).fear) * 0.55 + u(N(a).curiosity) * 0.45; const f = [`kíváncsiság ${LW.pct(P(a).curiosity)}`]; if (!c.water) { s += 1.0; f.push('nem ismer vizet'); } if (!c.food) { s += 0.8; f.push('nem ismer ételt'); } else if (c.food.d > 10) { s += 0.4; f.push('messze az étel'); } if (a.knowledge.places.size < 20) { s += 0.3; f.push('keveset ismer'); } if (c.night) s *= 0.25; if (N(a).warmth < 0.5) s *= 0.3; if (N(a).food < 0.3 || N(a).water < 0.3) s *= (c.water && c.food) ? 0.3 : 1.2; return [s, f]; },
       plan: (c, a) => { const t = exploreTarget(c.world, a); return t == null ? null : { steps: [{ op: 'moveTo', i: t, explore: true }], tag: 'explore:walk' }; },
     },

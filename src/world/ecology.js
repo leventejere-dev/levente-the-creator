@@ -46,8 +46,8 @@
         const cap = t.vegCap[i] * seasonVeg * (0.45 + 0.55 * t.moist[i] / 255);
         if (cap > 0) {
           let v = t.veg[i];
-          if (v < 3) { if (rng.chance(0.25 * seasonVeg)) v += 1; }
-          else v += cfg.vegRegrowth * v * (1 - v / Math.max(1, cap));
+          // logisztikus növekedés + a szomszédos földek magjai: a lelegelt föld is újraéled (nem ragad nullán)
+          v += cfg.vegRegrowth * v * (1 - v / Math.max(1, cap)) + (v < cap ? 0.7 * seasonVeg : 0);
           if (v > cap) v -= (v - cap) * 0.15;
           t.veg[i] = LW.clamp(Math.round(v), 0, 255);
         }

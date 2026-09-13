@@ -29,7 +29,7 @@
     const c = canvas(sleeping ? Math.max(cw, H + 4) : cw, sleeping ? 12 : ch); const g = c.getContext('2d');
     const fill = (col, x, y, w, hh) => { g.fillStyle = typeof col === 'string' ? col : rgb(col); g.fillRect(x, y, w, hh); };
     const skinD = mul(skin, 0.78), hairD = mul(hair, 0.7), hairL = mul(hair, 1.25);
-    const K = a.knowledge && a.knowledge.techs; const dyed = K && K.has('weaving'); const modern = K && K.has('electrification');
+    const K = a.knowledge && a.knowledge.techs; const dyed = K && K.has('dyeing'); const modern = K && K.has('electrification');
     const clothCol = !clothed ? (f ? [120, 82, 48] : [100, 68, 40]) : modern ? [[70, 110, 190], [190, 70, 70], [60, 150, 110], [230, 200, 80], [120, 90, 170], [40, 40, 50], [220, 220, 220]][h % 7] : dyed ? [[150, 108, 62], [90, 110, 150], [150, 70, 60], [96, 130, 70], [170, 140, 70], [110, 80, 120]][h % 6] : [[150, 108, 62], [120, 96, 70], [96, 110, 70], [140, 84, 60], [110, 100, 90]][h % 5];
     const clothD = mul(clothCol, 0.75);
     if (sleeping) {
@@ -96,7 +96,7 @@
     PX,
     /** Ember-sprite (vászon) életszakasz/képkocka/irány szerint; gyorsítótárazva. */
     agent(a, stage, frame, facing, sleeping) {
-      const key = `${a.id}|${a.palette.skin}|${a.palette.hair}|${stage}|${frame}|${facing}|${sleeping ? 1 : 0}|${a.inv.clothes ? 1 : 0}|${a.inv.spear ? 1 : 0}|${a.inv.basket ? 1 : 0}|${a.inv.handaxe ? 1 : 0}|${a.knowledge && a.knowledge.techs.has('weaving') ? 1 : 0}${a.knowledge && a.knowledge.techs.has('electrification') ? 1 : 0}`;
+      const key = `${a.id}|${a.palette.skin}|${a.palette.hair}|${stage}|${frame}|${facing}|${sleeping ? 1 : 0}|${a.inv.clothes ? 1 : 0}|${a.inv.spear ? 1 : 0}|${a.inv.basket ? 1 : 0}|${a.inv.handaxe ? 1 : 0}|${a.knowledge && a.knowledge.techs.has('dyeing') ? 1 : 0}${a.knowledge && a.knowledge.techs.has('electrification') ? 1 : 0}`;
       let c = cache.get(key); if (c) return c;
       c = drawPerson(a, stage, frame, facing, sleeping); cache.set(key, c); if (cache.size > 4000) cache.clear(); return c;
     },
@@ -222,6 +222,7 @@
     printing_house: { wall: '#8a7a5a', roof: '#4a3a2a', door: '#2a1a10', sign: '#2a2a2a' }, lab: { wall: '#e8e8e4', roof: '#7a8a9a', windows: '#a0d0ff', flat: true }, factory: { wall: '#8a4a3a', roof: '#4a4a4a', chimney: 2, smoke: true, windows: '#c0c0c0' },
     power_plant: { wall: '#9a9a96', roof: '#5a5a5a', chimney: 3, smoke: true, glow: true, bolt: true }, hospital: { wall: '#f0f0ec', roof: '#c8d8e8', windows: '#a0d0ff', cross: true, flat: true }, computer_center: { wall: '#2a3a5a', roof: '#1a2438', lights: true, flat: true },
     data_center: { wall: '#1a2434', roof: '#101820', lights: true, flat: true }, simulation_core: { special: 'core' },
+    palisade: { special: 'palisade' }, stone_wall: { special: 'stonewall' }, castle: { wall: '#8a8a86', roof: '#5a5a5a', flat: true, towers: true, door: '#2a1a10' }, harbor: { special: 'harbor' },
   };
   function generic(ctx, b, def, px, py, tick, night) {
     const W = (b.w || 1) * PX, H = (b.h || 1) * PX; const st = STYLE[b.kind] || { wall: '#8a7a5a', roof: '#5a4a3a', door: '#2a1a10' }; const done = b.progress >= 1;
@@ -236,6 +237,9 @@
     else if (st.special === 'market') { s('#8a6a44', 1, 8, W - 2, 7); for (const [x, c] of [[1, '#d75a4a'], [6, '#e0b15a'], [11, '#5ac8b8']]) { s(c, x, 3, 4, 3); s('#5a3a20', x, 6, 1, 8); s('#5a3a20', x + 3, 6, 1, 8); } s('#c8405a', 2, 9, 2, 2); s('#d4b04a', 7, 9, 2, 2); s('#8a5a2a', 12, 9, 2, 2); }
     else if (st.special === 'mill') { s('#8a6a44', 4, 6, 8, 9); s('#5a4a30', 3, 4, 10, 3); s('#3a2a1a', 7, 11, 2, 4); const cx = 8, cy = 5; ctx.strokeStyle = '#c9a86a'; ctx.lineWidth = 1; ctx.beginPath(); for (let k = 0; k < 4; k++) { const ang = (k * Math.PI / 2) + (done ? f * 0.4 : 0); ctx.moveTo(px + cx, py + cy); ctx.lineTo(px + cx + Math.cos(ang) * 7, py + cy + Math.sin(ang) * 7); } ctx.stroke(); }
     else if (st.special === 'irrigation') { s('#3a6a9a', 0, 6, W, 4); s('#5a8ac0', 0, 7, W, 2); s('#7a6a4a', 0, 5, W, 1); s('#7a6a4a', 0, 10, W, 1); s('#3a6a9a', 6, 0, 4, 16); s('#5a8ac0', 7, 0, 2, 16); }
+    else if (st.special === 'palisade') { for (let x = 1; x < W - 1; x += 3) { s('#7a5a34', x, 2, 2, 12); s('#9a7a4a', x, 1, 2, 2); s('#5a3c22', x, 12, 2, 2); } s('#5a3c22', 1, 6, W - 2, 1); }
+    else if (st.special === 'stonewall') { s('#7a7a76', 0, 3, W, H - 5); s('#9a9a96', 1, 4, W - 2, 3); for (let x = 0; x < W; x += 4) { s('#8a8a86', x, 1, 3, 3); s('#5a5a56', x + 1, 8 + ((x >> 2) & 1) * 2, 2, 1); } }
+    else if (st.special === 'harbor') { s('#3a6a9a', 0, H - 6, W, 6); s('#5a8ac0', 2, H - 5, W - 4, 1); s('#7a5a34', 1, 4, W - 2, 3); s('#5a3c22', 2, 7, 2, 6); s('#5a3c22', W - 4, 7, 2, 6); s('#6a4a2c', W - 12, 8, 8, 3); s('#e8e0d0', W - 8, 1, 1, 8); s('#e8e0d0', W - 12, 2, 4, 4); }
     else if (st.special === 'core') { s('#0a0c14', 4, 4, W - 8, H - 8); s('#141a2a', 6, 6, W - 12, H - 12); const cx = W / 2, cy = H / 2; for (let r = 4; r < W / 2 - 4; r += 6) { ctx.strokeStyle = `rgba(90,200,255,${0.35 + ((f + r) % 3) * 0.2})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(px + cx, py + cy, r, 0, Math.PI * 2); ctx.stroke(); } s(['#9af0ff', '#5ac8ff', '#ffffff', '#5ac8ff'][f], cx - 2, cy - 2, 4, 4); }
     else {
       const wall = st.wall, roof = st.roof; const rh = st.flat ? 3 : Math.max(5, Math.round(H * 0.32));
@@ -250,6 +254,7 @@
       if (st.glow && done) s(['rgba(255,150,60,0.5)', 'rgba(255,190,90,0.6)', 'rgba(255,120,40,0.5)', 'rgba(255,170,70,0.6)'][f], Math.round(W / 2) - 1, H - 6, 3, 3);
       if (st.bolt) { s('#ffd24a', Math.round(W / 2) + 4, rh + 2, 2, 3); s('#ffd24a', Math.round(W / 2) + 3, rh + 5, 2, 3); }
       if (st.cross) { s('#d75a4a', Math.round(W / 2) - 1, rh + 2, 3, 1); s('#d75a4a', Math.round(W / 2), rh + 1, 1, 3); }
+      if (st.towers) { for (const [tx, ty] of [[1, 1], [W - 7, 1], [1, H - 9], [W - 7, H - 9]]) { s('#6a6a66', tx, ty, 6, 8); s('#9a9a96', tx + 1, ty + 1, 4, 6); s('#5a5a56', tx, ty, 2, 2); s('#5a5a56', tx + 4, ty, 2, 2); } s('#c8102e', Math.round(W / 2), 0, 1, 5); s('#c8102e', Math.round(W / 2) + 1, 0, 3, 2); }
       if (st.lights && done) { for (let x = 3; x < W - 3; x += 3) for (let y = rh + 2; y < H - 4; y += 3) if (((x * 7 + y * 13 + (tick >> 1)) & 7) < 3) s(((x + y) & 1) ? '#5ac8ff' : '#7fbf6a', x, y, 1, 1); }
     }
     if (!done) { s('rgba(255,255,255,0.35)', 0, 0, W, Math.round(H * (1 - b.progress))); s('#9a7a4a', 2, 2, 1, H - 4); s('#9a7a4a', W - 3, 2, 1, H - 4); }

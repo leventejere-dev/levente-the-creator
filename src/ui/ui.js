@@ -378,7 +378,8 @@
     }
     showCatchup(progress, label) {
       let m = $('#modal'); if (!m.querySelector('#cu-bar')) { const el = h('div'); el.appendChild(h('h1', null, 'Üdv újra, Teremtő', h('small', null, 'a világ nem várt rád'))); el.appendChild(h('p', { id: 'cu-label' }, label)); el.appendChild(h('div', { class: 'progress' }, h('div', { id: 'cu-bar' }))); this.modal(el); }
-      $('#cu-label').textContent = label; $('#cu-bar').style.width = Math.round(progress * 100) + '%';
+      if (!progress || progress < 0.001) this._cuStart = performance.now(); const el = (performance.now() - (this._cuStart || performance.now())) / 1000; const eta = progress > 0.03 ? Math.round(el / progress * (1 - progress)) : null;
+      $('#cu-label').textContent = label + (eta != null ? ` (kb. ${eta >= 60 ? Math.round(eta / 60) + ' perc' : eta + ' mp'} van hátra)` : ''); $('#cu-bar').style.width = Math.round(progress * 100) + '%';
     }
     showWelcomeReport(rep) {
       if (!rep || rep.skipped) { this.closeModal(); return; }

@@ -97,7 +97,7 @@
       const total = macroDays * T.TICKS_PER_DAY + detailTicks; let doneTicks = 0; let dayI = 0;
       const startTick = w.tick;
       const schedule = (fn) => (typeof setTimeout === 'function' ? setTimeout(fn, 0) : fn());
-      const finish = () => { meta.lastRealTimeMs = nowMs; report.after = w.history.snapshotStats(); report.chronicle = w.history.chronicle.slice(report.chronicleStart); report.firsts = Object.entries(w.history.firsts).filter(([, f]) => f.tick > startTick); report.beliefAfter = LW.mean([...w.agents.values()].map((a) => a.beliefs.creator)); report.worldTicks = w.tick - startTick; if (cb && cb.done) cb.done(report); };
+      const finish = () => { meta.lastRealTimeMs = Date.now(); /* a felzárkózás saját ideje nem tartozás — különben végtelen hurok */ report.after = w.history.snapshotStats(); report.chronicle = w.history.chronicle.slice(report.chronicleStart); report.firsts = Object.entries(w.history.firsts).filter(([, f]) => f.tick > startTick); report.beliefAfter = LW.mean([...w.agents.values()].map((a) => a.beliefs.creator)); report.worldTicks = w.tick - startTick; if (cb && cb.done) cb.done(report); };
       const stepMacro = () => {
         const n = Math.min(cfg.chunkDays, macroDays - dayI);
         for (let k = 0; k < n; k++) { LW.Macro.day(w); dayI++; doneTicks += T.TICKS_PER_DAY; }

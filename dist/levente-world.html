@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LEVENTE — THE CREATOR</title>
-<meta name="description" content="Önálló, folyamatosan élő, magától fejlődő digitális civilizáció. Build: 2026-09-14 13:05.">
+<meta name="description" content="Önálló, folyamatosan élő, magától fejlődő digitális civilizáció. Build: 2026-09-14 13:34.">
 <style>
 :root {
   --bg: #07080c; --panel: rgba(12, 14, 20, 0.86); --panel2: rgba(20, 23, 32, 0.9); --line: rgba(255, 255, 255, 0.08);
@@ -6809,15 +6809,32 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
   const q = new URLSearchParams(location.search);
   const $ = (s) => document.querySelector(s);
 
-  /** localStorage with optional gzip (CompressionStream) — saves are 'GZ:' + base64 when compressed, raw JSON otherwise. */
+  /** A nagy mentések helye: IndexedDB (több száz MB is elfér); a localStorage csak a kis beállításoké. */
+  const IDB = {
+    db: null,
+    open() { if (this.db) return Promise.resolve(this.db); if (typeof indexedDB === 'undefined') return Promise.reject(new Error('nincs IndexedDB')); return new Promise((res, rej) => { const r = indexedDB.open('levente-world', 1); r.onupgradeneeded = () => { r.result.createObjectStore('kv'); }; r.onsuccess = () => { this.db = r.result; this.db.onversionchange = () => { this.db.close(); this.db = null; }; res(this.db); }; r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error('blocked')); }); },
+    async get(k) { const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction('kv', 'readonly'); const q = t.objectStore('kv').get(k); q.onsuccess = () => res(q.result == null ? null : q.result); q.onerror = () => rej(q.error); }); },
+    async set(k, v) { const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = () => res(true); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('abort')); }); },
+    async del(k) { const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').delete(k); t.oncomplete = () => res(true); t.onerror = () => rej(t.error); }); },
+  };
+  /** Mentések: IndexedDB, opcionális gzip (CompressionStream) — 'GZ:' + base64 tömörítve, különben nyers JSON. A localStorage-ban talált régi mentés átköltözik. */
   const Store = {
     key: LW.CONFIG.persistence.key,
     canGzip: typeof CompressionStream === 'function',
     getRaw(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-    async get(k) { const s = this.getRaw(k); if (!s) return null; if (!s.startsWith('GZ:')) return s; return this.inflate(s.slice(3)); },
+    async get(k) {
+      let s = null; try { s = await IDB.get(k); } catch (e) { console.warn('IndexedDB olvasás', e); }
+      if (!s) { s = this.getRaw(k); if (s) { try { await IDB.set(k, s); localStorage.removeItem(k); } catch (e) { /* marad a localStorage */ } } } // átköltözés a régi helyről
+      if (!s) return null; if (!s.startsWith('GZ:')) return s; return this.inflate(s.slice(3));
+    },
     setRaw(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { console.warn('save failed', e); return false; } },
-    async set(k, json) { if (!this.canGzip) return this.setRaw(k, json); try { const gz = await this.deflate(json); return this.setRaw(k, 'GZ:' + gz); } catch (e) { return this.setRaw(k, json); } },
-    del(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } },
+    /** Nagy érték gyorsan, tömörítés nélkül (lapelhagyáskor): az adatbázisba indul, nem vár rá senki. */
+    setBig(k, v) { IDB.set(k, v).catch((e) => console.warn('IndexedDB írás', e)); },
+    async set(k, json) {
+      let v = json; if (this.canGzip) { try { v = 'GZ:' + await this.deflate(json); } catch (e) { v = json; } }
+      try { await IDB.set(k, v); try { localStorage.removeItem(k); } catch (e) { /* ignore */ } return true; } catch (e) { console.warn('IndexedDB írás', e); return this.setRaw(k, v); }
+    },
+    del(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } IDB.del(k).catch(() => {}); },
     async deflate(str) { const cs = new CompressionStream('gzip'); const w = cs.writable.getWriter(); w.write(new TextEncoder().encode(str)); w.close(); const buf = await new Response(cs.readable).arrayBuffer(); const u8 = new Uint8Array(buf); let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return btoa(s); },
     async inflate(b64) { const bin = atob(b64); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const ds = new DecompressionStream('gzip'); const w = ds.writable.getWriter(); w.write(u8); w.close(); return new Response(ds.readable).text(); },
     /** 'GZ:...' or raw JSON → JSON text */
@@ -6830,7 +6847,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       this.audio = new LW.Audio(); this.catchingUp = false; this.lastSave = performance.now(); this.lastSaveSize = 0; this.lastReport = null; this.cfg = cfg; this.saving = false;
       this.observer = !!(opts && opts.observer); this.cloudEvery = 120000; this.lastCloudSave = performance.now(); this.pendingCloud = false;
       let restored = false;
-      if (saved) { try { this.sim = LW.Persistence.fromJSON(saved); restored = true; } catch (e) { console.error('Could not restore the saved world', e); alert('A mentett világot nem sikerült betölteni (' + e.message + '). Új világ jön létre; a régi mentés megmarad a ' + Store.key + '.broken kulcs alatt.'); Store.setRaw(Store.key + '.broken', saved); } }
+      if (saved) { try { this.sim = LW.Persistence.fromJSON(saved); restored = true; } catch (e) { console.error('Could not restore the saved world', e); alert('A mentett világot nem sikerült betölteni (' + e.message + '). Új világ jön létre; a régi mentés megmarad a ' + Store.key + '.broken kulcs alatt.'); Store.setBig(Store.key + '.broken', saved); } }
       if (!restored) { const seed = q.has('seed') ? (/^\d+$/.test(q.get('seed')) ? (+q.get('seed') >>> 0) : LW.hash32(q.get('seed'))) : ((Math.random() * 4294967295) >>> 0); this.sim = LW.Simulation.newWorld(seed, cfg, Date.now(), { population: +q.get('pop') || cfg.genesis.population }); }
       this.renderer = new LW.Renderer($('#world'), $('#minimap'), this.sim.world);
       this.ui = new LW.UI(this);
@@ -6872,12 +6889,12 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
     async save(force) {
       if (this.catchingUp || this.observer || this.saving) return; this.lastSave = performance.now(); this.saving = true;
       let json = null;
-      try { json = LW.Persistence.toJSON(this.sim); this.lastSaveSize = json.length; const ok = await Store.set(Store.key, json); if (!ok && force) this.ui.toast('A mentés nem sikerült', 'A böngésző tárhelye megtelt — exportáld a világot a menüből.', true); } catch (e) { console.error('save error', e); }
+      try { json = LW.Persistence.toJSON(this.sim); this.lastSaveSize = json.length; const ok = await Store.set(Store.key, json); if (!ok && force) this.ui.toast('A helyi mentés nem sikerült', 'A böngésző nem engedte írni az adatbázisát — a világ a felhőben biztonságban van; ha kell, exportáld a menüből.', true); } catch (e) { console.error('save error', e); }
       finally { this.saving = false; }
       if (json && LW.Cloud.canWrite && this.sim.world.meta.started && (force || performance.now() - this.lastCloudSave > this.cloudEvery)) this.cloudSave(json);
     }
     /** Synchronous raw save for page-hide / unload (no time for compression). */
-    saveSync() { if (this.catchingUp || this.observer) return; try { const json = LW.Persistence.toJSON(this.sim); this.lastSaveSize = json.length; Store.setRaw(Store.key, json); } catch (e) { console.error('save error', e); } }
+    saveSync() { if (this.catchingUp || this.observer) return; try { const json = LW.Persistence.toJSON(this.sim); this.lastSaveSize = json.length; Store.setBig(Store.key, json); } catch (e) { console.error('save error', e); } }
     async cloudSave(json) {
       if (this.pendingCloud) return; this.pendingCloud = true; this.lastCloudSave = performance.now();
       try {
@@ -6914,7 +6931,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       else { sim.world.meta.lastRealTimeMs = Date.now(); this.save(true); }
     }
     newWorld(seed, population) { const sim = LW.Simulation.newWorld(seed, this.cfg, Date.now(), { population }); sim.paused = true; sim.world.meta.started = false; this.replaceSim(sim, false); this.ui.showGenesis(); this.ui.refreshSpeed(); }
-    hasSnapshot(slot) { const s = Store.getRaw(`${Store.key}.snap${slot}`); if (!s) return null; const m = Store.getRaw(`${Store.key}.snap${slot}.meta`); return m || 'mentve'; }
+    hasSnapshot(slot) { return Store.getRaw(`${Store.key}.snap${slot}.meta`) || null; }
     async snapshot(slot) { const json = LW.Persistence.toJSON(this.sim); const ok = await Store.set(`${Store.key}.snap${slot}`, json); if (ok) { Store.setRaw(`${Store.key}.snap${slot}.meta`, `${this.sim.world.name} · ${this.sim.world.year}. év`); this.ui.toast('Pillanatkép mentve', `${slot}. hely · ${this.sim.world.year}. év`, true); } else this.ui.toast('A pillanatkép nem sikerült', 'A böngésző tárhelye megtelt.', true); }
     async restoreSnapshot(slot) { const s = await Store.get(`${Store.key}.snap${slot}`); if (!s) return; try { const sim = LW.Persistence.fromJSON(s); sim.world.meta.lastRealTimeMs = Date.now(); this.replaceSim(sim, false); this.ui.toast('Idővonal visszaállítva', `Folytatás a(z) ${sim.world.year}. évtől — egy másik történelem kezdődik.`, false); } catch (e) { alert('A visszaállítás nem sikerült: ' + e.message); } }
   }

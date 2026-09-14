@@ -62,7 +62,8 @@
         const rel = la.relationships.get(lb.id); const resent = rel ? rel.resentment - rel.friendship : 0.1;
         const sameLang = la.langId === lb.langId; const hunger = ((1 - la.needs.food) + (1 - lb.needs.food)) / 2;
         const markets = w.buildingsNear(a.x | 0, a.y | 0, 10).some((x) => x.kind === 'market') && w.buildingsNear(b.x | 0, b.y | 0, 10).some((x) => x.kind === 'market');
-        t += 0.0025 * (dom * 1.5 + resent + hunger * 0.8) - (sameLang ? 0.0012 : 0) - (markets ? 0.0015 : 0) - 0.0006; t = LW.clamp(t, 0, 1.2);
+        const dip = ((LW.Tech.fx(w, la).diplomacy || 0) + (LW.Tech.fx(w, lb).diplomacy || 0)) / 2; // követek, szerződések, közös játékok, elrettentés
+        t += 0.0025 * (dom * 1.5 + resent + hunger * 0.8) * Math.max(0.2, 1 - dip) - (sameLang ? 0.0012 : 0) - (markets ? 0.0015 : 0) - 0.0006 - dip * 0.001; t = LW.clamp(t, 0, 1.2);
         a.rivalry[key] = t;
         if (t >= 1 && !a.warWith && !b.warWith && rng.chance(0.2)) { a.warWith = b.id; b.warWith = a.id; a.warSince = w.tick; b.warSince = w.tick; a.warScore = 0; b.warScore = 0; w.events.emit('WarDeclared', { tick: w.tick, place: a.name, other: b.name, agentId: la.id, tile: w.idx(a.x | 0, a.y | 0) }); for (const p of w.agentsNear(a.x + 0.5, a.y + 0.5, 14).concat(w.agentsNear(b.x + 0.5, b.y + 0.5, 14))) { p.emotions.fear = b01(p.emotions.fear + 0.3); p.emotions.anger = b01(p.emotions.anger + 0.2); } }
       }
@@ -72,7 +73,9 @@
       const rng = w.rng; if (!rng.chance(0.35)) return;
       const wa = this.warriors(w, a), wb = this.warriors(w, b);
       const wallOf = (s) => { let best = 0; for (const x of w.buildingsNear(s.x | 0, s.y | 0, 12)) { const d = LW.Buildings.DEFS[x.kind]; if (x.progress >= 1 && d && d.wall > best) best = d.wall; } return best; };
-      const str = (list, s) => list.reduce((acc, p) => acc + p.personality.bravery + p.personality.aggression * 0.5 + LW.Tree.bestTool(p, 'hunt') * 0.6 + p.health, 0) * rng.range(0.7, 1.3) * (1 + wallOf(s) * 0.25); // a fal védi az otthon harcolókat
+      const warOf = (s) => { const l = s.leaderId != null ? w.agents.get(s.leaderId) : null; return l ? (LW.Tech.fx(w, l).war || 0) : 0; }; // lovasság, tüzérség, páncélosok: az állam hadereje
+      const str = (list, s) => list.reduce((acc, p) => acc + p.personality.bravery + p.personality.aggression * 0.5 + LW.Tree.bestTool(p, 'hunt') * 0.6 + p.health, 0) * rng.range(0.7, 1.3) * (1 + wallOf(s) * 0.25) * (1 + warOf(s)); // a fal védi az otthon harcolókat
+      { const la = a.leaderId != null ? w.agents.get(a.leaderId) : null, lb = b.leaderId != null ? w.agents.get(b.leaderId) : null; if (la && lb && la.knowledge.techs.has('nuclear_weapons') && lb.knowledge.techs.has('nuclear_weapons') && rng.chance(0.06)) { this.nuclear(w, a, b); return; } }
       const sa = str(wa, a), sb = str(wb, b); const win = sa >= sb ? a : b, lose = win === a ? b : a; const wl = win === a ? wb : wa, ww = win === a ? wa : wb;
       for (const p of wl.slice(0, rng.int(1, 3))) { A().damage(w, p, rng.range(0.3, 0.95), `háború (${win.name})`); if (w.agents.has(p.id)) { p.emotions.fear = b01(p.emotions.fear + 0.4); A().memory(w, p, { type: 'war', text: `harcoltunk ${win.name} ellen, és vesztettünk`, importance: 0.7, emotion: 'fear', intensity: 0.7 }); } }
       for (const p of ww.slice(0, rng.int(0, 1))) A().damage(w, p, rng.range(0.2, 0.6), `háború (${lose.name})`);
@@ -85,6 +88,18 @@
         if (decisive) { lose.polityId = win.id; const ll = lose.leaderId != null ? w.agents.get(lose.leaderId) : null; if (ll && ll.occupation === 'leader') ll.occupation = null; lose.leaderId = null; for (const p of w.agentsNear(lose.x + 0.5, lose.y + 0.5, 14)) { const wl2 = win.leaderId != null ? w.agents.get(win.leaderId) : null; if (wl2) { const r = LW.Relationships.ensure(w, p, wl2); r.fear = b01((r.fear || 0) + 0.3); r.resentment = b01(r.resentment + 0.3); } } }
         w.events.emit('WarEnded', { tick: w.tick, place: win.name, other: lose.name, decisive, tile: w.idx(win.x | 0, win.y | 0) });
       }
+    },
+    /** Atomcsapás: a háború egyetlen nap alatt véget ér, és senki sem nyer. A félelem nemzedékekre megmarad. */
+    nuclear(w, a, b) {
+      const rng = w.rng; const target = rng.chance(0.5) ? a : b; const other = target === a ? b : a;
+      const victims = w.agentsNear(target.x + 0.5, target.y + 0.5, 12); let dead = 0;
+      for (const p of victims) { if (rng.chance(0.45)) { A().damage(w, p, rng.range(0.6, 1.2), `atomcsapás (${other.name})`); if (!w.agents.has(p.id)) dead++; } else { p.injury = Math.min(0.9, p.injury + 0.3); p.ill = Math.max(p.ill || 0, rng.int(10, 40)); } }
+      for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) { const x = (target.x | 0) + dx, y = (target.y | 0) + dy; if (!w.inBounds(x, y)) continue; const i = w.idx(x, y); if (dx * dx + dy * dy > 36) continue; w.tiles.burnt[i] = 255; w.tiles.veg[i] = 0; w.tiles.trees[i] = Math.min(w.tiles.trees[i], 10); w.tiles.fert[i] = Math.max(0, w.tiles.fert[i] - 120); w.dirtyTiles.add(i); }
+      for (const bld of w.buildingsNear(target.x | 0, target.y | 0, 6)) if (rng.chance(0.7)) LW.Buildings.destroy(w, bld, 'atomcsapás');
+      for (const p of w.agents.values()) { p.emotions.fear = b01(p.emotions.fear + 0.6); p.emotions.grief = b01(p.emotions.grief + 0.3); A().memory(w, p, { type: 'war', text: `atomcsapás érte ${target.name} városát — a világ megváltozott`, importance: 0.95, emotion: 'fear', intensity: 0.9 }); }
+      a.warWith = null; b.warWith = null; a.rivalry = a.rivalry || {}; b.rivalry = b.rivalry || {}; a.rivalry[String(b.id)] = 0; b.rivalry[String(a.id)] = 0;
+      w.events.emit('NuclearStrike', { tick: w.tick, place: target.name, other: other.name, dead, tile: w.idx(target.x | 0, target.y | 0) });
+      w.events.emit('WarEnded', { tick: w.tick, place: other.name, other: target.name, decisive: false, tile: w.idx(other.x | 0, other.y | 0) });
     },
     // ---------------------------------------------------------------- vállalatok: a vagyon szervezi a termelést
     companies(w) {

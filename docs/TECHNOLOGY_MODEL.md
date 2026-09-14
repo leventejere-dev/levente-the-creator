@@ -204,3 +204,45 @@ printing/scientific method, steam engine, electrification, computer, AI, world s
 least a few surface-visible veins of copper, tin, iron, coal, gold, salt, oil and gems, so every world *can* get there;
 whether it does is up to its people. A calibration run with a 12× discovery multiplier crosses the whole tree in ~47
 years from 8 people; at the real rate it takes centuries per era, growing faster as populations and institutions grow.
+
+## The final round — a mirror of the human world (`src/tech/tree2.js`, `src/world/crossings.js`, `src/society/frontier.js`)
+
+The second layer adds 155 discoveries (260 in total), 44 buildings (79), items and recipes, organised by domain
+(`Tree.DOMAINS`): crossings & infrastructure, transport, energy, materials & industry, agriculture, medicine,
+communication, sciences, society & economy, culture, warfare, space, machine minds. Every entry is a *possibility* with
+the same gates as the core (prerequisites, materials, `nearby` place, `minPop`, skill, difficulty) and a measurable
+effect. New `fx` keys and where they act:
+
+| key | acts in |
+|---|---|
+| `fertility` | `Agents.conceive` (× max(0.25, 1 + fertility)); family planning is negative — the demographic transition |
+| `longevity` | old-age death and the age-driven health cap (`Agents.daily`): years added to the genetic longevity |
+| `safety` | `Agents.dangerAt` (× 1 − min(0.7, 0.4·safety)); guard/court/barracks buildings add to it |
+| `diplomacy` | polity tension growth (`Civilization.polities`): treaties, games, deterrence slow the road to war |
+| `war` | battle strength of a state (`Civilization.battle`), from its leader's knowledge |
+| `trade` | markets/banks give more, wealth accrues (`Society.market`); stations and banks add to it |
+| `happiness` | daily joy/stress/sadness drift (`Agents.daily`); theatres, stadiums, cinemas add to it |
+
+Building properties read by the daily systems: `produce` (apiary, fish pond, greenhouse, vertical farm → communal
+store, eaten by the hungry in both simulations), `power` (craft + warmth nearby via `Tree.fx`), `transport` (speed,
+trade), `media` (teach), `joy` (joy, festivals), `hygiene` (illness shortens), `court`/`police`/`barracks` (safety),
+`bank` (redistribution + trade), `assembly` (democracy), `spaceport` (launches; colonists depart with `space_colony`).
+
+**Crossings.** `tiles.bridge` (1 wooden, 2 stone, 3 steel bridge, 4 tunnel) makes water/peak tiles passable
+(`World.isPassable/moveCost`). `Crossings.components` labels connected land; `Crossings.search` casts rays from shore
+tiles over water/peaks up to the kind's `span`, prefers spans that join two components (islands) and rivers that cut a
+settlement, scores the far shore by trees/vegetation/deposits. A bridge is a public building whose *site* is the shore
+tile and whose footprint lies on the water (`Buildings.create` resolves the geometry; workers stand at either end —
+`Buildings.approach/nearBuilding`). Completion writes the tiles and emits `CrossingBuilt` (`joined` when two lands met).
+
+**Politics.** Where a majority knows `democracy`, leaders are elected every four years by tallying each voter's best
+candidate (respect, friendship, trust minus resentment and fear) — `Election` events. `welfare_state` makes market
+help free for the needy. Two nuclear states at war can end it in a day (`Civilization.nuclear`): a strike kills, burns
+the land, destroys buildings and frightens everyone; the war ends with no winner.
+
+**Frontier.** `satellites` reveal every deposit once (`MapRevealed`); a spaceport launches rockets (`Launch`), and
+with `space_colony` known a few curious, brave adults leave the world for good (`ColonyLaunched`, `Frontier.depart`:
+not a death — they are gone, remembered).
+
+**Unknown future.** After `world_simulation`, `Tree.futureStep` generates one new possibility every two years, by
+domain (matter, life, mind, space, society), with real effects (including longevity). Nothing above says *when*.

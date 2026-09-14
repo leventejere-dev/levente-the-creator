@@ -194,7 +194,7 @@
     },
     buildPublic: {
       applicable: (c, a) => c.adult && !c.night && a.knowledge.techs.size >= 3 && N(a).water > 0.45 && N(a).food > 0.4,
-      score: (c, a) => { let best = 0, which = null; const DEFS = Bld().DEFS; for (const k in DEFS) { if (!DEFS[k].public) continue; const w = LW.Society.wants(c.world, a, k); if (w > best) { best = w; which = k; } } a._pubKind = which; if (!which) return [0, []]; return [best * (0.45 + P(a).ambition * 0.4 + P(a).discipline * 0.25) * (c.season === 3 ? 0.6 : 1), [`a közösségnek kellene: ${DEFS[which].label.toLowerCase()}`]]; },
+      score: (c, a) => { const DEFS = Bld().DEFS; const day = c.world.tick / LW.TIME.TICKS_PER_DAY | 0; if (a._pubDay !== day || !a._pubKind) { const pick = LW.Society.pickPublic(c.world, a); a._pubKind = pick ? pick.kind : null; a._pubWant = pick ? pick.want : 0; a._pubDay = day; } const which = a._pubKind, best = a._pubWant || 0; if (!which) return [0, []]; return [best * (0.45 + P(a).ambition * 0.4 + P(a).discipline * 0.25) * (c.season === 3 ? 0.6 : 1), [`a közösségnek kellene: ${DEFS[which].label.toLowerCase()}`]]; },
       plan: (c, a) => a._pubKind ? buildPlan(c, a, a._pubKind) : null,
     },
     helpBuild: {
@@ -320,7 +320,7 @@
     const m = Bld().missing(site); const steps = []; const mine = {}; let needAcq = {};
     for (const k in m) { const have = a.inv[k] || 0; if (have > 0) mine[k] = Math.min(have, m[k]); else needAcq[k] = Math.min(m[k], 6); }
     if (count(mine) === 0 && count(needAcq) > 0) { const one = {}; const k = Object.keys(needAcq)[0]; one[k] = needAcq[k]; const acq = acquireSteps(c.world, a, one, c); if (!acq) return null; steps.push(...acq); }
-    steps.push({ op: 'moveTo', i: c.world.idx(site.x, site.y), near: 1 });
+    steps.push({ op: 'moveTo', i: Bld().approach(c.world, a, site), near: 1 });
     if (count(m) > 0) steps.push({ op: 'deliver', bid: site.id });
     steps.push({ op: 'build', bid: site.id });
     return { steps, tag: 'build:' + site.kind, kind: site.kind };

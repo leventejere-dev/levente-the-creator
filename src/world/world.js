@@ -55,9 +55,10 @@
     biomeAt(i) { return this.tiles.biome[i]; }
     isWater(i) { return LW.isWaterBiome(this.tiles.biome[i]); }
     isFresh(i) { return LW.isFreshBiome(this.tiles.biome[i]); }
-    isPassable(i) { return LW.MOVE_COST[this.tiles.biome[i]] !== Infinity; }
+    isPassable(i) { return LW.MOVE_COST[this.tiles.biome[i]] !== Infinity || (this.tiles.bridge && this.tiles.bridge[i] > 0); }
     moveCost(i) {
       const t = this.tiles; let c = LW.MOVE_COST[t.biome[i]];
+      if (t.bridge && t.bridge[i]) c = t.bridge[i] === 4 ? 1.3 : t.bridge[i] === 1 ? 1.1 : 0.9; // a hídon a folyó és a szoros is út
       if (c === Infinity) return c;
       if (t.path[i]) c *= t.path[i] === 1 ? 0.85 : t.path[i] === 2 ? 0.7 : 0.55;
       if (t.fire[i]) c += 40;
@@ -116,7 +117,7 @@
         if (this.weather && this.weather.lightningTile >= 0) this.weather.lightningTile = remap(this.weather.lightningTile);
         if (this.history) { for (const list of [this.history.feed, this.history.godFeed, this.history.chronicle, this.history.wow]) for (const e of list) if (e.tile != null) e.tile = remap(e.tile); for (const k in this.history.firsts) if (this.history.firsts[k].tile != null) this.history.firsts[k].tile = remap(this.history.firsts[k].tile); }
       }
-      this.w = newW; this.h = newH; this.tiles = nt; this._initPathBuffers(); this.reindexBuildings(); this.rebuildBuckets(); this.dirtyTiles = new Set();
+      this.w = newW; this.h = newH; this.tiles = nt; this._initPathBuffers(); this.reindexBuildings(); this.rebuildBuckets(); this.dirtyTiles = new Set(); this._comp = null; this._bridgeSites = null;
       const name = this.language.place();
       this.landmarks.push({ kind: 'land', name, x: east ? oldW + size / 2 : oldW / 2, y: east ? oldH / 2 : oldH + size / 2, tick: this.tick });
       this.events.emit('NewLand', { tick: this.tick, name, side, agentId: explorerId, w: newW, h: newH, tile: this.idx(east ? oldW + (size >> 1) : (oldW >> 1), east ? (oldH >> 1) : oldH + (size >> 1)) });

@@ -199,7 +199,7 @@
       if (a.needs.water <= 0) dh -= cfg.dehydrationHealthPerDay * dt;
       if (a.needs.warmth <= 0) dh -= cfg.hypothermiaHealthPerDay * (1 + Math.max(0, 5 - eff) / 10) * dt;
       if (world.tiles.fire[i]) { dh -= 0.15; a.emotions.fear = 1; }
-      const maxHealth = Math.max(0.2, 1 - a.injury - Math.max(0, this.age(world, a) - a.genes.physiology.longevity + 10) * 0.02);
+      const maxHealth = Math.max(0.2, 1 - a.injury - Math.max(0, this.age(world, a) - a.genes.physiology.longevity - (LW.Tech.fx(world, a).longevity || 0) + 10) * 0.02);
       if (dh === 0 && a.needs.food > 0.35 && a.needs.water > 0.35 && a.needs.energy > 0.25) dh += 0.15 * dt * (a.knowledge.techs.has('herbal_medicine') ? 1.5 : 1);
       a.health = LW.clamp(a.health + dh, 0, maxHealth);
       if (a.injury > 0) a.injury = Math.max(0, a.injury - 0.05 * dt);
@@ -218,6 +218,7 @@
       if (world.burning.size) { for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) { const x = (a.x | 0) + dx, y = (a.y | 0) + dy; if (!world.inBounds(x, y)) continue; if (t.fire[world.idx(x, y)]) d = Math.max(d, 1 - Math.max(Math.abs(dx), Math.abs(dy)) / 4); } }
       if (LW.Time.isNight(world.tick) && !fx.inside && !fx.fire) { const group = world.agentsNear(a.x, a.y, 2, a.id).length; d = Math.max(d, (t.danger[i] / 255) * 0.5 / (1 + group * 0.5)); }
       if (a.threat) d = Math.max(d, 0.7);
+      const safe = LW.Tech.fx(world, a).safety || 0; if (safe > 0) d *= 1 - Math.min(0.7, safe * 0.4); // őrség, törvény, biztosítás: kevesebb a félnivaló
       return LW.clamp01(d);
     },
     daily(world, a) {
@@ -226,8 +227,10 @@
       LW.Relationships.decay(world, a);
       LW.Social.daily(world, a);
       // old age
-      const age = this.age(world, a); const lon = a.genes.physiology.longevity;
+      const tfx = LW.Tech.fx(world, a);
+      const age = this.age(world, a); const lon = a.genes.physiology.longevity + (tfx.longevity || 0); // az orvoslás évekkel tolja ki az öregséget
       if (age > lon - 10 && rng.chance(0.00025 * Math.exp((age - lon) / 5))) { this.die(world, a, 'öregség'); return; }
+      if (tfx.happiness) { const hp = tfx.happiness; a.emotions.joy = LW.clamp01(a.emotions.joy + 0.02 * hp); a.emotions.stress = LW.clamp01(a.emotions.stress - 0.02 * hp); a.emotions.sadness = LW.clamp01(a.emotions.sadness - 0.01 * hp); } // a kultúra, a jólét (vagy a hangos világ) napról napra formál
       // baseline illness
       if (rng.chance(0.0006 * (1 - a.genes.physiology.immunity * 0.7) * (a.needs.food < 0.3 ? 2 : 1) * (1 - 0.6 * Math.min(1, LW.Tech.fx(world, a).health)))) { a.injury = Math.min(0.8, a.injury + 0.3); a.emotions.stress += 0.2; a.ill = Math.max(a.ill || 0, rng.int(5, 14)); this.memory(world, a, { type: 'illness', text: 'megbetegedtem', importance: 0.4, emotion: 'fear', intensity: 0.4 }); world.events.emit('AgentIll', { tick: world.tick, agentId: a.id }); }
       LW.Mind.daily(world, a);
@@ -256,7 +259,7 @@
       if (mother.pregnancy || mother.sex !== 'f' || father.sex !== 'm') return false;
       const age = this.age(world, mother); if (age < world.cfg.agents.adultAge || age > 45) return false;
       const blessed = (mother.fertilityBoostUntil > world.tick || father.fertilityBoostUntil > world.tick) ? 3 : 1;
-      const p = world.cfg.agents.fertilityBase * blessed * mother.genes.physiology.fertility * father.genes.physiology.fertility * (mother.health > 0.5 ? 1 : 0.4) * (mother.needs.food > 0.3 ? 1 : 0.3) * (age > 38 ? 0.4 : 1) * (mother.children.some((c) => { const ch = world.agents.get(c); return ch && LW.Time.ageYears(ch.bornTick, world.tick) < 2.5; }) ? 0.12 : 1);
+      const p = world.cfg.agents.fertilityBase * blessed * Math.max(0.25, 1 + (LW.Tech.fx(world, mother).fertility || 0)) * mother.genes.physiology.fertility * father.genes.physiology.fertility * (mother.health > 0.5 ? 1 : 0.4) * (mother.needs.food > 0.3 ? 1 : 0.3) * (age > 38 ? 0.4 : 1) * (mother.children.some((c) => { const ch = world.agents.get(c); return ch && LW.Time.ageYears(ch.bornTick, world.tick) < 2.5; }) ? 0.12 : 1);
       if (!world.rng.chance(p)) return false;
       mother.pregnancy = { by: father.id, since: world.tick, fatherGenes: father.genes };
       world.events.emit('Pregnancy', { tick: world.tick, agentId: mother.id, fatherId: father.id });

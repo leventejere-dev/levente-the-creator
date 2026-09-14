@@ -17,6 +17,7 @@
       stone: new Uint8Array(n), depType: new Uint8Array(n), depAmt: new Uint16Array(n), depKnown: new Uint8Array(n),
       traffic: new Uint16Array(n), path: new Uint8Array(n), fire: new Uint8Array(n), burnt: new Uint8Array(n),
       snow: new Uint8Array(n), danger: new Uint8Array(n), shade: new Uint8Array(n),
+      bridge: new Uint8Array(n), // átkelő: 1 fahíd, 2 kőhíd, 3 acélhíd, 4 alagút — a víz és a csúcs járhatóvá válik
     };
   }
 

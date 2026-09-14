@@ -130,14 +130,15 @@
     },
     buildNew(world, a, st, plan) {
       const i = st.i; if (!near(world, a, i, 1.8)) return FAIL;
-      if (world.buildingAt(i) || !world.isPassable(i)) { const j = Bld().findSite(world, a, st.kind); if (j < 0) return FAIL; st.i = j; return RUN; }
+      const bridge = !!Bld().DEFS[st.kind].bridge;
+      if ((world.buildingAt(i) && !bridge) || !world.isPassable(i) || (bridge && !(world._bridgeSites && world._bridgeSites.get(i)))) { const j = Bld().findSite(world, a, st.kind); if (j < 0) return FAIL; st.i = j; return RUN; }
       const b = Bld().create(world, st.kind, world.xOf(i), world.yOf(i), a.id);
       plan.steps.splice(plan.i + 1, 0, { op: 'deliver', bid: b.id }, { op: 'build', bid: b.id });
       return DONE;
     },
-    deliver(world, a, st) { const b = world.buildings.get(st.bid); if (!b || !near(world, a, world.idx(b.x, b.y), 1.8)) return FAIL; Bld().deliver(world, b, a); return DONE; },
+    deliver(world, a, st) { const b = world.buildings.get(st.bid); if (!b || !Bld().nearBuilding(world, a, b, 1.8)) return FAIL; Bld().deliver(world, b, a); return DONE; },
     build(world, a, st) {
-      const b = world.buildings.get(st.bid); if (!b) return FAIL; if (!near(world, a, world.idx(b.x, b.y), 1.8)) return FAIL;
+      const b = world.buildings.get(st.bid); if (!b) return FAIL; if (!Bld().nearBuilding(world, a, b, 1.8)) return FAIL;
       if (b.progress >= 1) return DONE; if (!Bld().materialsComplete(b)) { Bld().deliver(world, b, a); if (!Bld().materialsComplete(b)) return FAIL; }
       const finished = Bld().work(world, b, a); if (finished) { a.counters.built++; return DONE; }
       st.t = (st.t || 0) + 1; return st.t > 400 ? DONE : RUN;

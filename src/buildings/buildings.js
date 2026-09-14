@@ -23,7 +23,9 @@
     DEFS,
     /** Start a construction site. Divine kinds are completed instantly. */
     create(world, kind, x, y, ownerId) {
-      const def = DEFS[kind]; const b = { id: world.nextIds.building++, kind, x: x | 0, y: y | 0, w: def.size ? def.size[0] : 1, h: def.size ? def.size[1] : 1, ownerId: ownerId ?? null, residents: [], progress: def.ticks === 0 ? 1 : 0, delivered: {}, hp: 1, storage: {}, startedTick: world.tick, builtTick: def.ticks === 0 ? world.tick : -1, settlementId: null };
+      const def = DEFS[kind]; let bw = def.size ? def.size[0] : 1, bh = def.size ? def.size[1] : 1, bdir = null;
+      if (def.bridge) { const g = world._bridgeSites && world._bridgeSites.get(world.idx(x | 0, y | 0)); if (g) { x = g.x; y = g.y; bw = g.w; bh = g.h; bdir = g.dir; world._bridgeSites.delete(g.shore); } } // a hely a part, az épület a vízen
+      const b = { id: world.nextIds.building++, kind, x: x | 0, y: y | 0, w: bw, h: bh, ...(bdir ? { dir: bdir } : {}), ownerId: ownerId ?? null, residents: [], progress: def.ticks === 0 ? 1 : 0, delivered: {}, hp: 1, storage: {}, startedTick: world.tick, builtTick: def.ticks === 0 ? world.tick : -1, settlementId: null };
       if (def.records) b.records = [];
       if (kind === 'campfire') { b.fuel = def.fuelTicks; b.lit = true; }
       if (def.farm) { b.crop = 0; b.planted = false; }
@@ -60,6 +62,7 @@
         if (def.dwelling && a.partner != null) { const p = world.agents.get(a.partner); if (p && p.home == null) this.moveIn(world, b, p); }
         if (def.dwelling) for (const cid of a.children) { const c = world.agents.get(cid); if (c && c.home == null && LW.Time.ageYears(c.bornTick, world.tick) < world.cfg.agents.adultAge) this.moveIn(world, b, c); }
         if (b.kind === 'campfire') { b.fuel = def.fuelTicks; b.lit = true; }
+        if (def.bridge && LW.Crossings) LW.Crossings.onComplete(world, b, a);
         world.events.emit('BuildingCompleted', { tick: world.tick, buildingId: b.id, kind: b.kind, agentId: a.id, tile: world.idx(b.x, b.y), first: !world.firsts || !world.firsts['building:' + b.kind] });
         LW.Agents.memory(world, a, { type: 'built', text: `felépítettem: ${def.label.toLowerCase()}`, importance: 0.6, emotion: 'pride', intensity: 0.6, buildingId: b.id });
         a.emotions.pride = Math.min(1, a.emotions.pride + 0.4);
@@ -87,6 +90,7 @@
       for (const rid of b.residents) { const r = world.agents.get(rid); if (r) { r.home = null; LW.Agents.memory(world, r, { type: 'loss', text: `elvesztettem az otthonom (${cause})`, importance: 0.7, emotion: 'sadness', intensity: 0.7 }); r.emotions.sadness = Math.min(1, r.emotions.sadness + 0.5); if (cause === 'tűz') r.emotions.fear = Math.min(1, r.emotions.fear + 0.5); } }
       // drop stored items on the ground
       const i = world.idx(b.x, b.y); world.ground = world.ground || new Map(); const g = world.ground.get(i) || {}; for (const k in b.storage) g[k] = (g[k] || 0) + Math.floor(b.storage[k] * (cause === 'tűz' ? 0.2 : 0.8)); world.ground.set(i, g);
+      if (def.bridge && LW.Crossings) LW.Crossings.onDestroy(world, b);
       world.removeBuilding(b.id); world.dirtyTiles.add(i);
       world.events.emit(def.divine ? 'ManifestationEnded' : 'BuildingDestroyed', { tick: world.tick, buildingId: b.id, kind: b.kind, cause, tile: i, ownerId: b.ownerId });
     },
@@ -136,7 +140,12 @@
       return best;
     },
     /** Pick a building site near an anchor: passable, unoccupied, not water/mountain, prefers near water & family. */
+    /** Hol álljon az ember, hogy egy épületen dolgozzon: a híd esetén a közelebbi hídfő, különben a sarokmező. */
+    approach(world, a, b) { const def = DEFS[b.kind]; if (def && def.bridge && LW.Crossings) { const ends = LW.Crossings.ends(world, b); if (ends.length) return ends.sort((p, q) => LW.dist(a.x, a.y, world.xOf(p), world.yOf(p)) - LW.dist(a.x, a.y, world.xOf(q), world.yOf(q)))[0]; } return world.idx(b.x, b.y); },
+    /** Elég közel van-e az ember az épület bármelyik mezőjéhez. */
+    nearBuilding(world, a, b, r) { const w = b.w || 1, h = b.h || 1; if (w === 1 && h === 1) return LW.dist(a.x, a.y, b.x + 0.5, b.y + 0.5) <= r; for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) if (LW.dist(a.x, a.y, b.x + dx + 0.5, b.y + dy + 0.5) <= r) return true; return false; },
     findSite(world, a, kind) {
+      if (DEFS[kind].bridge) { const site = LW.Crossings.candidate(world, a, kind); if (!site) return -1; world._bridgeSites = world._bridgeSites || new Map(); if (world._bridgeSites.size > 200) world._bridgeSites.clear(); world._bridgeSites.set(site.shore, site); return site.shore; }
       const anchor = a.home != null && world.buildings.get(a.home) ? world.buildings.get(a.home) : null;
       const ax = anchor ? anchor.x : a.x | 0, ay = anchor ? anchor.y : a.y | 0;
       const water = LW.Agents.nearestPoi(world, a, 'water');

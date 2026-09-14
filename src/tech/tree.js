@@ -78,7 +78,7 @@
   Object.assign(B, {
     granary: pub({ label: 'Magtár', cost: { wood: 12, clay: 6, stone: 4 }, ticks: 220, storage: 200, preserve: 0.85, tech: 'granary_building', lifeDays: 4000, want: 'food', minPop: 3 }),
     well: pub({ label: 'Kút', cost: { stone: 12, wood: 4 }, ticks: 160, water: true, tech: 'well_digging', lifeDays: 12000, want: 'water', minPop: 2 }),
-    orchard: { label: 'Gyümölcsös', cost: { wood: 4 }, ticks: 120, farm: true, cropItem: 'fruit', cropDays: 200, yieldBase: 10, tech: 'horticulture', lifeDays: 6000, size: [2, 2] },
+    orchard: { label: 'Gyümölcsös', cost: { wood: 4 }, ticks: 120, farm: true, cropItem: 'fruit', cropDays: 200, yieldBase: 40, perennial: true, tech: 'horticulture', lifeDays: 6000, size: [2, 2] },
     pasture: { label: 'Karám', cost: { wood: 10, fiber: 4 }, ticks: 160, pasture: true, tech: 'animal_husbandry', lifeDays: 3000, size: [2, 2] },
     kiln: pub({ label: 'Égetőkemence', cost: { clay: 10, stone: 8 }, ticks: 160, furnace: 1, kiln: true, tech: 'kiln_building', lifeDays: 3000, light: 0.3, minPop: 2 }),
     furnace: pub({ label: 'Olvasztókemence', cost: { stone: 16, clay: 10, wood: 6 }, ticks: 260, furnace: 2, storage: 60, tech: 'copper_smelting', lifeDays: 4000, light: 0.4, minPop: 3 }),

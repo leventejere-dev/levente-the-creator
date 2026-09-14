@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-13 22:54 */
+/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-14 08:10 */
 
 /* ===== core/rng.js ===== */
 /* LEVENTE — THE CREATOR · core/rng.js
@@ -193,7 +193,7 @@
     fish_raw:    { food: 0.35, spoilDays: 2,  weight: 0.8, label: 'Nyers hal', raw: 'fish_cooked' },
     fish_cooked: { food: 0.55, spoilDays: 6,  weight: 0.7, label: 'Sült hal' },
     dried_food:  { food: 0.50, spoilDays: 60, weight: 0.5, label: 'Szárított étel' },
-    grain:       { food: 0.30, spoilDays: 90, weight: 0.5, label: 'Gabona' },
+    grain:       { food: 0.40, spoilDays: 120, weight: 0.5, label: 'Gabona' },
     wood:   { weight: 1.5, label: 'Fa' },
     stone:  { weight: 2.0, label: 'Kő' },
     flint:  { weight: 0.8, label: 'Kova' },
@@ -1322,7 +1322,7 @@
     hut:         { label: 'Kunyhó', cost: { wood: 14, fiber: 6, stone: 2 }, ticks: 160, insulation: 14, safety: 0.6, sleep: 0.8, capacity: 5, storage: 40, dwelling: true, tech: 'hut_construction', lifeDays: 2400, light: 0.4 },
     stone_house: { label: 'Kőház', cost: { stone: 24, wood: 10, clay: 6 }, ticks: 400, insulation: 18, safety: 0.85, sleep: 0.95, capacity: 6, storage: 80, dwelling: true, tech: 'stone_masonry', lifeDays: 9000, light: 0.6 },
     storage_pit: { label: 'Tárolóverem', cost: { wood: 4, stone: 2 }, ticks: 40, storage: 60, preserve: 0.5, tech: 'food_drying', lifeDays: 800 },
-    farm_plot:   { label: 'Szántó', cost: { wood: 2 }, ticks: 60, farm: true, tech: 'seed_planting', lifeDays: 400 },
+    farm_plot:   { label: 'Szántó', cost: { wood: 2 }, ticks: 60, farm: true, tech: 'seed_planting', lifeDays: 2400 },
     monolith:    { label: 'Monolit', cost: {}, ticks: 0, divine: true, lifeDays: 1e9, light: 0.3 },
     light:       { label: 'Fényoszlop', cost: {}, ticks: 0, divine: true, lifeDays: 3, light: 1.5 },
     orb:         { label: 'Lebegő gömb', cost: {}, ticks: 0, divine: true, lifeDays: 7, light: 0.8 },
@@ -1409,7 +1409,7 @@
         const def = DEFS[b.kind];
         if (b.kind === 'campfire' && b.lit && b.progress >= 1) { b.fuel--; if (b.fuel <= 0) { b.lit = false; world.dirtyTiles.add(world.idx(b.x, b.y)); world.events.emit('FireWentOut', { tick: world.tick, buildingId: b.id, tile: world.idx(b.x, b.y) }); } }
         if ((b.id % TPD) === s) { // once per day per building
-          if (b.progress >= 1 || def.divine) { b.hp -= 1 / def.lifeDays; if (b.hp <= 0) { this.destroy(world, b, def.divine ? 'elhalványult' : 'elkorhadt'); continue; } }
+          if (b.progress >= 1 || def.divine) { b.hp -= (b.kind === 'campfire' && !b.lit ? 8 : 1) / def.lifeDays; if (b.hp <= 0) { this.destroy(world, b, def.divine ? 'elhalványult' : 'elkorhadt'); continue; } } // a kihűlt tűzhely hamar elenyészik
           else if (world.tick - b.startedTick > TPD * 200) { this.destroy(world, b, 'félbehagyták'); continue; }
           if (def.farm && b.progress >= 1 && b.planted) {
             const i = world.idx(b.x, b.y), t = world.tiles; const season = LW.Time.season(world.tick);
@@ -1554,7 +1554,7 @@
   Object.assign(B, {
     granary: pub({ label: 'Magtár', cost: { wood: 12, clay: 6, stone: 4 }, ticks: 220, storage: 200, preserve: 0.85, tech: 'granary_building', lifeDays: 4000, want: 'food', minPop: 3 }),
     well: pub({ label: 'Kút', cost: { stone: 12, wood: 4 }, ticks: 160, water: true, tech: 'well_digging', lifeDays: 12000, want: 'water', minPop: 2 }),
-    orchard: { label: 'Gyümölcsös', cost: { wood: 4 }, ticks: 120, farm: true, cropItem: 'fruit', cropDays: 200, yieldBase: 10, tech: 'horticulture', lifeDays: 6000, size: [2, 2] },
+    orchard: { label: 'Gyümölcsös', cost: { wood: 4 }, ticks: 120, farm: true, cropItem: 'fruit', cropDays: 200, yieldBase: 40, perennial: true, tech: 'horticulture', lifeDays: 6000, size: [2, 2] },
     pasture: { label: 'Karám', cost: { wood: 10, fiber: 4 }, ticks: 160, pasture: true, tech: 'animal_husbandry', lifeDays: 3000, size: [2, 2] },
     kiln: pub({ label: 'Égetőkemence', cost: { clay: 10, stone: 8 }, ticks: 160, furnace: 1, kiln: true, tech: 'kiln_building', lifeDays: 3000, light: 0.3, minPop: 2 }),
     furnace: pub({ label: 'Olvasztókemence', cost: { stone: 16, clay: 10, wood: 6 }, ticks: 260, furnace: 2, storage: 60, tech: 'copper_smelting', lifeDays: 4000, light: 0.4, minPop: 3 }),
@@ -2703,7 +2703,7 @@
     },
     farm: {
       applicable: (c, a) => c.adult && a.knowledge.techs.has('seed_planting'),
-      score: (c, a) => { const farm = [...c.world.buildings.values()].find((b) => b.kind === 'farm_plot' && b.ownerId === a.id); a._farm = farm; if (!farm) return [c.season <= 1 && c.home ? 0.6 + P(a).discipline * 0.3 : 0.1, ['szántót akar']]; if (farm.progress < 1) return [0.7, ['befejezi a szántót']]; if (!farm.planted && c.season <= 1) return [((a.inv.roots || 0) + (a.inv.berries || 0) >= 2 ? 0.75 : 0.3), ['vetés']]; if (farm.planted && farm.crop >= 1) return [1.0 + u(N(a).food) * 0.5, ['érett a termés']]; return [0.05, ['nő a termés']]; },
+      score: (c, a) => { const farms = [...c.world.buildings.values()].filter((b) => b.kind === 'farm_plot' && b.ownerId === a.id); const maxFarms = 1 + (c.household.length >= 3 ? 1 : 0) + (a.knowledge.techs.has('plowing') ? 1 : 0) + (a.knowledge.techs.has('crop_rotation') ? 1 : 0); const farm = farms.find((b) => b.progress < 1) || farms.find((b) => b.planted && b.crop >= 1) || farms.find((b) => !b.planted) || null; a._farm = farm; if (!farm) { if (farms.length >= maxFarms) return [0.05, ['nő a termés']]; return [c.season <= 1 && c.home ? 0.6 + P(a).discipline * 0.3 + (farms.length === 0 ? 0.2 : 0) + u(N(a).food) * 0.4 : 0.1, [farms.length ? 'még egy szántót akar' : 'szántót akar']]; } if (farm.progress < 1) return [0.7, ['befejezi a szántót']]; if (!farm.planted && c.season <= 1) return [((a.inv.roots || 0) + (a.inv.berries || 0) >= 2 ? 0.75 : 0.3), ['vetés']]; if (farm.planted && farm.crop >= 1) return [1.0 + u(N(a).food) * 0.5, ['érett a termés']]; return [0.05, ['nő a termés']]; },
       plan: (c, a) => { const farm = a._farm; if (!farm) return buildPlan(c, a, 'farm_plot'); if (farm.progress < 1) return buildPlanFor(c, a, farm); if (!farm.planted) { const seeds = (a.inv.roots || 0) + (a.inv.berries || 0) >= 2 ? [] : acquireSteps(c.world, a, { berries: 2 }, c); if (!seeds) return null; return { steps: [...seeds, { op: 'moveTo', i: c.world.idx(farm.x, farm.y) }, { op: 'plant', bid: farm.id }], tag: 'farm:plant' }; } if (farm.crop >= 1) return { steps: [{ op: 'moveTo', i: c.world.idx(farm.x, farm.y) }, { op: 'harvest', bid: farm.id }], tag: 'farm:harvest' }; return null; },
     },
     explore: {
@@ -3018,7 +3018,7 @@
     },
     plant(world, a, st) { const b = world.buildings.get(st.bid); if (!b || b.progress < 1 || !near(world, a, world.idx(b.x, b.y), 1.8)) return FAIL; let seeds = 2; for (const k of ['roots', 'berries']) { while (seeds > 0 && (a.inv[k] || 0) > 0) { A().removeItem(a, k, 1); seeds--; } } if (seeds > 0) return FAIL; b.planted = true; b.crop = 0; A().practice(a, 'farming', 3); a.counters.farmed = (a.counters.farmed || 0) + 1; return DONE; },
     take(world, a, st) { const b = world.buildings.get(st.bid); if (!b || !b.storage || !near(world, a, world.idx(b.x, b.y), 1.8)) return FAIL; const have = b.storage[st.item] || 0; if (have <= 0) return FAIL; const q = Math.min(have, st.n || 1); const add = A().addItem(world, a, st.item, q); b.storage[st.item] -= add; if (b.storage[st.item] <= 0) delete b.storage[st.item]; return add > 0 ? DONE : FAIL; },
-    harvest(world, a, st) { const b = world.buildings.get(st.bid); if (!b || !b.planted || b.crop < 1 || !near(world, a, world.idx(b.x, b.y), 1.8)) return FAIL; const def = Bld().def(b); const i = world.idx(b.x, b.y); const q = Math.round((def.yieldBase || 6) + world.tiles.fert[i] / 255 * 8) * (1 + LW.Tech.fx(world, a).farm) | 0; const cropItem = def.cropItem || 'grain'; const add = A().addItem(world, a, cropItem, q); if (add < q) { world.ground = world.ground || new Map(); const g = world.ground.get(i) || {}; g[cropItem] = (g[cropItem] || 0) + (q - add); world.ground.set(i, g); } b.planted = !!def.perennial; b.crop = 0; if (!def.perennial) world.tiles.fert[i] = Math.max(20, world.tiles.fert[i] - 12); A().practice(a, 'farming', 4); a.counters.farmed = (a.counters.farmed || 0) + 2; world.events.emit('Harvest', { tick: world.tick, agentId: a.id, amount: q, tile: i, first: !world.firsts || !world.firsts['harvest'] }); return DONE; },
+    harvest(world, a, st) { const b = world.buildings.get(st.bid); if (!b || !b.planted || b.crop < 1 || !near(world, a, world.idx(b.x, b.y), 1.8)) return FAIL; const def = Bld().def(b); const i = world.idx(b.x, b.y); const q = Math.round(((def.yieldBase || 30) + world.tiles.fert[i] / 255 * 30) * (1 + LW.Tech.fx(world, a).farm)); /* egy szántó egy családot etet, nem egy vacsorát */ const cropItem = def.cropItem || 'grain'; const add = A().addItem(world, a, cropItem, q); if (add < q) { world.ground = world.ground || new Map(); const g = world.ground.get(i) || {}; g[cropItem] = (g[cropItem] || 0) + (q - add); world.ground.set(i, g); } b.planted = !!def.perennial; b.crop = 0; if (!def.perennial) world.tiles.fert[i] = Math.max(20, world.tiles.fert[i] - 12); A().practice(a, 'farming', 4); a.counters.farmed = (a.counters.farmed || 0) + 2; world.events.emit('Harvest', { tick: world.tick, agentId: a.id, amount: q, tile: i, first: !world.firsts || !world.firsts['harvest'] }); return DONE; },
   };
 
   const Actions = {
@@ -3574,7 +3574,7 @@
       if ((def.minPop || 1) > pop) return 0;
       for (const b of world.buildingsNear(a.x | 0, a.y | 0, 16)) if (b.kind === kind) return b.progress < 1 ? 0.9 : 0; // a félkész középületet be kell fejezni
       let want = 0.5;
-      if (def.want === 'food') want += (1 - a.needs.food) * 0.6; if (def.want === 'water') want += (LW.Agents.nearestPoi(world, a, 'water') ? (LW.Agents.nearestPoi(world, a, 'water').d > 8 ? 0.6 : 0.1) : 1); if (def.want === 'belief') want += a.beliefs.creator * 0.8; if (def.want === 'knowledge') want += a.personality.curiosity * 0.6 + a.personality.intelligence * 0.3; if (def.want === 'health') want += (1 - a.health) * 0.8; if (def.want === 'safety') { want += (1 - a.needs.safety) * 0.5 + a.emotions.fear * 0.5; const s2 = LW.Settlements.at(world, a.x, a.y); if (s2 && (s2.warWith || (s2.rivalry && Object.values(s2.rivalry).some((v) => v > 0.5)))) want += 0.6; }
+      if (def.want === 'food') { want += (1 - a.needs.food) * 1.2 + 0.2; const hungry = world.agentsNear(a.x, a.y, 12, a.id).filter((o) => o.needs.food < 0.4).length; want += Math.min(0.6, hungry * 0.1); } if (def.want === 'water') want += (LW.Agents.nearestPoi(world, a, 'water') ? (LW.Agents.nearestPoi(world, a, 'water').d > 8 ? 0.6 : 0.1) : 1); if (def.want === 'belief') want += a.beliefs.creator * 0.8; if (def.want === 'knowledge') want += a.personality.curiosity * 0.6 + a.personality.intelligence * 0.3; if (def.want === 'health') want += (1 - a.health) * 0.8; if (def.want === 'safety') { want += (1 - a.needs.safety) * 0.5 + a.emotions.fear * 0.5; const s2 = LW.Settlements.at(world, a.x, a.y); if (s2 && (s2.warWith || (s2.rivalry && Object.values(s2.rivalry).some((v) => v > 0.5)))) want += 0.6; }
       if (def.furnace || def.workshop || def.lab || def.factory || def.computer) want += a.personality.creativity * 0.5 + a.personality.ambition * 0.3;
       return want;
     },
@@ -4259,7 +4259,7 @@
       const supported = A().caregivers(w, a).length > 0 || hh.some((o) => o !== a && A().isAdult(w, o)) || (!adult && w.agentsNear(a.x, a.y, 14, a.id).some((o) => A().isAdult(w, o))); // orphans are taken in by the people around them
       if (child) { intake = supported ? 0.95 : 0.4; }
       else {
-        const foodQ = Math.min(1, [...a.knowledge.places.values()].filter((p) => p.k === 'food').reduce((s, p) => s + p.q, 0) / 400);
+        const foodQ = Math.min(1, [...a.knowledge.places.values()].filter((p) => p.k === 'food').reduce((s, p) => s + p.q, 0) / 400) * (1 - Math.min(0.5, (w.agentsNear(a.x, a.y, 10, a.id).length) * 0.03)); // sokan ugyanazt a bokrot dézsmálják
         const hunt = a.inv.spear && A().knownCount(a, 'animals') ? 0.4 : 0; const fish = a.knowledge.techs.has('fishing') && A().knownCount(a, 'fish') ? 0.35 : 0;
         intake = (0.55 + 0.5 * (0.6 + a.skills.gathering * 0.6) * seasonFood * foodQ * (a.knowledge.techs.has('foraging_lore') ? 1.15 : 1) + hunt + fish) * (1 + LW.Tech.fx(w, a).food * 0.6 + LW.Tech.fx(w, a).farm * 0.2);
         if (stage === 'adolescent' && supported) intake = Math.max(intake, 0.9);
@@ -4304,7 +4304,7 @@
       if (adult) { A().practice(a, 'gathering', 8); A().practice(a, 'foraging', 5); A().practice(a, 'crafting', 2); A().practice(a, 'building', home ? 1 : 2); A().practice(a, 'exploring', 1 + a.personality.curiosity * 2); if ((a.inv.spear || LW.Tree.bestTool(a, 'hunt') >= 1) && A().knownCount(a, 'animals')) A().practice(a, 'hunting', 4); if (a.knowledge.techs.has('seed_planting')) A().practice(a, 'farming', 5); if (a.knowledge.techs.has('herbal_medicine')) A().practice(a, 'medicine', 2); A().practice(a, 'social', 2); if (a.knowledge.techs.has('stone_knapping') && !a.inv.handaxe && A().knownCount(a, 'stone') && A().knownCount(a, 'flint') && rng.chance(0.3)) { a.inv.handaxe = 1; w.events.emit('ItemCrafted', { tick: w.tick, agentId: a.id, item: 'handaxe', first: !w.firsts['item:handaxe'] }); } if (a.knowledge.techs.has('spear_making') && !a.inv.spear && rng.chance(0.3)) { a.inv.spear = 1; w.events.emit('ItemCrafted', { tick: w.tick, agentId: a.id, item: 'spear', first: !w.firsts['item:spear'] }); } if (a.knowledge.techs.has('basket_weaving') && !a.inv.basket && rng.chance(0.3)) a.inv.basket = 1; if (a.knowledge.techs.has('hide_working') && !a.inv.clothes && (a.inv.hide || 0) >= 2 && rng.chance(0.4)) { a.inv.hide -= 2; a.inv.clothes = 1; } if (a.inv.spear && A().knownCount(a, 'animals') && rng.chance(0.25)) a.inv.hide = (a.inv.hide || 0) + 1; }
       // ---- fire & shelter
       if (adult && a.knowledge.techs.has('fire_making')) {
-        const fires = [...w.buildings.values()].filter((b) => b.kind === 'campfire' && LW.dist(b.x, b.y, a.x, a.y) < 5);
+        const fires = [...w.buildings.values()].filter((b) => b.kind === 'campfire' && LW.dist(b.x, b.y, a.x, a.y) < 8);
         if (!fires.length && rng.chance(0.5) && A().knownCount(a, 'wood')) { const s = LW.Buildings.findSite(w, a, 'campfire'); if (s >= 0) { const b = LW.Buildings.create(w, 'campfire', w.xOf(s), w.yOf(s), a.id); b.delivered = { wood: 3 }; LW.Buildings.complete(w, b, a); } }
         else for (const f of fires) if (!f.lit || f.fuel < T.TICKS_PER_DAY) { if (rng.chance(0.8)) { f.fuel = LW.Buildings.DEFS.campfire.fuelTicks; f.lit = true; } }
       }
@@ -4317,7 +4317,11 @@
           if (!site && rng.chance(0.5)) { const s = LW.Buildings.findSite(w, a, kind); if (s >= 0) site = LW.Buildings.create(w, kind, w.xOf(s), w.yOf(s), a.id); }
           if (site) { const def = LW.Buildings.def(site); const cost = def.cost; const expectedDays = 2 + def.ticks / 40; for (const k in cost) site.delivered[k] = Math.min(cost[k], (site.delivered[k] || 0) + cost[k] / expectedDays * (0.6 + a.skills.building)); site.progress = Math.min(1, site.progress + 1 / expectedDays * (0.7 + a.skills.building * 0.6)); A().practice(a, 'building', 6); if (site.progress >= 1 && LW.Buildings.materialsComplete(site)) { a.counters.built++; LW.Buildings.complete(w, site, a); } else if (site.progress >= 1) site.progress = 0.95; }
         } else if (cur === 0 && partnerHome) { const ph = w.buildings.get(w.agents.get(a.partner).home); if (ph) LW.Buildings.moveIn(w, ph, a); }
-        if (a.knowledge.techs.has('seed_planting') && home && rng.chance(0.15)) { let farm = [...w.buildings.values()].find((b) => b.kind === 'farm_plot' && b.ownerId === a.id); if (!farm) { const s = LW.Buildings.findSite(w, a, 'farm_plot'); if (s >= 0) { farm = LW.Buildings.create(w, 'farm_plot', w.xOf(s), w.yOf(s), a.id); farm.delivered = { wood: 2 }; LW.Buildings.complete(w, farm, a); } } if (farm && farm.progress >= 1) { if (!farm.planted && LW.Time.season(w.tick) <= 1) { farm.planted = true; farm.crop = 0; } else if (farm.planted && farm.crop >= 1) { const q = Math.round(6 + w.tiles.fert[w.idx(farm.x, farm.y)] / 255 * 8); if (home.storage) home.storage.grain = (home.storage.grain || 0) + q; farm.planted = false; farm.crop = 0; w.events.emit('Harvest', { tick: w.tick, agentId: a.id, amount: q, tile: w.idx(farm.x, farm.y), first: !w.firsts['harvest'] }); } } }
+        if (a.knowledge.techs.has('seed_planting') && home && rng.chance(0.35)) {
+          const farms = [...w.buildings.values()].filter((b) => b.kind === 'farm_plot' && b.ownerId === a.id); const maxFarms = 1 + (hh.length >= 3 ? 1 : 0) + (a.knowledge.techs.has('plowing') ? 1 : 0) + (a.knowledge.techs.has('crop_rotation') ? 1 : 0);
+          if (farms.length < maxFarms && LW.Time.season(w.tick) <= 1 && rng.chance(0.5)) { const s = LW.Buildings.findSite(w, a, 'farm_plot'); if (s >= 0) { const f = LW.Buildings.create(w, 'farm_plot', w.xOf(s), w.yOf(s), a.id); f.delivered = { wood: 2 }; LW.Buildings.complete(w, f, a); farms.push(f); } }
+          for (const farm of farms) { if (farm.progress < 1) continue; if (!farm.planted && LW.Time.season(w.tick) <= 1) { farm.planted = true; farm.crop = 0; } else if (farm.planted && farm.crop >= 1) { const q = Math.round((30 + w.tiles.fert[w.idx(farm.x, farm.y)] / 255 * 30) * (1 + LW.Tech.fx(w, a).farm)); const store = home.storage ? home.storage : (LW.Tree.nearestStore(w, a, 12) || {}).storage; if (store) store.grain = Math.min((store.grain || 0) + q, 400); farm.planted = false; farm.crop = 0; A().practice(a, 'farming', 6); w.events.emit('Harvest', { tick: w.tick, agentId: a.id, amount: q, tile: w.idx(farm.x, farm.y), first: !w.firsts['harvest'] }); } }
+        }
       }
       // ---- középületek és jobb szerszámok (a napi léptékben elvonatkoztatva: az anyagot a közösség előteremti)
       if (adult && rng.chance(0.06)) { let best = 0, which = null; for (const k in LW.Buildings.DEFS) { if (!LW.Buildings.DEFS[k].public) continue; const wnt = LW.Society.wants(w, a, k); if (wnt > best) { best = wnt; which = k; } } if (which && best > 0.5) { let site = [...w.buildings.values()].find((b) => b.kind === which && b.progress < 1 && LW.dist(b.x, b.y, a.x, a.y) < 20); if (!site) { const s = LW.Buildings.findSite(w, a, which); if (s >= 0) site = LW.Buildings.create(w, which, w.xOf(s), w.yOf(s), a.id); } if (site) { const def = LW.Buildings.def(site); const expectedDays = 3 + def.ticks / 30; for (const k in def.cost) site.delivered[k] = Math.min(def.cost[k], (site.delivered[k] || 0) + def.cost[k] / expectedDays); site.progress = Math.min(1, site.progress + 1 / expectedDays * (0.7 + a.skills.building * 0.6) * LW.Tech.mult(w, a, 'build')); A().practice(a, 'building', 4); if (site.progress >= 1 && LW.Buildings.materialsComplete(site)) { a.counters.built++; LW.Buildings.complete(w, site, a); } else if (site.progress >= 1) site.progress = 0.95; } } }

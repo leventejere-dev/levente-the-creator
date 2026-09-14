@@ -75,7 +75,7 @@
     fish_raw:    { food: 0.35, spoilDays: 2,  weight: 0.8, label: 'Nyers hal', raw: 'fish_cooked' },
     fish_cooked: { food: 0.55, spoilDays: 6,  weight: 0.7, label: 'Sült hal' },
     dried_food:  { food: 0.50, spoilDays: 60, weight: 0.5, label: 'Szárított étel' },
-    grain:       { food: 0.30, spoilDays: 90, weight: 0.5, label: 'Gabona' },
+    grain:       { food: 0.40, spoilDays: 120, weight: 0.5, label: 'Gabona' },
     wood:   { weight: 1.5, label: 'Fa' },
     stone:  { weight: 2.0, label: 'Kő' },
     flint:  { weight: 0.8, label: 'Kova' },

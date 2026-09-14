@@ -15,7 +15,7 @@
       const done = new Set();
       for (const b of w.buildings.values()) {
         if (b.progress < 1) continue; const def = Bd[b.kind]; if (!def) continue;
-        const near = def.water || def.records || def.shrine || def.school || def.hospital || def.market || def.pasture || def.power || def.produce || def.joy || def.hygiene || def.spaceport ? w.agentsNear(b.x + 0.5, b.y + 0.5, 12) : null;
+        const near = def.water || def.records || def.shrine || def.school || def.hospital || def.market || def.pasture || def.power || def.produce || def.joy || def.hygiene || def.spaceport || def.bank ? w.agentsNear(b.x + 0.5, b.y + 0.5, 12) : null;
         // termelő középület (méhes, halastó, üvegház, vertikális farm): évszaktól függetlenül a közös raktárba dolgozik
         if (def.produce && b.storage) { const cap = def.storage || 60; for (const k in def.produce) b.storage[k] = Math.min(cap, (b.storage[k] || 0) + def.produce[k] * (near.length ? 1 : 0.3)); }
         // erőmű: fény, meleg és gépek a környéken (a hatás a Tree.fx-ben); csatorna, víztorony: kevesebb kór

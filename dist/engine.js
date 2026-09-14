@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-14 12:56 */
+/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-14 13:05 */
 
 /* ===== core/rng.js ===== */
 /* LEVENTE — THE CREATOR · core/rng.js
@@ -272,6 +272,11 @@
     occupation: (k) => M.occupation[k] || k, goal: (k) => M.goal[k] || k, goalVerb: (k) => M.goalVerb[k] || k, ctx: (k) => M.ctx[k] || k, op: (k) => M.op[k] || k,
     deposit: (i) => M.deposit[i] || '?', depositByName: (n) => M.deposit[LW.DEPOSIT_NAME.indexOf(n)] || n, depositItemByName: (n) => M.depositItem[LW.DEPOSIT_NAME.indexOf(n)] || n,
     tier: (k) => M.tier[k] || k, tierBecame: (k) => M.tierBecame[k] || k, shape: (k) => M.shape[k] || k, eventType: (k) => M.eventType[k] || k,
+    /** Egyes szám harmadik személyű birtokos rag: kikötő → kikötője, kemence → kemencéje, gyár → gyára, műhely → műhelye. */
+    poss: (word) => { const w = String(word); const last = w[w.length - 1]; const vow = w.replace(/[^aáoóuúeéiíöőüű]/g, ''); const back = /[aáoóuú]/.test(vow.slice(-1)) || (/[ií]/.test(vow.slice(-1)) && /[aáoóuú]/.test(vow.slice(-2, -1))); const ae = back ? 'a' : 'e';
+      if (/mű$/.test(w)) return w + 've'; if (/alom$/.test(w)) return w.slice(0, -2) + 'ma'; if (/elem$/.test(w)) return w.slice(0, -2) + 'me'; if (/orony$/.test(w)) return w.slice(0, -3) + 'nya';
+      if (/[aáeéiíoóöőuúüű]$/.test(w)) { const stem = last === 'a' ? w.slice(0, -1) + 'á' : last === 'e' ? w.slice(0, -1) + 'é' : w; return stem + 'j' + ae; }
+      if (/[tdkn]$/.test(w)) return w + 'j' + ae; return w + ae; },
   };
   LW.HU = HU;
 })(globalThis.LW || (globalThis.LW = {}));
@@ -2087,9 +2092,12 @@
   Tree.fx = function (world, a) {
     const base = fx0.call(this, world, a); const day = world.tick / TPD | 0;
     if (a._fxb && a._fxbDay === day && a._fxbN === a.knowledge.techs.size && a._fxbX === (a.x | 0) >> 3 && a._fxbY === (a.y | 0) >> 3) return a._fxb;
-    const g = { ...base }; let power = 0, transport = 0, media = 0, joy = 0, guard = 0, bank = 0;
-    for (const b of world.buildingsNear(a.x | 0, a.y | 0, 10)) { if (b.progress < 1) continue; const d = B[b.kind]; if (!d) continue; if (d.power > power) power = d.power; if (d.transport > transport) transport = d.transport; if (d.media > media) media = d.media; if (d.joy > joy) joy = d.joy; if ((d.police || d.court || d.barracks) && 1 > guard) guard = 1; if (d.bank > bank) bank = d.bank; }
-    g.craft += power * 0.1; g.warmth += power * 1.5; g.speed += transport * 0.2; g.trade += transport * 0.2 + bank * 0.2; g.teach += media * 0.2; g.happiness += joy * 0.08; g.safety += guard * 0.2;
+    const g = { ...base };
+    // a környék épületei 8×8-as cellánként naponta egyszer (egy városban százan laknak ugyanabban a cellában)
+    const cx = (a.x | 0) >> 3, cy = (a.y | 0) >> 3; const ck = cy * 4096 + cx; if (!world._fxCells || world._fxCellsDay !== day) { world._fxCells = new Map(); world._fxCellsDay = day; }
+    let c = world._fxCells.get(ck);
+    if (!c) { c = { power: 0, transport: 0, media: 0, joy: 0, guard: 0, bank: 0 }; for (const b of world.buildingsNear(cx * 8 + 4, cy * 8 + 4, 12)) { if (b.progress < 1) continue; const d = B[b.kind]; if (!d) continue; if (d.power > c.power) c.power = d.power; if (d.transport > c.transport) c.transport = d.transport; if (d.media > c.media) c.media = d.media; if (d.joy > c.joy) c.joy = d.joy; if (d.police || d.court || d.barracks) c.guard = 1; if (d.bank > c.bank) c.bank = d.bank; } world._fxCells.set(ck, c); }
+    g.craft += c.power * 0.1; g.warmth += c.power * 1.5; g.speed += c.transport * 0.2; g.trade += c.transport * 0.2 + c.bank * 0.2; g.teach += c.media * 0.2; g.happiness += c.joy * 0.08; g.safety += c.guard * 0.2;
     g.speed -= this.bestTool(a, 'vehicle') * 0.25; // szekér/kerékpár/gépkocsi: 0.25 fokonként (az alap 0.5/fok helyett)
     g.craft += this.bestTool(a, 'robot') * 0.3; g.build += this.bestTool(a, 'robot') * 0.3; g.farm += this.bestTool(a, 'robot') * 0.2;
     a._fxb = g; a._fxbDay = day; a._fxbN = a.knowledge.techs.size; a._fxbX = (a.x | 0) >> 3; a._fxbY = (a.y | 0) >> 3; return g;
@@ -3892,7 +3900,7 @@
       const done = new Set();
       for (const b of w.buildings.values()) {
         if (b.progress < 1) continue; const def = Bd[b.kind]; if (!def) continue;
-        const near = def.water || def.records || def.shrine || def.school || def.hospital || def.market || def.pasture || def.power || def.produce || def.joy || def.hygiene || def.spaceport ? w.agentsNear(b.x + 0.5, b.y + 0.5, 12) : null;
+        const near = def.water || def.records || def.shrine || def.school || def.hospital || def.market || def.pasture || def.power || def.produce || def.joy || def.hygiene || def.spaceport || def.bank ? w.agentsNear(b.x + 0.5, b.y + 0.5, 12) : null;
         // termelő középület (méhes, halastó, üvegház, vertikális farm): évszaktól függetlenül a közös raktárba dolgozik
         if (def.produce && b.storage) { const cap = def.storage || 60; for (const k in def.produce) b.storage[k] = Math.min(cap, (b.storage[k] || 0) + def.produce[k] * (near.length ? 1 : 0.3)); }
         // erőmű: fény, meleg és gépek a környéken (a hatás a Tree.fx-ben); csatorna, víztorony: kevesebb kór
@@ -4088,7 +4096,7 @@
     // ---------------------------------------------------------------- vállalatok: a vagyon szervezi a termelést
     companies(w) {
       const rng = w.rng;
-      for (const b of w.buildings.values()) { const def = LW.Buildings.DEFS[b.kind]; if (!def || !def.public || !def.storage || b.progress < 1 || b.company) continue; if (!rng.chance(0.03)) continue; const near = w.agentsNear(b.x + 0.5, b.y + 0.5, 10).filter((p) => A().isAdult(w, p) && (p.wealth || 0) >= 4 && p.knowledge.techs.has('banking')); if (!near.length) continue; const o = near.sort((x, y) => (y.wealth || 0) - (x.wealth || 0))[0]; b.company = { ownerId: o.id, name: `${o.name} ${def.label.toLowerCase()}e`, since: w.tick, workers: 1 }; o.wealth = (o.wealth || 0) - 5; o.achievements.push('Vállalatalapító'); o.importance += 0.6; w.events.emit('CompanyFounded', { tick: w.tick, agentId: o.id, name: b.company.name, kind: b.kind, tile: w.idx(b.x, b.y) }); A().memory(w, o, { type: 'company', text: `saját vállalatot alapítottam: ${b.company.name}`, importance: 0.8, emotion: 'pride', intensity: 0.7 }); }
+      for (const b of w.buildings.values()) { const def = LW.Buildings.DEFS[b.kind]; if (!def || !def.public || !def.storage || b.progress < 1 || b.company) continue; if (!rng.chance(0.03)) continue; const near = w.agentsNear(b.x + 0.5, b.y + 0.5, 10).filter((p) => A().isAdult(w, p) && (p.wealth || 0) >= 4 && p.knowledge.techs.has('banking')); if (!near.length) continue; const o = near.sort((x, y) => (y.wealth || 0) - (x.wealth || 0))[0]; b.company = { ownerId: o.id, name: `${o.name} ${LW.HU.poss(def.label.toLowerCase())}`, since: w.tick, workers: 1 }; o.wealth = (o.wealth || 0) - 5; o.achievements.push('Vállalatalapító'); o.importance += 0.6; w.events.emit('CompanyFounded', { tick: w.tick, agentId: o.id, name: b.company.name, kind: b.kind, tile: w.idx(b.x, b.y) }); A().memory(w, o, { type: 'company', text: `saját vállalatot alapítottam: ${b.company.name}`, importance: 0.8, emotion: 'pride', intensity: 0.7 }); }
       // a vállalat dolgozókat gyűjt és a tulajdonos gazdagszik a termelésből
       for (const b of w.buildings.values()) { if (!b.company) continue; const o = w.agents.get(b.company.ownerId); if (!o) { b.company = null; continue; } const near = w.agentsNear(b.x + 0.5, b.y + 0.5, 12).filter((p) => A().isAdult(w, p) && p.id !== o.id); b.company.workers = Math.max(1, Math.min(near.length, 1 + Math.floor((o.wealth || 0) / 6))); if (rng.chance(0.5)) { o.wealth = (o.wealth || 0) + Math.round(b.company.workers * 0.5); for (const p of near.slice(0, b.company.workers)) p.wealth = (p.wealth || 0) + 1; } }
     },

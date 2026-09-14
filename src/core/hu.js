@@ -24,6 +24,11 @@
     occupation: (k) => M.occupation[k] || k, goal: (k) => M.goal[k] || k, goalVerb: (k) => M.goalVerb[k] || k, ctx: (k) => M.ctx[k] || k, op: (k) => M.op[k] || k,
     deposit: (i) => M.deposit[i] || '?', depositByName: (n) => M.deposit[LW.DEPOSIT_NAME.indexOf(n)] || n, depositItemByName: (n) => M.depositItem[LW.DEPOSIT_NAME.indexOf(n)] || n,
     tier: (k) => M.tier[k] || k, tierBecame: (k) => M.tierBecame[k] || k, shape: (k) => M.shape[k] || k, eventType: (k) => M.eventType[k] || k,
+    /** Egyes szám harmadik személyű birtokos rag: kikötő → kikötője, kemence → kemencéje, gyár → gyára, műhely → műhelye. */
+    poss: (word) => { const w = String(word); const last = w[w.length - 1]; const vow = w.replace(/[^aáoóuúeéiíöőüű]/g, ''); const back = /[aáoóuú]/.test(vow.slice(-1)) || (/[ií]/.test(vow.slice(-1)) && /[aáoóuú]/.test(vow.slice(-2, -1))); const ae = back ? 'a' : 'e';
+      if (/mű$/.test(w)) return w + 've'; if (/alom$/.test(w)) return w.slice(0, -2) + 'ma'; if (/elem$/.test(w)) return w.slice(0, -2) + 'me'; if (/orony$/.test(w)) return w.slice(0, -3) + 'nya';
+      if (/[aáeéiíoóöőuúüű]$/.test(w)) { const stem = last === 'a' ? w.slice(0, -1) + 'á' : last === 'e' ? w.slice(0, -1) + 'é' : w; return stem + 'j' + ae; }
+      if (/[tdkn]$/.test(w)) return w + 'j' + ae; return w + ae; },
   };
   LW.HU = HU;
 })(globalThis.LW || (globalThis.LW = {}));

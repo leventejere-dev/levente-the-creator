@@ -241,9 +241,12 @@
   Tree.fx = function (world, a) {
     const base = fx0.call(this, world, a); const day = world.tick / TPD | 0;
     if (a._fxb && a._fxbDay === day && a._fxbN === a.knowledge.techs.size && a._fxbX === (a.x | 0) >> 3 && a._fxbY === (a.y | 0) >> 3) return a._fxb;
-    const g = { ...base }; let power = 0, transport = 0, media = 0, joy = 0, guard = 0, bank = 0;
-    for (const b of world.buildingsNear(a.x | 0, a.y | 0, 10)) { if (b.progress < 1) continue; const d = B[b.kind]; if (!d) continue; if (d.power > power) power = d.power; if (d.transport > transport) transport = d.transport; if (d.media > media) media = d.media; if (d.joy > joy) joy = d.joy; if ((d.police || d.court || d.barracks) && 1 > guard) guard = 1; if (d.bank > bank) bank = d.bank; }
-    g.craft += power * 0.1; g.warmth += power * 1.5; g.speed += transport * 0.2; g.trade += transport * 0.2 + bank * 0.2; g.teach += media * 0.2; g.happiness += joy * 0.08; g.safety += guard * 0.2;
+    const g = { ...base };
+    // a környék épületei 8×8-as cellánként naponta egyszer (egy városban százan laknak ugyanabban a cellában)
+    const cx = (a.x | 0) >> 3, cy = (a.y | 0) >> 3; const ck = cy * 4096 + cx; if (!world._fxCells || world._fxCellsDay !== day) { world._fxCells = new Map(); world._fxCellsDay = day; }
+    let c = world._fxCells.get(ck);
+    if (!c) { c = { power: 0, transport: 0, media: 0, joy: 0, guard: 0, bank: 0 }; for (const b of world.buildingsNear(cx * 8 + 4, cy * 8 + 4, 12)) { if (b.progress < 1) continue; const d = B[b.kind]; if (!d) continue; if (d.power > c.power) c.power = d.power; if (d.transport > c.transport) c.transport = d.transport; if (d.media > c.media) c.media = d.media; if (d.joy > c.joy) c.joy = d.joy; if (d.police || d.court || d.barracks) c.guard = 1; if (d.bank > c.bank) c.bank = d.bank; } world._fxCells.set(ck, c); }
+    g.craft += c.power * 0.1; g.warmth += c.power * 1.5; g.speed += c.transport * 0.2; g.trade += c.transport * 0.2 + c.bank * 0.2; g.teach += c.media * 0.2; g.happiness += c.joy * 0.08; g.safety += c.guard * 0.2;
     g.speed -= this.bestTool(a, 'vehicle') * 0.25; // szekér/kerékpár/gépkocsi: 0.25 fokonként (az alap 0.5/fok helyett)
     g.craft += this.bestTool(a, 'robot') * 0.3; g.build += this.bestTool(a, 'robot') * 0.3; g.farm += this.bestTool(a, 'robot') * 0.2;
     a._fxb = g; a._fxbDay = day; a._fxbN = a.knowledge.techs.size; a._fxbX = (a.x | 0) >> 3; a._fxbY = (a.y | 0) >> 3; return g;

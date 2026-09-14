@@ -161,6 +161,8 @@
       for (let r = 1; r <= 2; r++) { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const nx = x + dx, ny = y + dy; if (!world.inBounds(nx, ny)) continue; const j = world.idx(nx, ny); if (!world.isPassable(j)) continue; const d = LW.dist(a.x, a.y, nx + 0.5, ny + 0.5); if (d < bd) { bd = d; best = j; } } if (best != null) return best; }
       return best;
     },
+    /** A földön hagyott holmi elenyészik: a fa és a bőr korhad, a kő a földbe süllyed, a fém rozsdál. */
+    groundDecay(world, g, days) { const rng = world.rng; for (const k in g) { const it = LW.ITEMS[k]; if (!it || it.food) continue; const rate = it.tool || it.slot ? 0.003 : (k === 'stone' || k === 'flint' || k === 'clay' || k === 'salt' || /^ore_/.test(k) || k === 'coal' || k === 'gems' || k === 'gold_nugget') ? 0.006 : 0.02; const q = g[k]; if (q <= 0) { delete g[k]; continue; } const loss = q * rate * days; g[k] = q - loss - (rng.chance(rate * days * 4) ? 1 : 0); if (g[k] < 0.5) delete g[k]; } },
     knownCount(a, kind) { let n = 0; for (const v of a.knowledge.places.values()) if (v.k === kind && v.q > 0) n++; return n; },
 
     // ---------------- biology tick

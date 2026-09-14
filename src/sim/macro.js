@@ -21,7 +21,7 @@
         try { this.agentDay(w, a, seasonFood); } catch (e) { if (w.onError) w.onError(e, a, { op: 'macro' }); }
       }
       LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w); LW.Society.daily(w);
-      for (const [i, g] of w.ground) { A().spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); }
+      for (const [i, g] of w.ground) { A().spoil(w, g, 1.5); A().groundDecay(w, g, 1); if (!Object.keys(g).length) w.ground.delete(i); }
     },
     agentDay(w, a, seasonFood) {
       const rng = w.rng; const stage = A().stage(w, a); const adult = stage === 'adult' || stage === 'elder'; const child = stage === 'infant' || stage === 'child';

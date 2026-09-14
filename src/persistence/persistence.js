@@ -17,8 +17,9 @@
   const TRANSIENT = new Set(['plan', 'why', 'env', 'threat', 'engagedWith', 'lastSaid']);
   function serializeAgent(a, tick) {
     const o = {};
-    for (const k in a) { if (TRANSIENT.has(k) || k[0] === '_') continue; o[k] = a[k]; }
-    o.knowledge = { techs: [...a.knowledge.techs], places: [...a.knowledge.places.values()], progress: a.knowledge.progress };
+    for (const k in a) { if (TRANSIENT.has(k) || k[0] === '_') continue; o[k] = r4(a[k]); }
+    for (const k of ['needs', 'emotions', 'skills', 'beliefs', 'personality']) if (a[k]) o[k] = roundShallow(a[k]);
+    o.knowledge = { techs: [...a.knowledge.techs], places: [...a.knowledge.places.values()], progress: roundShallow(a.knowledge.progress) };
     // csak a számottevő kapcsolatok maradnak a mentésben (nagy népességnél a többi négyzetesen nőne)
     const keep = (r) => r.status !== 'stranger' || r.familiarity >= 0.15 || r.friendship >= 0.1 || r.romance > 0 || r.resentment >= 0.1 || (r.fear || 0) >= 0.2 || (r.trust || 0) >= 0.2 || r.attraction >= 0.5;
     let rels = [...a.relationships].filter(([, r]) => keep(r));
@@ -32,8 +33,10 @@
   }
   // a nulla, hamis és üres mezők kimaradnak a mentésből; visszatöltéskor az alapértékek pótolják őket
   const REL_ZERO = { trust: 0, attraction: 0, respect: 0, friendship: 0, fear: 0, resentment: 0, jealousy: 0, gratitude: 0, loyalty: 0, familiarity: 0, dependency: 0, romance: 0 };
-  function compactRel(r) { const o = {}; for (const k in r) { const v = r[k]; if (v === 0 || v === false || v == null) continue; o[k] = v; } return o; }
-  function compactMem(m) { const o = {}; for (const k in m) { const v = m[k]; if (v == null || v === false || (Array.isArray(v) && !v.length)) continue; o[k] = v; } return o; }
+  const r4 = (v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 10000) / 10000 : v); // négy tizedes elég; a teljes fát bejáró replacer kétszer annyi ideig tartott
+  function compactRel(r) { const o = {}; for (const k in r) { const v = r[k]; if (v === 0 || v === false || v == null) continue; o[k] = r4(v); } return o; }
+  function compactMem(m) { const o = {}; for (const k in m) { const v = m[k]; if (v == null || v === false || (Array.isArray(v) && !v.length)) continue; o[k] = r4(v); } return o; }
+  function roundShallow(obj) { if (!obj || typeof obj !== 'object') return obj; const o = {}; for (const k in obj) o[k] = r4(obj[k]); return o; }
   function restoreAgent(o) {
     const a = { ...o };
     const places = (o.knowledge.places || []).map((p) => (Array.isArray(p) ? { k: p[0], i: p[1], q: p[2], t: p[3] } : p));
@@ -86,7 +89,7 @@
       return sim;
     },
     migrate(state) { if (!state || typeof state.v !== 'number') throw new Error('Not a world save'); return state; },
-    toJSON(sim) { return JSON.stringify(this.serialize(sim), (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 10000) / 10000 : v)); },
+    toJSON(sim) { return JSON.stringify(this.serialize(sim)); }, // kerekítő replacer nélkül: feleannyi idő, ugyanakkora mentés
     fromJSON(str) { return this.restore(JSON.parse(str)); },
   };
   function mergeCfg(base, over) { if (!over) return JSON.parse(JSON.stringify(base)); const out = JSON.parse(JSON.stringify(base)); for (const k in over) { if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k]) && out[k] && typeof out[k] === 'object') Object.assign(out[k], over[k]); else out[k] = over[k]; } return out; }

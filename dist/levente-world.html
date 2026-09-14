@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LEVENTE — THE CREATOR</title>
-<meta name="description" content="Önálló, folyamatosan élő, magától fejlődő digitális civilizáció. Build: 2026-09-14 13:34.">
+<meta name="description" content="Önálló, folyamatosan élő, magától fejlődő digitális civilizáció. Build: 2026-09-14 13:51.">
 <style>
 :root {
   --bg: #07080c; --panel: rgba(12, 14, 20, 0.86); --panel2: rgba(20, 23, 32, 0.9); --line: rgba(255, 255, 255, 0.08);
@@ -415,7 +415,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
     paths: { trail: 40, path: 160, road: 600, decayPerDay: 0.02 },
     history: { chronicleThreshold: 0.6, feedThreshold: 0.15, feedCap: 300, firstBonus: 3.0, creatorBonus: 1.5 },
     catchup: { detailWindowTicks: 192, maxYears: 500, chunkDays: 30 },
-    persistence: { autosaveSeconds: 30, snapshotSlots: 3, key: 'lw.world.v1' },
+    persistence: { autosaveSeconds: 90, snapshotSlots: 3, key: 'lw.world.v1' },
     lod: { microCap: 300, mesoCap: 3000 },
     audio: { masterVolume: 0.35 },
     debug: { why: true, overlay: false },
@@ -2797,6 +2797,8 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       for (let r = 1; r <= 2; r++) { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const nx = x + dx, ny = y + dy; if (!world.inBounds(nx, ny)) continue; const j = world.idx(nx, ny); if (!world.isPassable(j)) continue; const d = LW.dist(a.x, a.y, nx + 0.5, ny + 0.5); if (d < bd) { bd = d; best = j; } } if (best != null) return best; }
       return best;
     },
+    /** A földön hagyott holmi elenyészik: a fa és a bőr korhad, a kő a földbe süllyed, a fém rozsdál. */
+    groundDecay(world, g, days) { const rng = world.rng; for (const k in g) { const it = LW.ITEMS[k]; if (!it || it.food) continue; const rate = it.tool || it.slot ? 0.003 : (k === 'stone' || k === 'flint' || k === 'clay' || k === 'salt' || /^ore_/.test(k) || k === 'coal' || k === 'gems' || k === 'gold_nugget') ? 0.006 : 0.02; const q = g[k]; if (q <= 0) { delete g[k]; continue; } const loss = q * rate * days; g[k] = q - loss - (rng.chance(rate * days * 4) ? 1 : 0); if (g[k] < 0.5) delete g[k]; } },
     knownCount(a, kind) { let n = 0; for (const v of a.knowledge.places.values()) if (v.k === kind && v.q > 0) n++; return n; },
 
     // ---------------- biology tick
@@ -3271,7 +3273,8 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
         if (a.knowledge.techs.has('cooking') && (a.inv.meat_raw || a.inv.fish_raw) && c.fire) want.push([a.inv.meat_raw ? 'meat_cooked' : 'fish_cooked', 0.5 + u(N(a).food) * 0.6]);
         if (a.knowledge.techs.has('food_drying') && c.fire && ((a.inv.meat_raw || 0) >= 2 || (a.inv.fish_raw || 0) >= 2 || (a.inv.berries || 0) >= 6)) want.push(['dried_food', 0.45 + (c.season === 2 ? 0.3 : 0)]);
         // jobb szerszám, ha tudja, hogyan (balta, vadászfegyver, eke, csákány, ruha)
-        for (const rid in LW.Tech.RECIPES) { const R = LW.Tech.RECIPES[rid]; const out = Object.keys(R.out)[0]; const it = LW.ITEMS[out]; if (!it || !it.slot || !a.knowledge.techs.has(R.tech)) continue; if (LW.Tree.bestTool(a, it.slot) >= it.tier) continue; if (needsBuilding(R.nearby) && !nearestBuilding(c.world, a, R.nearby, 30)) continue; if (R.nearby === 'fire' && !c.fire) continue; want.push([rid, 0.4 + (it.slot === 'hunt' ? u(N(a).food) * 0.3 : 0) + (it.slot === 'clothes' ? u(N(a).warmth) * 0.5 : 0) + P(a).ambition * 0.15]); }
+        if (!a._toolC || c.world.tick - a._toolC.tick > 48) { const list = []; for (const rid in LW.Tech.RECIPES) { const R = LW.Tech.RECIPES[rid]; const out = Object.keys(R.out)[0]; const it = LW.ITEMS[out]; if (!it || !it.slot || !a.knowledge.techs.has(R.tech)) continue; if (LW.Tree.bestTool(a, it.slot) >= it.tier) continue; if (needsBuilding(R.nearby) && !nearestBuilding(c.world, a, R.nearby, 30)) continue; list.push([rid, it.slot]); } a._toolC = { tick: c.world.tick, list }; } // félnaponta újraszámolva: 60 recept, mindnél épületkeresés
+        for (const [rid, slot] of a._toolC.list) { const R = LW.Tech.RECIPES[rid]; if (R.nearby === 'fire' && !c.fire) continue; if (LW.Tree.bestTool(a, slot) >= LW.ITEMS[Object.keys(R.out)[0]].tier) continue; want.push([rid, 0.4 + (slot === 'hunt' ? u(N(a).food) * 0.3 : 0) + (slot === 'clothes' ? u(N(a).warmth) * 0.5 : 0) + P(a).ambition * 0.15]); }
         if (a.knowledge.techs.has('baking') && (a.inv.flour || 0) >= 1 && c.fire) want.push(['bread', 0.5 + u(N(a).food) * 0.5]);
         if (a.knowledge.techs.has('milling') && ((a.inv.grain || 0) >= 3 || (c.home && c.home.storage && (c.home.storage.grain || 0) >= 3))) want.push(['flour', 0.4 + u(N(a).food) * 0.4]);
         for (const [r, s] of want) if (s > best) { best = s; which = r; }
@@ -3290,9 +3293,11 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
     experiment: {
       applicable: (c, a) => (c.adult || c.stage === 'adolescent') && N(a).food > 0.25 && (N(a).water > 0.3 || !c.water) && N(a).energy > 0.2 && N(a).warmth > 0.12,
       score: (c, a) => {
-        const el = LW.Tech.eligible(c.world, a); if (!el.length) return [0, ['nincs mit kipróbálni']];
+        // ami kipróbálható és elérhető: hatóránként újraszámolva (a beszerzési tervek végigpróbálása drága)
+        if (!a._expC || c.world.tick - a._expC.tick > 24 || a._expC.n !== a.knowledge.techs.size) { const el = LW.Tech.eligible(c.world, a); const ok = []; for (const id of el) { const d = LW.Tech.D[id]; const m = LW.Tech.missingItems(a, d); const feasible = count(m) === 0 || acquireSteps(c.world, a, m, c); if (!feasible) continue; if (d.nearby === 'fire' && !c.fire) continue; if (d.nearby === 'water' && !c.water) continue; if (needsBuilding(d.nearby) && !nearestBuilding(c.world, a, d.nearby, 30)) continue; ok.push(id); } a._expC = { tick: c.world.tick, n: a.knowledge.techs.size, ids: ok }; }
+        const el = a._expC.ids; if (!el.length) return [0, ['nincs mit kipróbálni']];
         let best = 0, which = null;
-        for (const id of el) { const d = LW.Tech.D[id]; const need = d.need ? u(N(a)[d.need] ?? 1) : 0; const prog = a.knowledge.progress[id] || 0; const m = LW.Tech.missingItems(a, d); const feasible = count(m) === 0 || acquireSteps(c.world, a, m, c); if (!feasible) continue; if (d.nearby === 'fire' && !c.fire) continue; if (d.nearby === 'water' && !c.water) continue; if (needsBuilding(d.nearby) && !nearestBuilding(c.world, a, d.nearby, 30)) continue; const s = (0.25 + P(a).curiosity * 0.5) * (0.4 + P(a).creativity * 0.6) * (1 - d.difficulty * 0.5) + need * 0.7 + prog * 0.4 + u(N(a).curiosity) * 0.35 + (count(m) === 0 ? 0.15 : 0); if (s > best) { best = s; which = id; } }
+        for (const id of el) { const d = LW.Tech.D[id]; if (a.knowledge.techs.has(id)) continue; const need = d.need ? u(N(a)[d.need] ?? 1) : 0; const prog = a.knowledge.progress[id] || 0; const m = LW.Tech.missingItems(a, d); const s = (0.25 + P(a).curiosity * 0.5) * (0.4 + P(a).creativity * 0.6) * (1 - d.difficulty * 0.5) + need * 0.7 + prog * 0.4 + u(N(a).curiosity) * 0.35 + (count(m) === 0 ? 0.15 : 0); if (s > best) { best = s; which = id; } }
         a._exp = which; return [best * (c.night ? 0.4 : 1), which ? [`próba: ${LW.Tech.D[which].name.toLowerCase()}`, `kíváncsiság ${LW.pct(P(a).curiosity)}`, `kreativitás ${LW.pct(P(a).creativity)}`] : []];
       },
       plan: (c, a) => {
@@ -3328,7 +3333,9 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
     teach: {
       applicable: (c, a) => c.adult && a.knowledge.techs.size > 0 && c.nearby.length > 0,
       // (a halandóság-érzet a pontozásban: aki tudja, hogy fogy az ideje, átadja, amit tud)
-      score: (c, a) => { let best = 0, who = null, tech = null; for (const o of c.nearby) { if (o.sleeping || A().stage(c.world, o) === 'infant') continue; const r = a.relationships.get(o.id); const close = (a.children.includes(o.id) ? 0.8 : 0) + (r ? r.friendship * 0.6 : 0); if (close < 0.2) continue; for (const t of a.knowledge.techs) { if (o.knowledge.techs.has(t) || LW.Tech.D[t].hidden) continue; const pre = !LW.Tech.D[t].prereq || LW.Tech.D[t].prereq.every((p) => o.knowledge.techs.has(p)); if (!pre) continue; const s = 0.3 * (1 + (a.mind ? a.mind.mortality * 1.2 : 0)) * close * (0.5 + P(a).empathy + P(a).sociability * 0.5) * (c.stage === 'elder' ? 1.5 : 1); if (s > best) { best = s; who = o; tech = t; } } } a._teach = who ? { who, tech } : null; return [best, who ? [`tanítja (${LW.Tech.D[tech].name.toLowerCase()}): ${who.name}`] : []]; },
+      score: (c, a) => { let best = 0, who = null, tech = null; const cands = []; for (const o of c.nearby) { if (o.sleeping || A().stage(c.world, o) === 'infant') continue; const r = a.relationships.get(o.id); const close = (a.children.includes(o.id) ? 0.8 : 0) + (r ? r.friendship * 0.6 : 0); if (close >= 0.2) cands.push([close, o]); } cands.sort((p, q) => q[0] - p[0]); const base = 0.3 * (1 + (a.mind ? a.mind.mortality * 1.2 : 0)) * (0.5 + P(a).empathy + P(a).sociability * 0.5) * (c.stage === 'elder' ? 1.5 : 1);
+        for (const [close, o] of cands) { const s = base * close; if (s <= best) break; let t0 = null; for (const t of a.knowledge.techs) { if (o.knowledge.techs.has(t) || LW.Tech.D[t].hidden) continue; const pre = !LW.Tech.D[t].prereq || LW.Tech.D[t].prereq.every((p) => o.knowledge.techs.has(p)); if (pre) { t0 = t; break; } } if (t0) { best = s; who = o; tech = t0; break; } } // a pontszám nem függ attól, mit tanít: a legközelebbi tanítható ember elég
+        a._teach = who ? { who, tech } : null; return [best, who ? [`tanítja (${LW.Tech.D[tech].name.toLowerCase()}): ${who.name}`] : []]; },
       plan: (c, a) => a._teach ? { steps: [{ op: 'moveTo', i: c.world.idx(a._teach.who.x | 0, a._teach.who.y | 0), near: 1 }, { op: 'interact', target: a._teach.who.id, kind: 'teach', tech: a._teach.tech, n: 6 }], target: a._teach.who.id, tech: a._teach.tech } : null,
     },
     pickup: {
@@ -3348,8 +3355,10 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
     },
   };
 
-  function nearestGround(world, a, maxD) { let best = null, bd = maxD; for (const [i, g] of world.ground) { let any = false; for (const k in g) if (g[k] > 0) { any = true; break; } if (!any) continue; const d = LW.dist(a.x, a.y, world.xOf(i) + 0.5, world.yOf(i) + 0.5); if (d < bd) { bd = d; best = i; } } return best; }
-  function nearestGroundFood(world, a, maxD) { let best = null, bd = maxD; for (const [i, g] of world.ground) { let any = false; for (const k in g) if (g[k] > 0 && LW.ITEMS[k] && LW.ITEMS[k].food) { any = true; break; } if (!any) continue; const d = LW.dist(a.x, a.y, world.xOf(i) + 0.5, world.yOf(i) + 0.5); if (d < bd) { bd = d; best = i; } } return best; }
+  // a földön heverő holmi: csak a környező ablakot nézi (a világban ezrével hevernek kupacok, mind végigjárni drága volt)
+  function nearestGroundBy(world, a, maxD, pred) { if (!world.ground || !world.ground.size) return null; let best = null, bd = maxD; const r = Math.ceil(maxD), ax = a.x | 0, ay = a.y | 0; for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const x = ax + dx, y = ay + dy; if (!world.inBounds(x, y)) continue; const i = world.idx(x, y); const g = world.ground.get(i); if (!g) continue; let any = false; for (const k in g) if (g[k] > 0 && pred(k)) { any = true; break; } if (!any) continue; const d = LW.dist(a.x, a.y, x + 0.5, y + 0.5); if (d < bd) { bd = d; best = i; } } return best; }
+  function nearestGround(world, a, maxD) { return nearestGroundBy(world, a, maxD, () => true); }
+  function nearestGroundFood(world, a, maxD) { return nearestGroundBy(world, a, maxD, (k) => LW.ITEMS[k] && LW.ITEMS[k].food); }
   function findHouseholdSite(c, a) { for (const b of c.world.buildingsNear(a.x | 0, a.y | 0, 40)) { if (b.progress >= 1) continue; const def = Bld().def(b); if (def.divine) continue; if (b.ownerId === a.id) continue; if (def.public && LW.dist(a.x, a.y, b.x, b.y) < 18 && (c.world.tick + a.id) % 3 === 0) return b; const owner = c.world.agents.get(b.ownerId); if (!owner) continue; if (a.partner === owner.id || c.household.includes(owner)) if (LW.dist(a.x, a.y, b.x, b.y) < 40) return b; } return null; }
   function buildPlan(c, a, kind) {
     const pubk = !!Bld().DEFS[kind].public; let site = c.world.buildingsNear(a.x | 0, a.y | 0, 24).find((b) => b.kind === kind && b.progress < 1 && (b.ownerId === a.id || (pubk && LW.dist(a.x, a.y, b.x, b.y) < 20)));
@@ -4961,7 +4970,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
         try { this.agentDay(w, a, seasonFood); } catch (e) { if (w.onError) w.onError(e, a, { op: 'macro' }); }
       }
       LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w); LW.Society.daily(w);
-      for (const [i, g] of w.ground) { A().spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); }
+      for (const [i, g] of w.ground) { A().spoil(w, g, 1.5); A().groundDecay(w, g, 1); if (!Object.keys(g).length) w.ground.delete(i); }
     },
     agentDay(w, a, seasonFood) {
       const rng = w.rng; const stage = A().stage(w, a); const adult = stage === 'adult' || stage === 'elder'; const child = stage === 'infant' || stage === 'child';
@@ -5108,16 +5117,24 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
     setPreset(p) { if (this.world.cfg.time.speedPresets[p]) { this.preset = p; this.world.meta.speedPreset = p; } }
 
     /** One world tick. */
-    tick() {
-      const w = this.world; const t0 = now();
+    tick() { if (!this._tp) this.tickBegin(); this.tickAgents(Infinity); this.tickEnd(); } // egy félbehagyott szeletelt ticket előbb befejez
+    /** Egy tick három részben: kezdet (világ), emberek (szeletelhető), vég (épületek, nap, év). A képkockák között
+     *  a szeletelt változat fut, hogy 800 embernél se akadjon meg az oldal: egy tick több képkockán át is tarthat. */
+    tickBegin() {
+      const w = this.world; this._tp = { t0: now(), cpu: 0, k: 0, agents: null };
       w.tick++;
       w.weather.step();
       LW.Ecology.stepSlice(w);
       LW.Ecology.stepFire(w);
       w.rebuildBuckets();
-      const agents = w.agentList();
-      for (let k = 0; k < agents.length; k++) {
-        const a = agents[k]; if (!w.agents.has(a.id)) continue;
+      this._tp.agents = w.agentList();
+      this._tp.cpu += now() - this._tp.t0;
+    }
+    /** Az emberek lépése; legfeljebb budgetMs ideig. Igaz, ha mindenki sorra került. */
+    tickAgents(budgetMs) {
+      const w = this.world; const tp = this._tp; const agents = tp.agents; const t0 = now();
+      for (; tp.k < agents.length; tp.k++) {
+        const a = agents[tp.k]; if (!w.agents.has(a.id)) continue;
         try {
           LW.Agents.stepBiology(w, a); if (!w.agents.has(a.id)) continue;
           if (((w.tick + a.id) & 1) === 0) LW.Perception.scan(w, a);
@@ -5126,14 +5143,20 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
           if (((w.tick + a.id) & 3) === 0) LW.Social.ambient(w, a);
           this.nightHazards(w, a);
         } catch (e) { w.onError(e, a, null); a.plan = null; }
+        if ((tp.k & 15) === 15 && now() - t0 > budgetMs) { tp.k++; tp.cpu += now() - t0; return false; }
       }
+      tp.cpu += now() - t0; return true;
+    }
+    tickEnd() {
+      const w = this.world; const tp = this._tp; const t0 = now();
       LW.Buildings.step(w);
       if (w.tick % T.TICKS_PER_HOUR === 0) { const h = LW.Time.hour(w.tick); for (const a of w.agents.values()) if (a.id % 24 === h) LW.Memory.consolidate(w, a); }
-      if (w.tick % T.TICKS_PER_DAY === 0) { LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w); LW.Society.daily(w); for (const [i, g] of w.ground) { LW.Agents.spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); } }
+      if (w.tick % T.TICKS_PER_DAY === 0) { LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w); LW.Society.daily(w); for (const [i, g] of w.ground) { LW.Agents.spoil(w, g, 1.5); LW.Agents.groundDecay(w, g, 1); if (!Object.keys(g).length) w.ground.delete(i); } }
       if (w.tick % T.TICKS_PER_YEAR === 0) w.history.yearEnd();
       w.meta.lastSimulatedTick = w.tick;
-      const dt = now() - t0; this.perf.tickUs = this.perf.tickUs * 0.98 + dt * 1000 * 0.02; if (dt * 1000 > this.perf.tickMaxUs) this.perf.tickMaxUs = dt * 1000; this.perf._acc++;
+      const dt = tp.cpu + (now() - t0); this._tp = null; this.perf.tickUs = this.perf.tickUs * 0.98 + dt * 1000 * 0.02; if (dt * 1000 > this.perf.tickMaxUs) this.perf.tickMaxUs = dt * 1000; this.perf._acc++;
     }
+    get tickInProgress() { return !!this._tp; }
     nightHazards(w, a) {
       if (!LW.Time.isNight(w.tick) || a.env?.inside || a.env?.fire) return;
       const i = w.idx(a.x | 0, a.y | 0); const d = w.tiles.danger[i]; if (d < 50) return;
@@ -5147,7 +5170,8 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       this.tickDebt += (realDtMs / 1000) * this.ticksPerSecond;
       const maxTicks = Math.min(Math.floor(this.tickDebt), 2000); if (maxTicks <= 0) return 0;
       const t0 = now(); let n = 0;
-      while (n < maxTicks) { this.tick(); n++; if (now() - t0 > budgetMs) break; }
+      // szeletelve: egy drága tick több képkockán át folytatódik, a kicsik egy képkockába többen is beleférnek
+      while (n < maxTicks) { if (!this._tp) this.tickBegin(); const done = this.tickAgents(Math.max(1, budgetMs - (now() - t0))); if (!done) break; this.tickEnd(); n++; if (now() - t0 > budgetMs) break; }
       this.tickDebt -= n; if (this.tickDebt > 20000) this.tickDebt = 20000; // debt beyond ~this is handled by a real catch-up
       this.perf._accT += realDtMs; if (this.perf._accT >= 1000) { this.perf.ticksLastSec = this.perf._acc; this.perf._acc = 0; this.perf._accT = 0; this.perf.tickMaxUs *= 0.5; }
       return n;
@@ -5222,8 +5246,9 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
   const TRANSIENT = new Set(['plan', 'why', 'env', 'threat', 'engagedWith', 'lastSaid']);
   function serializeAgent(a, tick) {
     const o = {};
-    for (const k in a) { if (TRANSIENT.has(k) || k[0] === '_') continue; o[k] = a[k]; }
-    o.knowledge = { techs: [...a.knowledge.techs], places: [...a.knowledge.places.values()], progress: a.knowledge.progress };
+    for (const k in a) { if (TRANSIENT.has(k) || k[0] === '_') continue; o[k] = r4(a[k]); }
+    for (const k of ['needs', 'emotions', 'skills', 'beliefs', 'personality']) if (a[k]) o[k] = roundShallow(a[k]);
+    o.knowledge = { techs: [...a.knowledge.techs], places: [...a.knowledge.places.values()], progress: roundShallow(a.knowledge.progress) };
     // csak a számottevő kapcsolatok maradnak a mentésben (nagy népességnél a többi négyzetesen nőne)
     const keep = (r) => r.status !== 'stranger' || r.familiarity >= 0.15 || r.friendship >= 0.1 || r.romance > 0 || r.resentment >= 0.1 || (r.fear || 0) >= 0.2 || (r.trust || 0) >= 0.2 || r.attraction >= 0.5;
     let rels = [...a.relationships].filter(([, r]) => keep(r));
@@ -5237,8 +5262,10 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
   }
   // a nulla, hamis és üres mezők kimaradnak a mentésből; visszatöltéskor az alapértékek pótolják őket
   const REL_ZERO = { trust: 0, attraction: 0, respect: 0, friendship: 0, fear: 0, resentment: 0, jealousy: 0, gratitude: 0, loyalty: 0, familiarity: 0, dependency: 0, romance: 0 };
-  function compactRel(r) { const o = {}; for (const k in r) { const v = r[k]; if (v === 0 || v === false || v == null) continue; o[k] = v; } return o; }
-  function compactMem(m) { const o = {}; for (const k in m) { const v = m[k]; if (v == null || v === false || (Array.isArray(v) && !v.length)) continue; o[k] = v; } return o; }
+  const r4 = (v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 10000) / 10000 : v); // négy tizedes elég; a teljes fát bejáró replacer kétszer annyi ideig tartott
+  function compactRel(r) { const o = {}; for (const k in r) { const v = r[k]; if (v === 0 || v === false || v == null) continue; o[k] = r4(v); } return o; }
+  function compactMem(m) { const o = {}; for (const k in m) { const v = m[k]; if (v == null || v === false || (Array.isArray(v) && !v.length)) continue; o[k] = r4(v); } return o; }
+  function roundShallow(obj) { if (!obj || typeof obj !== 'object') return obj; const o = {}; for (const k in obj) o[k] = r4(obj[k]); return o; }
   function restoreAgent(o) {
     const a = { ...o };
     const places = (o.knowledge.places || []).map((p) => (Array.isArray(p) ? { k: p[0], i: p[1], q: p[2], t: p[3] } : p));
@@ -5291,7 +5318,7 @@ input[type=text], input[type=number], select { font: inherit; color: var(--ink);
       return sim;
     },
     migrate(state) { if (!state || typeof state.v !== 'number') throw new Error('Not a world save'); return state; },
-    toJSON(sim) { return JSON.stringify(this.serialize(sim), (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 10000) / 10000 : v)); },
+    toJSON(sim) { return JSON.stringify(this.serialize(sim)); }, // kerekítő replacer nélkül: feleannyi idő, ugyanakkora mentés
     fromJSON(str) { return this.restore(JSON.parse(str)); },
   };
   function mergeCfg(base, over) { if (!over) return JSON.parse(JSON.stringify(base)); const out = JSON.parse(JSON.stringify(base)); for (const k in over) { if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k]) && out[k] && typeof out[k] === 'object') Object.assign(out[k], over[k]); else out[k] = over[k]; } return out; }

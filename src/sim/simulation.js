@@ -36,16 +36,24 @@
     setPreset(p) { if (this.world.cfg.time.speedPresets[p]) { this.preset = p; this.world.meta.speedPreset = p; } }
 
     /** One world tick. */
-    tick() {
-      const w = this.world; const t0 = now();
+    tick() { if (!this._tp) this.tickBegin(); this.tickAgents(Infinity); this.tickEnd(); } // egy félbehagyott szeletelt ticket előbb befejez
+    /** Egy tick három részben: kezdet (világ), emberek (szeletelhető), vég (épületek, nap, év). A képkockák között
+     *  a szeletelt változat fut, hogy 800 embernél se akadjon meg az oldal: egy tick több képkockán át is tarthat. */
+    tickBegin() {
+      const w = this.world; this._tp = { t0: now(), cpu: 0, k: 0, agents: null };
       w.tick++;
       w.weather.step();
       LW.Ecology.stepSlice(w);
       LW.Ecology.stepFire(w);
       w.rebuildBuckets();
-      const agents = w.agentList();
-      for (let k = 0; k < agents.length; k++) {
-        const a = agents[k]; if (!w.agents.has(a.id)) continue;
+      this._tp.agents = w.agentList();
+      this._tp.cpu += now() - this._tp.t0;
+    }
+    /** Az emberek lépése; legfeljebb budgetMs ideig. Igaz, ha mindenki sorra került. */
+    tickAgents(budgetMs) {
+      const w = this.world; const tp = this._tp; const agents = tp.agents; const t0 = now();
+      for (; tp.k < agents.length; tp.k++) {
+        const a = agents[tp.k]; if (!w.agents.has(a.id)) continue;
         try {
           LW.Agents.stepBiology(w, a); if (!w.agents.has(a.id)) continue;
           if (((w.tick + a.id) & 1) === 0) LW.Perception.scan(w, a);
@@ -54,14 +62,20 @@
           if (((w.tick + a.id) & 3) === 0) LW.Social.ambient(w, a);
           this.nightHazards(w, a);
         } catch (e) { w.onError(e, a, null); a.plan = null; }
+        if ((tp.k & 15) === 15 && now() - t0 > budgetMs) { tp.k++; tp.cpu += now() - t0; return false; }
       }
+      tp.cpu += now() - t0; return true;
+    }
+    tickEnd() {
+      const w = this.world; const tp = this._tp; const t0 = now();
       LW.Buildings.step(w);
       if (w.tick % T.TICKS_PER_HOUR === 0) { const h = LW.Time.hour(w.tick); for (const a of w.agents.values()) if (a.id % 24 === h) LW.Memory.consolidate(w, a); }
-      if (w.tick % T.TICKS_PER_DAY === 0) { LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w); LW.Society.daily(w); for (const [i, g] of w.ground) { LW.Agents.spoil(w, g, 1.5); if (!Object.keys(g).length) w.ground.delete(i); } }
+      if (w.tick % T.TICKS_PER_DAY === 0) { LW.Settlements.detect(w); LW.Agents.immigrationCheck(w); LW.Speech.daily(w); LW.Society.daily(w); for (const [i, g] of w.ground) { LW.Agents.spoil(w, g, 1.5); LW.Agents.groundDecay(w, g, 1); if (!Object.keys(g).length) w.ground.delete(i); } }
       if (w.tick % T.TICKS_PER_YEAR === 0) w.history.yearEnd();
       w.meta.lastSimulatedTick = w.tick;
-      const dt = now() - t0; this.perf.tickUs = this.perf.tickUs * 0.98 + dt * 1000 * 0.02; if (dt * 1000 > this.perf.tickMaxUs) this.perf.tickMaxUs = dt * 1000; this.perf._acc++;
+      const dt = tp.cpu + (now() - t0); this._tp = null; this.perf.tickUs = this.perf.tickUs * 0.98 + dt * 1000 * 0.02; if (dt * 1000 > this.perf.tickMaxUs) this.perf.tickMaxUs = dt * 1000; this.perf._acc++;
     }
+    get tickInProgress() { return !!this._tp; }
     nightHazards(w, a) {
       if (!LW.Time.isNight(w.tick) || a.env?.inside || a.env?.fire) return;
       const i = w.idx(a.x | 0, a.y | 0); const d = w.tiles.danger[i]; if (d < 50) return;
@@ -75,7 +89,8 @@
       this.tickDebt += (realDtMs / 1000) * this.ticksPerSecond;
       const maxTicks = Math.min(Math.floor(this.tickDebt), 2000); if (maxTicks <= 0) return 0;
       const t0 = now(); let n = 0;
-      while (n < maxTicks) { this.tick(); n++; if (now() - t0 > budgetMs) break; }
+      // szeletelve: egy drága tick több képkockán át folytatódik, a kicsik egy képkockába többen is beleférnek
+      while (n < maxTicks) { if (!this._tp) this.tickBegin(); const done = this.tickAgents(Math.max(1, budgetMs - (now() - t0))); if (!done) break; this.tickEnd(); n++; if (now() - t0 > budgetMs) break; }
       this.tickDebt -= n; if (this.tickDebt > 20000) this.tickDebt = 20000; // debt beyond ~this is handled by a real catch-up
       this.perf._accT += realDtMs; if (this.perf._accT >= 1000) { this.perf.ticksLastSec = this.perf._acc; this.perf._acc = 0; this.perf._accT = 0; this.perf.tickMaxUs *= 0.5; }
       return n;

@@ -60,7 +60,7 @@
     paths: { trail: 40, path: 160, road: 600, decayPerDay: 0.02 },
     history: { chronicleThreshold: 0.6, feedThreshold: 0.15, feedCap: 300, firstBonus: 3.0, creatorBonus: 1.5 },
     catchup: { detailWindowTicks: 192, maxYears: 500, chunkDays: 30 },
-    persistence: { autosaveSeconds: 30, snapshotSlots: 3, key: 'lw.world.v1' },
+    persistence: { autosaveSeconds: 90, snapshotSlots: 3, key: 'lw.world.v1' },
     lod: { microCap: 300, mesoCap: 3000 },
     audio: { masterVolume: 0.35 },
     debug: { why: true, overlay: false },

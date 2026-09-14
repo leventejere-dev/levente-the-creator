@@ -235,9 +235,11 @@
     },
     mult(world, a, key) { return 1 + (this.fx(world, a)[key] || 0); },
     /** Közös raktár a közelben, amelyben van a keresett anyagból (műhely, kovács, piac, gyár…). */
-    publicStore(world, a, item, radius) { for (const b of world.buildingsNear(a.x | 0, a.y | 0, radius || 20)) { const d = B[b.kind]; if (b.progress >= 1 && d && d.public && d.storage && b.storage && (b.storage[item] || 0) > 0) return b; } return null; },
+    publicStore(world, a, item, radius) { const list = this.storesNear(world, a, radius || 20); for (const b of list) if ((b.storage[item] || 0) > 0) return b; return null; },
+    /** A közeli közös raktárak listája, naponta egyszer összegyűjtve emberenként (a sűrű városban ezreket kérdeznének). */
+    storesNear(world, a, radius) { const day = world.tick / TPD | 0; if (a._psDay === day && a._psR === radius && a._ps) return a._ps; const out = []; for (const b of world.buildingsNear(a.x | 0, a.y | 0, radius)) { const d = B[b.kind]; if (b.progress >= 1 && d && d.public && d.storage && b.storage) out.push(b); } a._ps = out; a._psDay = day; a._psR = radius; return out; },
     /** Legközelebbi közös raktár, ahová termelni lehet. */
-    nearestStore(world, a, radius) { let best = null, bd = 1e9; for (const b of world.buildingsNear(a.x | 0, a.y | 0, radius || 20)) { const d = B[b.kind]; if (!(b.progress >= 1 && d && d.public && d.storage)) continue; const dd = LW.dist(a.x, a.y, b.x, b.y); if (dd < bd) { bd = dd; best = b; } } return best; },
+    nearestStore(world, a, radius) { let best = null, bd = 1e9; for (const b of this.storesNear(world, a, radius || 20)) { const dd = LW.dist(a.x, a.y, b.x, b.y); if (dd < bd) { bd = dd; best = b; } } return best; },
     /** Épület-adta szorzó a közelben (műhely, labor, egyetem…): a legjobb ilyen épület egy tulajdonságára. */
     buildingBonus(world, x, y, prop, radius) { let best = 0; for (const b of world.buildingsNear(x | 0, y | 0, radius || 12)) { if (b.progress < 1) continue; const v = B[b.kind][prop]; if (v && v > best) best = v; } return best; },
     /** A világ korszaka az élők tudásából. */

@@ -40,7 +40,8 @@
     }
     runCatchUp(sim, done) {
       this.ui.showCatchup(0, 'A világ ébred…'); this.catchingUp = true; sim.paused = true;
-      sim.catchUp(Date.now(), { progress: (p, label) => this.ui.showCatchup(p, label), done: (rep) => { this.catchingUp = false; sim.paused = false; this.lastReport = rep; this.renderer.bakeAll(); this.ui.attachWorld(sim.world); done(rep); this.save(true); } });
+      // a böngésző legfeljebb ~2 percet számol; ami nem fér bele, azt kihagyja (az idő ugrik, a világ nem kerül hurokba)
+      sim.catchUp(Date.now(), { budgetMs: 120000, progress: (p, label) => this.ui.showCatchup(p, label), done: (rep) => { this.catchingUp = false; sim.paused = false; this.lastReport = rep; this.renderer.bakeAll(); this.ui.attachWorld(sim.world); done(rep); this.save(true); } });
     }
     /** The world begins the moment the Creator first looks at it. */
     beginWorld() { const w = this.sim.world; if (w.meta.started) return; w.meta.started = true; w.meta.createdMs = Date.now(); w.meta.lastRealTimeMs = Date.now(); this.sim.paused = false; this.ui.refreshSpeed(); this.ui.toast('A világ elindult', `${w.name}, nulladik év. Mostantól minden rajtuk múlik.`, false); this.save(true); }
@@ -52,10 +53,10 @@
       if (!this.observer && !this.catchingUp && meta.started) {
         if (this.sim.paused) meta.lastRealTimeMs = Date.now(); // a deliberate pause is the Creator's choice: no time accrues
         else {
-          // real time owed since the last simulated frame — background tabs are throttled, so this can be much more than one frame
-          const owedMs = Math.max(dt, Date.now() - (meta.lastRealTimeMs || Date.now()));
-          if (owedMs > 120000) { this.runCatchUp(this.sim, (rep) => this.ui.showWelcomeReport(rep)); }
-          else { this.sim.advance(owedMs, this.cfg.time.frameBudgetMs); meta.lastRealTimeMs = Date.now(); }
+          // a világ órája annyit lép, amennyit a gép tényleg leszimulált: ha a gép lassabb a beállított sebességnél, a világ lassabban megy, nem halmoz tartozást
+          const owedMs = Math.max(dt, Math.min(600, Date.now() - (meta.lastRealTimeMs || Date.now())));
+          if (Date.now() - (meta.lastRealTimeMs || Date.now()) > 180000 && !document.hidden) { this.runCatchUp(this.sim, (rep) => this.ui.showWelcomeReport(rep)); }
+          else { const n = this.sim.advance(owedMs, this.cfg.time.frameBudgetMs); const simMs = n * LW.TIME.TICK_MINUTES * 60000 / this.sim.minutesPerRealSecond; meta.lastRealTimeMs = Math.min(Date.now(), (meta.lastRealTimeMs || Date.now()) + Math.max(simMs, n ? 0 : dt)); }
         }
       }
       this.renderer.draw(this.sim, this.audioEnv); this.audio.ambient(this.audioEnv); this.ui.update(dt);

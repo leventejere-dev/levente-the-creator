@@ -82,10 +82,13 @@
     removeAgent(id) { this.agents.delete(id); }
     /** Az épület által lefedett mezők (alapterület: b.w × b.h, a bal felső sarok a horgony). */
     buildingTiles(b) { const out = []; const w = b.w || 1, h = b.h || 1; for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) { const x = b.x + dx, y = b.y + dy; if (this.inBounds(x, y)) out.push(this.idx(x, y)); } return out; }
-    addBuilding(b) { this.buildings.set(b.id, b); if (!this.btile) this.btile = new Map(); for (const i of this.buildingTiles(b)) { this.btile.set(i, b.id); this.tiles.shade[i] = 1; } return b; }
-    removeBuilding(id) { const b = this.buildings.get(id); if (!b) return; this.buildings.delete(id); if (this.btile) for (const i of this.buildingTiles(b)) { if (this.btile.get(i) === id) { this.btile.delete(i); this.tiles.shade[i] = 0; } } }
+    addBuilding(b) { this.buildings.set(b.id, b); if (!this.btile) this.btile = new Map(); for (const i of this.buildingTiles(b)) { this.btile.set(i, b.id); this.tiles.shade[i] = 1; } this._bput(b); return b; }
+    removeBuilding(id) { const b = this.buildings.get(id); if (!b) return; this.buildings.delete(id); if (this.btile) for (const i of this.buildingTiles(b)) { if (this.btile.get(i) === id) { this.btile.delete(i); this.tiles.shade[i] = 0; } } this._bdel(b); }
     buildingAt(i) { if (!this.btile) this.reindexBuildings(); const id = this.btile.get(i); return id != null ? (this.buildings.get(id) || null) : null; }
-    reindexBuildings() { this.btile = new Map(); for (const b of this.buildings.values()) for (const i of this.buildingTiles(b)) this.btile.set(i, b.id); }
+    reindexBuildings() { this.btile = new Map(); this.bcells = new Map(); for (const b of this.buildings.values()) { for (const i of this.buildingTiles(b)) this.btile.set(i, b.id); this._bput(b); } }
+    _bkey(x, y) { return ((y >> 3) * 4096) + (x >> 3); }
+    _bput(b) { if (!this.bcells) this.bcells = new Map(); const k = this._bkey(b.x, b.y); let s = this.bcells.get(k); if (!s) { s = new Set(); this.bcells.set(k, s); } s.add(b.id); }
+    _bdel(b) { if (!this.bcells) return; const s = this.bcells.get(this._bkey(b.x, b.y)); if (s) s.delete(b.id); }
     /** Új föld a tengeren túl: a térkép keletre vagy délre bővül egy külön generált sávval; minden mezőindex újraszámolva. */
     expand(side, size, explorerId) {
       const oldW = this.w, oldH = this.h; const east = side === 'east';
@@ -119,7 +122,7 @@
       this.events.emit('NewLand', { tick: this.tick, name, side, agentId: explorerId, w: newW, h: newH, tile: this.idx(east ? oldW + (size >> 1) : (oldW >> 1), east ? (oldH >> 1) : oldH + (size >> 1)) });
       return name;
     }
-    buildingsNear(x, y, r) { const out = []; for (const b of this.buildings.values()) if (Math.abs(b.x - x) <= r && Math.abs(b.y - y) <= r) out.push(b); return out; }
+    buildingsNear(x, y, r) { const out = []; if (!this.bcells) this.reindexBuildings(); const x0 = (x - r) >> 3, x1 = (x + r) >> 3, y0 = (y - r) >> 3, y1 = (y + r) >> 3; for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++) { const s = this.bcells.get(cy * 4096 + cx); if (!s) continue; for (const id of s) { const b = this.buildings.get(id); if (b && Math.abs(b.x - x) <= r && Math.abs(b.y - y) <= r) out.push(b); } } return out; }
 
     // ---- spatial hash for agents (rebuilt each tick)
     rebuildBuckets() {

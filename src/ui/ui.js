@@ -41,7 +41,7 @@
     click() { this.audio.play('click'); }
     refreshTop() {
       const w = this.world, s = this.sim.summary(); const T = LW.Time;
-      $('#st-age').textContent = `${w.year}. év`; $('#st-date').textContent = `${T.seasonName(w.tick)} · ${T.dayOfYear(w.tick) + 1}. nap · ${T.clock(w.tick)}`;
+      $('#st-age').textContent = `${w.year}. év`; const nominal = this.sim.minutesPerRealSecond / 15; const eff = (this.sim.perf.ticksLastSec || 0) * LW.TIME.TICK_MINUTES / 15; $('#st-date').textContent = `${T.seasonName(w.tick)} · ${T.dayOfYear(w.tick) + 1}. nap · ${T.clock(w.tick)}${!this.sim.paused && !this.app.observer && !this.app.catchingUp && eff < nominal * 0.7 && this.sim.perf.ticksLastSec > 0 ? ` · a gép bírja: ${eff < 10 ? eff.toFixed(1) : Math.round(eff)}×` : ''}`;
       $('#st-pop').textContent = s.population; $('#st-popsub').textContent = `${s.births} született · ${s.deaths} meghalt`;
       $('#st-tech').textContent = s.techLevel; $('#st-techsub').textContent = `${s.techs} ismert · ${s.discoveries} felfedezés`;
       $('#st-settle').textContent = s.settlements; $('#st-largest').textContent = s.largest;
@@ -377,14 +377,14 @@
       this.modal(el);
     }
     showCatchup(progress, label) {
-      let m = $('#modal'); if (!m.querySelector('#cu-bar')) { const el = h('div'); el.appendChild(h('h1', null, 'Üdv újra, Teremtő', h('small', null, 'a világ nem várt rád'))); el.appendChild(h('p', { id: 'cu-label' }, label)); el.appendChild(h('div', { class: 'progress' }, h('div', { id: 'cu-bar' }))); this.modal(el); }
+      let m = $('#modal'); if (!m.querySelector('#cu-bar')) { const el = h('div'); el.appendChild(h('h1', null, 'Üdv újra, Teremtő', h('small', null, 'a világ nem várt rád'))); el.appendChild(h('p', { id: 'cu-label' }, label)); el.appendChild(h('div', { class: 'progress' }, h('div', { id: 'cu-bar' }))); el.appendChild(h('p', { class: 'tiny' }, 'A gép a lemaradt időt számolja (legfeljebb ~2 percig). Ha nem akarsz várni: a kihagyott idő egyszerűen nem telik el a világban.')); el.appendChild(h('div', { class: 'modal-actions' }, h('button', { onclick: () => { this.sim._catchSkip = true; this.click(); } }, 'Kihagyom a többit'))); this.modal(el); }
       if (!progress || progress < 0.001) this._cuStart = performance.now(); const el = (performance.now() - (this._cuStart || performance.now())) / 1000; const eta = progress > 0.03 ? Math.round(el / progress * (1 - progress)) : null;
       $('#cu-label').textContent = label + (eta != null ? ` (kb. ${eta >= 60 ? Math.round(eta / 60) + ' perc' : eta + ' mp'} van hátra)` : ''); $('#cu-bar').style.width = Math.round(progress * 100) + '%';
     }
     showWelcomeReport(rep) {
       if (!rep || rep.skipped) { this.closeModal(); return; }
       const b = rep.before, a = rep.after; const el = h('div');
-      el.appendChild(h('h1', null, 'Üdv újra, Teremtő', h('small', null, `${LW.Time.realSpan(rep.awayMs)} voltál távol · a világban ${LW.Time.span(rep.worldTicks)} telt el${rep.capped ? ' (korlátozva)' : ''}`)));
+      el.appendChild(h('h1', null, 'Üdv újra, Teremtő', h('small', null, `${LW.Time.realSpan(rep.awayMs)} voltál távol · a világban ${LW.Time.span(rep.worldTicks)} telt el${rep.capped ? ' (korlátozva)' : ''}${rep.skippedTicks > 96 ? ` · ${LW.Time.span(rep.skippedTicks)} kimaradt (a gép nem bírta, vagy kihagytad)` : ''}`)));
       const cell = (label, from, to, sub) => h('div', { class: 'cell' }, h('label', null, label), h('b', null, String(to)), from != null && from !== to ? h('span', { class: 'delta' }, `${from} → ${to}`) : null, sub ? h('div', null, h('small', null, sub)) : null);
       el.appendChild(h('div', { class: 'report' }, cell('Népesség', b.population, a.population, `${a.births - b.births} született · ${a.deaths - b.deaths} meghalt`), cell('Települések', b.settlements, a.settlements), cell('Technológia', b.techLevel, a.techLevel, `${Math.max(0, a.discoveries - b.discoveries)} új felfedezés`), cell('Épületek', null, a.buildings - b.buildings, 'elkészült'), cell('Párok', null, a.couples - b.couples, 'alakult'), cell('Hit benned', pct(rep.beliefBefore || 0), pct(rep.beliefAfter || 0))));
       const newTechs = a.techs.filter((t) => !b.techs.includes(t)).map((t) => LW.Tech.D[t].name).filter(Boolean);

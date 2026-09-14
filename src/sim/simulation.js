@@ -94,14 +94,16 @@
       const detail = Math.min(owedTicks, cfg.detailWindowTicks);
       const macroDays = Math.floor((owedTicks - detail) / T.TICKS_PER_DAY);
       const detailTicks = owedTicks - macroDays * T.TICKS_PER_DAY;
-      const total = macroDays * T.TICKS_PER_DAY + detailTicks; let doneTicks = 0; let dayI = 0;
+      const total = macroDays * T.TICKS_PER_DAY + detailTicks; let doneTicks = 0; let dayI = 0; const t0 = now(); const budget = cb && cb.budgetMs ? cb.budgetMs : Infinity; this._catchSkip = false;
+      const outOfTime = () => this._catchSkip || (now() - t0) > budget;
       const startTick = w.tick;
       const schedule = (fn) => (typeof setTimeout === 'function' ? setTimeout(fn, 0) : fn());
-      const finish = () => { meta.lastRealTimeMs = Date.now(); /* a felzárkózás saját ideje nem tartozás — különben végtelen hurok */ report.after = w.history.snapshotStats(); report.chronicle = w.history.chronicle.slice(report.chronicleStart); report.firsts = Object.entries(w.history.firsts).filter(([, f]) => f.tick > startTick); report.beliefAfter = LW.mean([...w.agents.values()].map((a) => a.beliefs.creator)); report.worldTicks = w.tick - startTick; if (cb && cb.done) cb.done(report); };
+      const finish = () => { meta.lastRealTimeMs = Date.now(); report.skippedTicks = Math.max(0, total - doneTicks); /* a felzárkózás saját ideje nem tartozás — különben végtelen hurok */ report.after = w.history.snapshotStats(); report.chronicle = w.history.chronicle.slice(report.chronicleStart); report.firsts = Object.entries(w.history.firsts).filter(([, f]) => f.tick > startTick); report.beliefAfter = LW.mean([...w.agents.values()].map((a) => a.beliefs.creator)); report.worldTicks = w.tick - startTick; if (cb && cb.done) cb.done(report); };
       const stepMacro = () => {
         const n = Math.min(cfg.chunkDays, macroDays - dayI);
         for (let k = 0; k < n; k++) { LW.Macro.day(w); dayI++; doneTicks += T.TICKS_PER_DAY; }
         if (cb && cb.progress) cb.progress(doneTicks / total, `Szimulálás: ${LW.Time.span(doneTicks)} / ${LW.Time.span(total)}…`);
+        if (outOfTime()) { finish(); return; }
         if (dayI < macroDays) schedule(stepMacro); else schedule(stepDetail);
       };
       let dt = 0;
@@ -110,10 +112,10 @@
         for (let k = 0; k < n; k++) this.tick();
         dt += n; doneTicks += n;
         if (cb && cb.progress) cb.progress(doneTicks / total, `Szimulálás: ${LW.Time.span(doneTicks)} / ${LW.Time.span(total)}…`);
-        if (dt < detailTicks) schedule(stepDetail); else finish();
+        if (dt < detailTicks && !outOfTime()) schedule(stepDetail); else finish();
       };
       if (cb && cb.progress) cb.progress(0, 'A világ ébred…');
-      if (cb && cb.sync) { while (dayI < macroDays) { LW.Macro.day(w); dayI++; } while (dt < detailTicks) { this.tick(); dt++; } finish(); return report; }
+      if (cb && cb.sync) { while (dayI < macroDays && !outOfTime()) { LW.Macro.day(w); dayI++; doneTicks += T.TICKS_PER_DAY; } while (dt < detailTicks && !outOfTime()) { this.tick(); dt++; doneTicks++; } finish(); return report; }
       schedule(macroDays > 0 ? stepMacro : stepDetail);
       return report;
     }

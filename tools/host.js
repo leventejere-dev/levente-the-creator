@@ -23,7 +23,7 @@ const lease = meta.lease;
 const now = Date.now();
 if (lease && !String(lease.sessionId).startsWith('host:') && now - lease.at < 6 * 60000) { console.log(`host: a browser is simulating ${w.name} right now (lease ${Math.round((now - lease.at) / 1000)} s old) — yielding`); process.exit(0); }
 const before = sim.summary();
-const rep = sim.catchUp(now, { sync: true });
+const rep = sim.catchUp(now, { sync: true, budgetMs: 22 * 60 * 1000 }); // a gazda legfeljebb ~22 percet számol egy futásban
 meta.lease = { sessionId: 'host:github-actions', at: now }; meta.lastRealTimeMs = now;
 const out = 'GZ:' + zlib.gzipSync(Buffer.from(LW.Persistence.toJSON(sim), 'utf8')).toString('base64');
 fs.writeFileSync(file, out); fs.writeFileSync(flag, '1');

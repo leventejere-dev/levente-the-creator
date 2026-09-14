@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-14 11:27 */
+/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-14 11:41 */
 
 /* ===== core/rng.js ===== */
 /* LEVENTE — THE CREATOR · core/rng.js
@@ -771,10 +771,13 @@
     removeAgent(id) { this.agents.delete(id); }
     /** Az épület által lefedett mezők (alapterület: b.w × b.h, a bal felső sarok a horgony). */
     buildingTiles(b) { const out = []; const w = b.w || 1, h = b.h || 1; for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) { const x = b.x + dx, y = b.y + dy; if (this.inBounds(x, y)) out.push(this.idx(x, y)); } return out; }
-    addBuilding(b) { this.buildings.set(b.id, b); if (!this.btile) this.btile = new Map(); for (const i of this.buildingTiles(b)) { this.btile.set(i, b.id); this.tiles.shade[i] = 1; } return b; }
-    removeBuilding(id) { const b = this.buildings.get(id); if (!b) return; this.buildings.delete(id); if (this.btile) for (const i of this.buildingTiles(b)) { if (this.btile.get(i) === id) { this.btile.delete(i); this.tiles.shade[i] = 0; } } }
+    addBuilding(b) { this.buildings.set(b.id, b); if (!this.btile) this.btile = new Map(); for (const i of this.buildingTiles(b)) { this.btile.set(i, b.id); this.tiles.shade[i] = 1; } this._bput(b); return b; }
+    removeBuilding(id) { const b = this.buildings.get(id); if (!b) return; this.buildings.delete(id); if (this.btile) for (const i of this.buildingTiles(b)) { if (this.btile.get(i) === id) { this.btile.delete(i); this.tiles.shade[i] = 0; } } this._bdel(b); }
     buildingAt(i) { if (!this.btile) this.reindexBuildings(); const id = this.btile.get(i); return id != null ? (this.buildings.get(id) || null) : null; }
-    reindexBuildings() { this.btile = new Map(); for (const b of this.buildings.values()) for (const i of this.buildingTiles(b)) this.btile.set(i, b.id); }
+    reindexBuildings() { this.btile = new Map(); this.bcells = new Map(); for (const b of this.buildings.values()) { for (const i of this.buildingTiles(b)) this.btile.set(i, b.id); this._bput(b); } }
+    _bkey(x, y) { return ((y >> 3) * 4096) + (x >> 3); }
+    _bput(b) { if (!this.bcells) this.bcells = new Map(); const k = this._bkey(b.x, b.y); let s = this.bcells.get(k); if (!s) { s = new Set(); this.bcells.set(k, s); } s.add(b.id); }
+    _bdel(b) { if (!this.bcells) return; const s = this.bcells.get(this._bkey(b.x, b.y)); if (s) s.delete(b.id); }
     /** Új föld a tengeren túl: a térkép keletre vagy délre bővül egy külön generált sávval; minden mezőindex újraszámolva. */
     expand(side, size, explorerId) {
       const oldW = this.w, oldH = this.h; const east = side === 'east';
@@ -808,7 +811,7 @@
       this.events.emit('NewLand', { tick: this.tick, name, side, agentId: explorerId, w: newW, h: newH, tile: this.idx(east ? oldW + (size >> 1) : (oldW >> 1), east ? (oldH >> 1) : oldH + (size >> 1)) });
       return name;
     }
-    buildingsNear(x, y, r) { const out = []; for (const b of this.buildings.values()) if (Math.abs(b.x - x) <= r && Math.abs(b.y - y) <= r) out.push(b); return out; }
+    buildingsNear(x, y, r) { const out = []; if (!this.bcells) this.reindexBuildings(); const x0 = (x - r) >> 3, x1 = (x + r) >> 3, y0 = (y - r) >> 3, y1 = (y + r) >> 3; for (let cy = y0; cy <= y1; cy++) for (let cx = x0; cx <= x1; cx++) { const s = this.bcells.get(cy * 4096 + cx); if (!s) continue; for (const id of s) { const b = this.buildings.get(id); if (b && Math.abs(b.x - x) <= r && Math.abs(b.y - y) <= r) out.push(b); } } return out; }
 
     // ---- spatial hash for agents (rebuilt each tick)
     rebuildBuckets() {
@@ -1711,9 +1714,11 @@
     },
     mult(world, a, key) { return 1 + (this.fx(world, a)[key] || 0); },
     /** Közös raktár a közelben, amelyben van a keresett anyagból (műhely, kovács, piac, gyár…). */
-    publicStore(world, a, item, radius) { for (const b of world.buildingsNear(a.x | 0, a.y | 0, radius || 20)) { const d = B[b.kind]; if (b.progress >= 1 && d && d.public && d.storage && b.storage && (b.storage[item] || 0) > 0) return b; } return null; },
+    publicStore(world, a, item, radius) { const list = this.storesNear(world, a, radius || 20); for (const b of list) if ((b.storage[item] || 0) > 0) return b; return null; },
+    /** A közeli közös raktárak listája, naponta egyszer összegyűjtve emberenként (a sűrű városban ezreket kérdeznének). */
+    storesNear(world, a, radius) { const day = world.tick / TPD | 0; if (a._psDay === day && a._psR === radius && a._ps) return a._ps; const out = []; for (const b of world.buildingsNear(a.x | 0, a.y | 0, radius)) { const d = B[b.kind]; if (b.progress >= 1 && d && d.public && d.storage && b.storage) out.push(b); } a._ps = out; a._psDay = day; a._psR = radius; return out; },
     /** Legközelebbi közös raktár, ahová termelni lehet. */
-    nearestStore(world, a, radius) { let best = null, bd = 1e9; for (const b of world.buildingsNear(a.x | 0, a.y | 0, radius || 20)) { const d = B[b.kind]; if (!(b.progress >= 1 && d && d.public && d.storage)) continue; const dd = LW.dist(a.x, a.y, b.x, b.y); if (dd < bd) { bd = dd; best = b; } } return best; },
+    nearestStore(world, a, radius) { let best = null, bd = 1e9; for (const b of this.storesNear(world, a, radius || 20)) { const dd = LW.dist(a.x, a.y, b.x, b.y); if (dd < bd) { bd = dd; best = b; } } return best; },
     /** Épület-adta szorzó a közelben (műhely, labor, egyetem…): a legjobb ilyen épület egy tulajdonságára. */
     buildingBonus(world, x, y, prop, radius) { let best = 0; for (const b of world.buildingsNear(x | 0, y | 0, radius || 12)) { if (b.progress < 1) continue; const v = B[b.kind][prop]; if (v && v > best) best = v; } return best; },
     /** A világ korszaka az élők tudásából. */
@@ -2455,9 +2460,9 @@
     ctx.storeFood = home && home.storage ? A().foodUnits(home.storage) : 0;
     return ctx;
   }
-  function nearestFire(world, a, maxD) { let best = null, bd = maxD; for (const b of world.buildings.values()) { if (b.kind !== 'campfire' || !b.lit || b.progress < 1) continue; const d = LW.dist(a.x, a.y, b.x, b.y); if (d < bd) { bd = d; best = b; } } return best; }
+  function nearestFire(world, a, maxD) { let best = null, bd = maxD; for (const b of world.buildingsNear(a.x | 0, a.y | 0, maxD)) { if (b.kind !== 'campfire' || !b.lit || b.progress < 1) continue; const d = LW.dist(a.x, a.y, b.x, b.y); if (d < bd) { bd = d; best = b; } } return best; }
   /** Legközelebbi kész épület egy fajtából vagy tulajdonságból (pl. 'furnace' = kemence/olvasztó/kovács). */
-  function nearestBuilding(world, a, what, maxD) { let best = null, bd = maxD || 24; const DEFS = Bld().DEFS; for (const b of world.buildings.values()) { if (b.progress < 1) continue; const def = DEFS[b.kind]; if (!(b.kind === what || (def && def[what]))) continue; const d = LW.dist(a.x, a.y, b.x, b.y); if (d < bd) { bd = d; best = b; } } return best; }
+  function nearestBuilding(world, a, what, maxD) { let best = null, bd = maxD || 24; const DEFS = Bld().DEFS; for (const b of world.buildingsNear(a.x | 0, a.y | 0, bd)) { if (b.progress < 1) continue; const def = DEFS[b.kind]; if (!(b.kind === what || (def && def[what]))) continue; const d = LW.dist(a.x, a.y, b.x, b.y); if (d < bd) { bd = d; best = b; } } return best; }
   function needsBuilding(nearby) { return nearby && nearby !== 'fire' && nearby !== 'water'; }
   function bestDwelling(a) { const DEFS = Bld().DEFS; let best = null, bt = 0; for (const k in DEFS) { const d = DEFS[k]; if (!d.dwelling || !d.tier || (d.tech && !a.knowledge.techs.has(d.tech))) continue; if (d.tier > bt) { bt = d.tier; best = k; } } return best; }
   let _tileNearAgent = null;
@@ -2638,7 +2643,7 @@
       score: (c, a) => { let s = 0.5 + u(N(a).warmth) * 0.9 + (c.night ? 0.35 : 0) + (a.inv.meat_raw || a.inv.fish_raw ? 0.3 : 0) + (c.season === 3 ? 0.3 : 0); if (c.effTemp > 18 && !c.night) s *= 0.4; return [s, ['nincs tűz a közelben', `érzett ${Math.round(c.effTemp)} °C`]]; },
       plan: (c, a) => {
         const site = c.home ? c.world.randomNear(c.home.x, c.home.y, 1) : Bld().findSite(c.world, a, 'campfire'); if (site < 0) return null;
-        const existing = [...c.world.buildings.values()].find((b) => b.kind === 'campfire' && !b.lit && LW.dist(b.x, b.y, a.x, a.y) < 6);
+        const existing = c.world.buildingsNear(a.x | 0, a.y | 0, 6).find((b) => b.kind === 'campfire' && !b.lit && LW.dist(b.x, b.y, a.x, a.y) < 6);
         if (existing) { const m = missingFor(a, { wood: 3 }); const acq = count(m) ? acquireSteps(c.world, a, m, c) : []; if (!acq) return null; return { steps: [...acq, { op: 'moveTo', i: c.world.idx(existing.x, existing.y), near: 1 }, { op: 'refuel', bid: existing.id }], tag: 'gather:wood' }; }
         const m = missingFor(a, { wood: 3 }); const acq = count(m) ? acquireSteps(c.world, a, m, c) : []; if (!acq) return null;
         return { steps: [...acq, { op: 'moveTo', i: site, near: 1 }, { op: 'buildNew', kind: 'campfire', i: site }], tag: 'build:campfire', kind: 'campfire' };
@@ -2703,7 +2708,7 @@
     },
     farm: {
       applicable: (c, a) => c.adult && a.knowledge.techs.has('seed_planting'),
-      score: (c, a) => { const farms = [...c.world.buildings.values()].filter((b) => b.kind === 'farm_plot' && b.ownerId === a.id); const maxFarms = 1 + (c.household.length >= 3 ? 1 : 0) + (a.knowledge.techs.has('plowing') ? 1 : 0) + (a.knowledge.techs.has('crop_rotation') ? 1 : 0); const farm = farms.find((b) => b.progress < 1) || farms.find((b) => b.planted && b.crop >= 1) || farms.find((b) => !b.planted) || null; a._farm = farm; if (!farm) { if (farms.length >= maxFarms) return [0.05, ['nő a termés']]; return [c.season <= 1 && c.home ? 0.6 + P(a).discipline * 0.3 + (farms.length === 0 ? 0.2 : 0) + u(N(a).food) * 0.4 : 0.1, [farms.length ? 'még egy szántót akar' : 'szántót akar']]; } if (farm.progress < 1) return [0.7, ['befejezi a szántót']]; if (!farm.planted && c.season <= 1) return [((a.inv.roots || 0) + (a.inv.berries || 0) >= 2 ? 0.75 : 0.3), ['vetés']]; if (farm.planted && farm.crop >= 1) return [1.0 + u(N(a).food) * 0.5, ['érett a termés']]; return [0.05, ['nő a termés']]; },
+      score: (c, a) => { const farms = c.world.buildingsNear(a.x | 0, a.y | 0, 20).filter((b) => b.kind === 'farm_plot' && b.ownerId === a.id); const maxFarms = 1 + (c.household.length >= 3 ? 1 : 0) + (a.knowledge.techs.has('plowing') ? 1 : 0) + (a.knowledge.techs.has('crop_rotation') ? 1 : 0); const farm = farms.find((b) => b.progress < 1) || farms.find((b) => b.planted && b.crop >= 1) || farms.find((b) => !b.planted) || null; a._farm = farm; if (!farm) { if (farms.length >= maxFarms) return [0.05, ['nő a termés']]; return [c.season <= 1 && c.home ? 0.6 + P(a).discipline * 0.3 + (farms.length === 0 ? 0.2 : 0) + u(N(a).food) * 0.4 : 0.1, [farms.length ? 'még egy szántót akar' : 'szántót akar']]; } if (farm.progress < 1) return [0.7, ['befejezi a szántót']]; if (!farm.planted && c.season <= 1) return [((a.inv.roots || 0) + (a.inv.berries || 0) >= 2 ? 0.75 : 0.3), ['vetés']]; if (farm.planted && farm.crop >= 1) return [1.0 + u(N(a).food) * 0.5, ['érett a termés']]; return [0.05, ['nő a termés']]; },
       plan: (c, a) => { const farm = a._farm; if (!farm) return buildPlan(c, a, 'farm_plot'); if (farm.progress < 1) return buildPlanFor(c, a, farm); if (!farm.planted) { const seeds = (a.inv.roots || 0) + (a.inv.berries || 0) >= 2 ? [] : acquireSteps(c.world, a, { berries: 2 }, c); if (!seeds) return null; return { steps: [...seeds, { op: 'moveTo', i: c.world.idx(farm.x, farm.y) }, { op: 'plant', bid: farm.id }], tag: 'farm:plant' }; } if (farm.crop >= 1) return { steps: [{ op: 'moveTo', i: c.world.idx(farm.x, farm.y) }, { op: 'harvest', bid: farm.id }], tag: 'farm:harvest' }; return null; },
     },
     explore: {
@@ -2741,9 +2746,9 @@
 
   function nearestGround(world, a, maxD) { let best = null, bd = maxD; for (const [i, g] of world.ground) { let any = false; for (const k in g) if (g[k] > 0) { any = true; break; } if (!any) continue; const d = LW.dist(a.x, a.y, world.xOf(i) + 0.5, world.yOf(i) + 0.5); if (d < bd) { bd = d; best = i; } } return best; }
   function nearestGroundFood(world, a, maxD) { let best = null, bd = maxD; for (const [i, g] of world.ground) { let any = false; for (const k in g) if (g[k] > 0 && LW.ITEMS[k] && LW.ITEMS[k].food) { any = true; break; } if (!any) continue; const d = LW.dist(a.x, a.y, world.xOf(i) + 0.5, world.yOf(i) + 0.5); if (d < bd) { bd = d; best = i; } } return best; }
-  function findHouseholdSite(c, a) { for (const b of c.world.buildings.values()) { if (b.progress >= 1) continue; const def = Bld().def(b); if (def.divine) continue; if (b.ownerId === a.id) continue; if (def.public && LW.dist(a.x, a.y, b.x, b.y) < 18 && (c.world.tick + a.id) % 3 === 0) return b; const owner = c.world.agents.get(b.ownerId); if (!owner) continue; if (a.partner === owner.id || c.household.includes(owner)) if (LW.dist(a.x, a.y, b.x, b.y) < 40) return b; } return null; }
+  function findHouseholdSite(c, a) { for (const b of c.world.buildingsNear(a.x | 0, a.y | 0, 40)) { if (b.progress >= 1) continue; const def = Bld().def(b); if (def.divine) continue; if (b.ownerId === a.id) continue; if (def.public && LW.dist(a.x, a.y, b.x, b.y) < 18 && (c.world.tick + a.id) % 3 === 0) return b; const owner = c.world.agents.get(b.ownerId); if (!owner) continue; if (a.partner === owner.id || c.household.includes(owner)) if (LW.dist(a.x, a.y, b.x, b.y) < 40) return b; } return null; }
   function buildPlan(c, a, kind) {
-    const pubk = !!Bld().DEFS[kind].public; let site = [...c.world.buildings.values()].find((b) => b.kind === kind && b.progress < 1 && (b.ownerId === a.id || (pubk && LW.dist(a.x, a.y, b.x, b.y) < 20)));
+    const pubk = !!Bld().DEFS[kind].public; let site = c.world.buildingsNear(a.x | 0, a.y | 0, 24).find((b) => b.kind === kind && b.progress < 1 && (b.ownerId === a.id || (pubk && LW.dist(a.x, a.y, b.x, b.y) < 20)));
     if (!site) { const i = Bld().findSite(c.world, a, kind); if (i < 0) return null; return { steps: [{ op: 'moveTo', i, near: 1 }, { op: 'buildNew', kind, i }], tag: 'build:' + kind, kind }; }
     return buildPlanFor(c, a, site);
   }
@@ -3527,9 +3532,9 @@
         if (def.water) for (const a of near) A().rememberPlace(w, a, 'water', w.idx(b.x, b.y), 255);
         // írott tudás: aki tud írni, lejegyzi; aki tud olvasni, megtanulja
         if (def.records) {
-          b.records = b.records || []; const writers = near.filter((a) => a.knowledge.techs.has('writing'));
-          for (const a of writers) for (const id of a.knowledge.techs) { const d = LW.Tech.D[id]; if (!d || d.hidden || b.records.includes(id)) continue; if (rng.chance(0.25 * def.records)) { b.records.push(id); if (!w.firsts['record']) w.events.emit('RecordWritten', { tick: w.tick, agentId: a.id, tech: id, buildingId: b.id, tile: w.idx(b.x, b.y) }); } }
-          for (const a of writers) { if (a.knowledge.techs.size > 60 && rng.chance(0.5)) continue; const cand = b.records.filter((id) => !a.knowledge.techs.has(id) && LW.Tech.D[id] && (!LW.Tech.D[id].prereq || LW.Tech.D[id].prereq.every((p) => a.knowledge.techs.has(p)))); if (!cand.length) continue; const id = rng.pick(cand); if (rng.chance(0.05 * def.records * (0.5 + a.personality.intelligence) * LW.Tech.mult(w, a, 'teach'))) { LW.Tech.learn(w, a, id, 'read'); A().memory(w, a, { type: 'learn', text: `olvastam róla: ${LW.Tech.D[id].name.toLowerCase()}`, importance: 0.5, emotion: 'excitement', intensity: 0.4, tech: id }); } }
+          b.records = b.records || []; const writers = near.filter((a) => a.knowledge.techs.has('writing')); const recSet = new Set(b.records);
+          for (const a of writers.slice(0, 12)) for (const id of a.knowledge.techs) { const d = LW.Tech.D[id]; if (!d || d.hidden || recSet.has(id)) continue; if (rng.chance(0.25 * def.records)) { b.records.push(id); recSet.add(id); if (!w.firsts['record']) w.events.emit('RecordWritten', { tick: w.tick, agentId: a.id, tech: id, buildingId: b.id, tile: w.idx(b.x, b.y) }); } }
+          for (const a of writers) { if (a.knowledge.techs.size >= b.records.length || (a.knowledge.techs.size > 60 && rng.chance(0.5))) continue; const cand = b.records.filter((id) => !a.knowledge.techs.has(id) && LW.Tech.D[id] && (!LW.Tech.D[id].prereq || LW.Tech.D[id].prereq.every((p) => a.knowledge.techs.has(p)))); if (!cand.length) continue; const id = rng.pick(cand); if (rng.chance(0.05 * def.records * (0.5 + a.personality.intelligence) * LW.Tech.mult(w, a, 'teach'))) { LW.Tech.learn(w, a, id, 'read'); A().memory(w, a, { type: 'learn', text: `olvastam róla: ${LW.Tech.D[id].name.toLowerCase()}`, importance: 0.5, emotion: 'excitement', intensity: 0.4, tech: id }); } }
         }
         // szentély, templom: a hit rendeződik, a félelem csillapul; néha szertartás
         if (def.shrine) { for (const a of near) { a.beliefs.creator = b01(a.beliefs.creator + 0.004 * def.shrine); a.emotions.fear = Math.max(0, a.emotions.fear - 0.03); a.emotions.joy = b01(a.emotions.joy + 0.01); a.needs.social = b01(a.needs.social + 0.03); } if (near.length >= 3 && rng.chance(0.08) && w.tick - (b.lastRite || -1e9) > T.TICKS_PER_DAY * 12) { b.lastRite = w.tick; const s = LW.Settlements.at(w, b.x, b.y); w.events.emit('Ritual', { tick: w.tick, agentId: rng.pick(near).id, place: s ? s.name : null, n: near.length, tile: w.idx(b.x, b.y), temple: def.shrine >= 2 }); for (const a of near) { LW.Speech.say(w, a, null, [rng.pick(['creator', 'sky', 'voice']), rng.pick(['good', 'give', 'we'])]); a.beliefs.creator = b01(a.beliefs.creator + 0.05); } } }
@@ -4274,7 +4279,7 @@
       if (!A().knownCount(a, 'water') && !child) { a.health = Math.max(0, a.health - cfg.dehydrationHealthPerDay * 0.3); a.needs.water = 0.2; } else a.needs.water = 0.75;
       // ---- warmth (mean of the day)
       let temp = 0; for (let h = 0; h < 4; h++) { temp += w.tiles.baseTemp[i]; } temp = w.tileTemp(i) - 2; // tileTemp includes diurnal (evening) — approximate daily mean
-      const fireNear = [...w.buildings.values()].some((b) => b.kind === 'campfire' && b.lit && LW.dist(b.x, b.y, a.x, a.y) < 4);
+      const fireNear = w.buildingsNear(a.x | 0, a.y | 0, 4).some((b) => b.kind === 'campfire' && b.lit && LW.dist(b.x, b.y, a.x, a.y) < 4);
       const eff = temp + 2 + (home ? LW.Buildings.def(home).insulation || 0 : Math.min(3, hh.length)) + (fireNear ? 8 : 0) + (a.inv.clothes ? 8 : 0);
       if (eff < 8) { a.health = Math.max(0, a.health - cfg.hypothermiaHealthPerDay * (8 - eff) / 10); a.needs.warmth = 0.2; } else a.needs.warmth = 0.9;
       a.needs.energy = 0.8; a.needs.social = Math.min(1, a.needs.social + 0.2); a.needs.safety = home ? 0.8 : 0.5;
@@ -4286,7 +4291,7 @@
       A().daily(w, a); if (!w.agents.has(a.id)) return;
       // ---- social life
       const near = w.agentsNear(a.x, a.y, 14, a.id).filter((o) => w.agents.has(o.id));
-      if (near.length && stage !== 'infant') { const n = 1 + rng.int(0, 2); for (let k = 0; k < n; k++) { const o = rng.pick(near); if (A().stage(w, o) !== 'infant' && rng.chance(0.7)) LW.Social.interact(w, a, o, 'converse', {}); } }
+      if (near.length && stage !== 'infant') { const n = (w._macroLoad || 1) < 0.6 ? (rng.chance(0.7) ? 1 : 0) : 1 + rng.int(0, 2); for (let k = 0; k < n; k++) { const o = rng.pick(near); if (A().stage(w, o) !== 'infant' && rng.chance(0.7)) LW.Social.interact(w, a, o, 'converse', {}); } }
       if (adult) {
         if (a.partner != null && w.agents.has(a.partner)) { const p = w.agents.get(a.partner); if (rng.chance(0.5)) LW.Social.interact(w, a, p, 'mate', {}); }
         else if (near.length && rng.chance(0.12)) { let best = null, bs = 0.35; for (const o of near) { if (!A().isAdult(w, o)) continue; const r = LW.Relationships.ensure(w, a, o); if (r.status === 'family' && LW.Relationships.kinship(w, a, o) >= 0.9) continue; if (r.lastFlirt != null && w.tick - r.lastFlirt < T.TICKS_PER_DAY * 6) continue; if (r.attraction > bs) { bs = r.attraction; best = o; } } if (best) LW.Social.interact(w, a, best, 'flirt', {}); }
@@ -4305,7 +4310,7 @@
       if (adult) { A().practice(a, 'gathering', 8); A().practice(a, 'foraging', 5); A().practice(a, 'crafting', 2); A().practice(a, 'building', home ? 1 : 2); A().practice(a, 'exploring', 1 + a.personality.curiosity * 2); if ((a.inv.spear || LW.Tree.bestTool(a, 'hunt') >= 1) && A().knownCount(a, 'animals')) A().practice(a, 'hunting', 4); if (a.knowledge.techs.has('seed_planting')) A().practice(a, 'farming', 5); if (a.knowledge.techs.has('herbal_medicine')) A().practice(a, 'medicine', 2); A().practice(a, 'social', 2); if (a.knowledge.techs.has('stone_knapping') && !a.inv.handaxe && A().knownCount(a, 'stone') && A().knownCount(a, 'flint') && rng.chance(0.3)) { a.inv.handaxe = 1; w.events.emit('ItemCrafted', { tick: w.tick, agentId: a.id, item: 'handaxe', first: !w.firsts['item:handaxe'] }); } if (a.knowledge.techs.has('spear_making') && !a.inv.spear && rng.chance(0.3)) { a.inv.spear = 1; w.events.emit('ItemCrafted', { tick: w.tick, agentId: a.id, item: 'spear', first: !w.firsts['item:spear'] }); } if (a.knowledge.techs.has('basket_weaving') && !a.inv.basket && rng.chance(0.3)) a.inv.basket = 1; if (a.knowledge.techs.has('hide_working') && !a.inv.clothes && (a.inv.hide || 0) >= 2 && rng.chance(0.4)) { a.inv.hide -= 2; a.inv.clothes = 1; } if (a.inv.spear && A().knownCount(a, 'animals') && rng.chance(0.25)) a.inv.hide = (a.inv.hide || 0) + 1; }
       // ---- fire & shelter
       if (adult && a.knowledge.techs.has('fire_making')) {
-        const fires = [...w.buildings.values()].filter((b) => b.kind === 'campfire' && LW.dist(b.x, b.y, a.x, a.y) < 8);
+        const fires = w.buildingsNear(a.x | 0, a.y | 0, 8).filter((b) => b.kind === 'campfire' && LW.dist(b.x, b.y, a.x, a.y) < 8);
         if (!fires.length && rng.chance(0.5) && A().knownCount(a, 'wood')) { const s = LW.Buildings.findSite(w, a, 'campfire'); if (s >= 0) { const b = LW.Buildings.create(w, 'campfire', w.xOf(s), w.yOf(s), a.id); b.delivered = { wood: 3 }; LW.Buildings.complete(w, b, a); } }
         else for (const f of fires) if (!f.lit || f.fuel < T.TICKS_PER_DAY) { if (rng.chance(0.8)) { f.fuel = LW.Buildings.DEFS.campfire.fuelTicks; f.lit = true; } }
       }
@@ -4314,12 +4319,12 @@
         const tier = { [kind]: kt }; const cur = home ? LW.Buildings.DEFS[home.kind].tier || 0 : 0;
         const partnerHome = a.partner != null && w.agents.get(a.partner)?.home != null;
         if (kind && cur < tier[kind] && !(cur === 0 && partnerHome)) {
-          let site = [...w.buildings.values()].find((b) => b.ownerId === a.id && b.progress < 1 && LW.Buildings.def(b).dwelling);
+          let site = w.buildingsNear(a.x | 0, a.y | 0, 24).find((b) => b.ownerId === a.id && b.progress < 1 && LW.Buildings.def(b).dwelling);
           if (!site && rng.chance(0.5)) { const s = LW.Buildings.findSite(w, a, kind); if (s >= 0) site = LW.Buildings.create(w, kind, w.xOf(s), w.yOf(s), a.id); }
           if (site) { const def = LW.Buildings.def(site); const cost = def.cost; const expectedDays = 2 + def.ticks / 40; for (const k in cost) site.delivered[k] = Math.min(cost[k], (site.delivered[k] || 0) + cost[k] / expectedDays * (0.6 + a.skills.building)); site.progress = Math.min(1, site.progress + 1 / expectedDays * (0.7 + a.skills.building * 0.6)); A().practice(a, 'building', 6); if (site.progress >= 1 && LW.Buildings.materialsComplete(site)) { a.counters.built++; LW.Buildings.complete(w, site, a); } else if (site.progress >= 1) site.progress = 0.95; }
         } else if (cur === 0 && partnerHome) { const ph = w.buildings.get(w.agents.get(a.partner).home); if (ph) LW.Buildings.moveIn(w, ph, a); }
         if (a.knowledge.techs.has('seed_planting') && home && rng.chance(0.35)) {
-          const farms = [...w.buildings.values()].filter((b) => b.kind === 'farm_plot' && b.ownerId === a.id); const maxFarms = 1 + (hh.length >= 3 ? 1 : 0) + (a.knowledge.techs.has('plowing') ? 1 : 0) + (a.knowledge.techs.has('crop_rotation') ? 1 : 0);
+          const farms = w.buildingsNear(a.x | 0, a.y | 0, 20).filter((b) => b.kind === 'farm_plot' && b.ownerId === a.id); const maxFarms = 1 + (hh.length >= 3 ? 1 : 0) + (a.knowledge.techs.has('plowing') ? 1 : 0) + (a.knowledge.techs.has('crop_rotation') ? 1 : 0);
           if (farms.length < maxFarms && LW.Time.season(w.tick) <= 1 && rng.chance(0.5)) { const s = LW.Buildings.findSite(w, a, 'farm_plot'); if (s >= 0) { const f = LW.Buildings.create(w, 'farm_plot', w.xOf(s), w.yOf(s), a.id); f.delivered = { wood: 2 }; LW.Buildings.complete(w, f, a); farms.push(f); } }
           for (const farm of farms) { if (farm.progress < 1) continue; if (!farm.planted && LW.Time.season(w.tick) <= 1) { farm.planted = true; farm.crop = 0; } else if (farm.planted && farm.crop >= 1) { const q = Math.round((30 + w.tiles.fert[w.idx(farm.x, farm.y)] / 255 * 30) * (1 + LW.Tech.fx(w, a).farm)); const store = home.storage ? home.storage : (LW.Tree.nearestStore(w, a, 12) || {}).storage; if (store) store.grain = Math.min((store.grain || 0) + q, 400); farm.planted = false; farm.crop = 0; A().practice(a, 'farming', 6); w.events.emit('Harvest', { tick: w.tick, agentId: a.id, amount: q, tile: w.idx(farm.x, farm.y), first: !w.firsts['harvest'] }); } }
         }
@@ -4337,8 +4342,9 @@
       if (w.burning.size && rng.chance(0.3)) LW.Tech.observe(w, a, 'fire');
       if (fireNear) LW.Tech.observe(w, a, 'fire');
     },
-    canSource(w, a, d, depth) { depth = depth || 0; const need = d.items || (d.itemsAny ? d.itemsAny[0] : {}); for (const k in need) { if ((a.inv[k] || 0) >= need[k]) continue; { const ps = LW.Tree.publicStore(w, a, k, 20); if (ps && ps.storage[k] >= need[k]) continue; } const src = LW.Tech.SOURCE[k]; if (!src) { const R = LW.Tech.RECIPES[k]; if (!R || depth >= 2 || !a.knowledge.techs.has(R.tech)) return false; if (R.nearby && R.nearby !== 'fire' && R.nearby !== 'water' && !this.buildingNear(w, a, R.nearby, 24)) return false; if (!this.canSource(w, a, { items: R.inp || (R.inpAny ? R.inpAny[0] : {}) }, depth + 1)) return false; continue; } if (src === 'fiber') continue; if (src === 'store') { const home = a.home != null ? w.buildings.get(a.home) : null; if (!home || !home.storage || !(home.storage[k] >= need[k])) return false; continue; } if (src === 'animals') { if (!a.inv.spear && LW.Tree.bestTool(a, 'hunt') < 1) return false; continue; } if (src.startsWith('deposit:')) { const dt = LW.DEPOSIT[src.slice(8).toUpperCase()]; let ok = false; for (const p of a.knowledge.places.values()) if (p.k === 'deposit' && p.q === dt) { ok = true; break; } if (!ok || !a.knowledge.techs.has('digging')) return false; if (dt === LW.DEPOSIT.OIL && !a.knowledge.techs.has('oil_drilling')) return false; continue; } if (!A().knownCount(a, src)) return false; } return true; },
-    buildingNear(w, a, what, r) { const DEFS = LW.Buildings.DEFS; for (const b of w.buildings.values()) { if (b.progress < 1) continue; const def = DEFS[b.kind]; if ((b.kind === what || (def && def[what])) && LW.dist(a.x, a.y, b.x, b.y) <= r) return b; } return null; },
+    canSource(w, a, d, depth) { depth = depth || 0; const need = d.items || (d.itemsAny ? d.itemsAny[0] : {}); if (!depth) { const day = w.tick / T.TICKS_PER_DAY | 0; if (a._csDay !== day) { a._csDay = day; a._cs = {}; } const key = Object.keys(need).map((k) => k + need[k]).join(','); if (a._cs[key] != null) return a._cs[key]; const r = this._canSource(w, a, need, 0); a._cs[key] = r; return r; } return this._canSource(w, a, need, depth); },
+    _canSource(w, a, need, depth) { for (const k in need) { if ((a.inv[k] || 0) >= need[k]) continue; { const ps = LW.Tree.publicStore(w, a, k, 20); if (ps && ps.storage[k] >= need[k]) continue; } const src = LW.Tech.SOURCE[k]; if (!src) { const R = LW.Tech.RECIPES[k]; if (!R || depth >= 2 || !a.knowledge.techs.has(R.tech)) return false; if (R.nearby && R.nearby !== 'fire' && R.nearby !== 'water' && !this.buildingNear(w, a, R.nearby, 24)) return false; if (!this._canSource(w, a, R.inp || (R.inpAny ? R.inpAny[0] : {}), depth + 1)) return false; continue; } if (src === 'fiber') continue; if (src === 'store') { const home = a.home != null ? w.buildings.get(a.home) : null; if (!home || !home.storage || !(home.storage[k] >= need[k])) return false; continue; } if (src === 'animals') { if (!a.inv.spear && LW.Tree.bestTool(a, 'hunt') < 1) return false; continue; } if (src.startsWith('deposit:')) { const dt = LW.DEPOSIT[src.slice(8).toUpperCase()]; let ok = false; for (const p of a.knowledge.places.values()) if (p.k === 'deposit' && p.q === dt) { ok = true; break; } if (!ok || !a.knowledge.techs.has('digging')) return false; if (dt === LW.DEPOSIT.OIL && !a.knowledge.techs.has('oil_drilling')) return false; continue; } if (!A().knownCount(a, src)) return false; } return true; },
+    buildingNear(w, a, what, r) { const DEFS = LW.Buildings.DEFS; for (const b of w.buildingsNear(a.x | 0, a.y | 0, r)) { if (b.progress < 1) continue; const def = DEFS[b.kind]; if ((b.kind === what || (def && def[what])) && LW.dist(a.x, a.y, b.x, b.y) <= r) return b; } return null; },
   };
   LW.Macro = Macro;
 })(globalThis.LW || (globalThis.LW = {}));
@@ -4441,14 +4447,16 @@
       const detail = Math.min(owedTicks, cfg.detailWindowTicks);
       const macroDays = Math.floor((owedTicks - detail) / T.TICKS_PER_DAY);
       const detailTicks = owedTicks - macroDays * T.TICKS_PER_DAY;
-      const total = macroDays * T.TICKS_PER_DAY + detailTicks; let doneTicks = 0; let dayI = 0;
+      const total = macroDays * T.TICKS_PER_DAY + detailTicks; let doneTicks = 0; let dayI = 0; const t0 = now(); const budget = cb && cb.budgetMs ? cb.budgetMs : Infinity; this._catchSkip = false;
+      const outOfTime = () => this._catchSkip || (now() - t0) > budget;
       const startTick = w.tick;
       const schedule = (fn) => (typeof setTimeout === 'function' ? setTimeout(fn, 0) : fn());
-      const finish = () => { meta.lastRealTimeMs = Date.now(); /* a felzárkózás saját ideje nem tartozás — különben végtelen hurok */ report.after = w.history.snapshotStats(); report.chronicle = w.history.chronicle.slice(report.chronicleStart); report.firsts = Object.entries(w.history.firsts).filter(([, f]) => f.tick > startTick); report.beliefAfter = LW.mean([...w.agents.values()].map((a) => a.beliefs.creator)); report.worldTicks = w.tick - startTick; if (cb && cb.done) cb.done(report); };
+      const finish = () => { meta.lastRealTimeMs = Date.now(); report.skippedTicks = Math.max(0, total - doneTicks); /* a felzárkózás saját ideje nem tartozás — különben végtelen hurok */ report.after = w.history.snapshotStats(); report.chronicle = w.history.chronicle.slice(report.chronicleStart); report.firsts = Object.entries(w.history.firsts).filter(([, f]) => f.tick > startTick); report.beliefAfter = LW.mean([...w.agents.values()].map((a) => a.beliefs.creator)); report.worldTicks = w.tick - startTick; if (cb && cb.done) cb.done(report); };
       const stepMacro = () => {
         const n = Math.min(cfg.chunkDays, macroDays - dayI);
         for (let k = 0; k < n; k++) { LW.Macro.day(w); dayI++; doneTicks += T.TICKS_PER_DAY; }
         if (cb && cb.progress) cb.progress(doneTicks / total, `Szimulálás: ${LW.Time.span(doneTicks)} / ${LW.Time.span(total)}…`);
+        if (outOfTime()) { finish(); return; }
         if (dayI < macroDays) schedule(stepMacro); else schedule(stepDetail);
       };
       let dt = 0;
@@ -4457,10 +4465,10 @@
         for (let k = 0; k < n; k++) this.tick();
         dt += n; doneTicks += n;
         if (cb && cb.progress) cb.progress(doneTicks / total, `Szimulálás: ${LW.Time.span(doneTicks)} / ${LW.Time.span(total)}…`);
-        if (dt < detailTicks) schedule(stepDetail); else finish();
+        if (dt < detailTicks && !outOfTime()) schedule(stepDetail); else finish();
       };
       if (cb && cb.progress) cb.progress(0, 'A világ ébred…');
-      if (cb && cb.sync) { while (dayI < macroDays) { LW.Macro.day(w); dayI++; } while (dt < detailTicks) { this.tick(); dt++; } finish(); return report; }
+      if (cb && cb.sync) { while (dayI < macroDays && !outOfTime()) { LW.Macro.day(w); dayI++; doneTicks += T.TICKS_PER_DAY; } while (dt < detailTicks && !outOfTime()) { this.tick(); dt++; doneTicks++; } finish(); return report; }
       schedule(macroDays > 0 ? stepMacro : stepDetail);
       return report;
     }

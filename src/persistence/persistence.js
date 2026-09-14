@@ -24,16 +24,24 @@
     let rels = [...a.relationships].filter(([, r]) => keep(r));
     if (rels.length > 120) { rels.sort((x, y) => (y[1].familiarity + y[1].friendship + y[1].romance + y[1].resentment) - (x[1].familiarity + x[1].friendship + x[1].romance + x[1].resentment)); rels = rels.slice(0, 120); }
     const kept = new Set(rels.map(([id]) => id));
-    o.memory = { episodic: a.memory.episodic, emotional: a.memory.emotional, social: [...a.memory.social].filter(([id, s]) => kept.has(id) || (s.lastSeen >= 0 && tick - s.lastSeen < 96 * 30)).slice(0, 160) };
-    o.relationships = rels;
+    o.memory = { episodic: a.memory.episodic.map(compactMem), emotional: a.memory.emotional.map(compactMem), social: [...a.memory.social].filter(([id, s]) => kept.has(id) || (s.lastSeen >= 0 && tick - s.lastSeen < 96 * 30)).slice(0, 160).map(([id, s]) => [id, s.facts && s.facts.length ? s : { lastSeen: s.lastSeen, lastTile: s.lastTile, impression: s.impression }]) };
+    o.relationships = rels.map(([id, r]) => [id, compactRel(r)]);
+    o.knowledge.places = o.knowledge.places.map((p) => [p.k, p.i, p.q, p.t]); // tömbként: a mentés harmada
     if (a.pregnancy) o.pregnancy = { by: a.pregnancy.by, since: a.pregnancy.since, fatherGenes: a.pregnancy.fatherGenes };
     return o;
   }
+  // a nulla, hamis és üres mezők kimaradnak a mentésből; visszatöltéskor az alapértékek pótolják őket
+  const REL_ZERO = { trust: 0, attraction: 0, respect: 0, friendship: 0, fear: 0, resentment: 0, jealousy: 0, gratitude: 0, loyalty: 0, familiarity: 0, dependency: 0, romance: 0 };
+  function compactRel(r) { const o = {}; for (const k in r) { const v = r[k]; if (v === 0 || v === false || v == null) continue; o[k] = v; } return o; }
+  function compactMem(m) { const o = {}; for (const k in m) { const v = m[k]; if (v == null || v === false || (Array.isArray(v) && !v.length)) continue; o[k] = v; } return o; }
   function restoreAgent(o) {
     const a = { ...o };
-    a.knowledge = { techs: new Set(o.knowledge.techs), places: new Map(o.knowledge.places.map((p) => [LW.Agents.poiKey(p.k, p.i), p])), progress: o.knowledge.progress || {} };
-    a.memory = { episodic: o.memory.episodic || [], emotional: o.memory.emotional || [], social: new Map(o.memory.social || []) };
-    a.relationships = new Map(o.relationships || []);
+    const places = (o.knowledge.places || []).map((p) => (Array.isArray(p) ? { k: p[0], i: p[1], q: p[2], t: p[3] } : p));
+    a.knowledge = { techs: new Set(o.knowledge.techs), places: new Map(places.map((p) => [LW.Agents.poiKey(p.k, p.i), p])), progress: o.knowledge.progress || {} };
+    const fillMem = (m) => { if (m.tile === undefined) m.tile = null; if (m.divine === undefined) m.divine = false; if (m.distorted === undefined) m.distorted = false; return m; }; // a kulcsok sorrendje marad, hogy a mentés → betöltés → mentés azonos legyen
+    const fillRel = (r) => { for (const k in REL_ZERO) if (r[k] == null) r[k] = 0; if (!r.status) r.status = 'stranger'; return r; };
+    a.memory = { episodic: (o.memory.episodic || []).map(fillMem), emotional: (o.memory.emotional || []).map(fillMem), social: new Map((o.memory.social || []).map(([id, s]) => [id, s.facts ? s : { ...s, facts: [] }])) };
+    a.relationships = new Map((o.relationships || []).map(([id, r]) => [id, fillRel(r)]));
     a.plan = null; a.why = null; a.env = null; a.threat = null; if (a.engagedUntil == null) a.engagedUntil = 0; if (a.lastDecisionTick == null) a.lastDecisionTick = -1000;
     if (!a.palette) a.palette = LW.Genetics.palette(a.genes.appearance);
     if (!a.vocab) a.vocab = {}; if (a.beliefs && a.beliefs.trust == null) a.beliefs.trust = 0; if (!a.chatHistory) a.chatHistory = []; if (a.ill == null) a.ill = 0; if (a.beliefs && a.beliefs.simulation == null) a.beliefs.simulation = 0; if (!a.mind) a.mind = LW.Mind.fresh();

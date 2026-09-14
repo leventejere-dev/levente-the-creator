@@ -156,6 +156,9 @@
       const counts = new Map(); for (const l of world.langs.values()) { l.speakers = 0; l.secret = 0; counts.set(l.id, {}); }
       for (const a of world.agents.values()) { const l = world.langs.get(a.langId); if (!l) continue; l.speakers++; const cnt = counts.get(l.id); for (const c in a.vocab) { const v = a.vocab[c]; const m = cnt[c] || (cnt[c] = {}); m[v.w] = (m[v.w] || 0) + 1; if (v.s) l.secret++; } }
       for (const l of world.langs.values()) {
+        // holt nyelv: akinek két éve nincs élő beszélője, az a krónikában marad, a világban nem (ezrek gyűltek fel)
+        if (!l.speakers) { if (!l.diedTick) l.diedTick = world.tick; else if (world.tick - l.diedTick > T.TICKS_PER_YEAR * 2 && world.langs.size > 1) { world.langs.delete(l.id); world.deadLangs = (world.deadLangs || 0) + 1; if (l.name && (l.speakersMax || 0) >= 3) world.events.emit('LanguageDied', { tick: world.tick, name: l.name, langId: l.id }); } continue; }
+        l.diedTick = 0; l.speakersMax = Math.max(l.speakersMax || 0, l.speakers);
         const cnt = counts.get(l.id); const words = {}; for (const c in cnt) { let bw = null, bn = 0; for (const w in cnt[c]) if (cnt[c][w] > bn) { bn = cnt[c][w]; bw = w; } if (bw) words[c] = bw; }
         if (l.speakers > 0) l.words = words;
         if (!l.name && l.speakers >= 2 && Object.keys(l.words).length >= 10) { const base = l.words.we || l.words.person || l.words.speak || l.words[Object.keys(l.words)[0]]; l.name = base[0].toUpperCase() + base.slice(1); const st = this.homeOf(world, l); l.place = st ? st.name : null; world.events.emit('LanguageNamed', { tick: world.tick, name: l.name, langId: l.id, speakers: l.speakers, place: l.place, tile: st ? world.idx(st.x | 0, st.y | 0) : undefined }); }
@@ -169,6 +172,8 @@
     splitCheck(world) {
       const groups = new Map(); // langId → settlementId → agents
       for (const a of world.agents.values()) { const s = LW.Settlements.at(world, a.x, a.y); if (!s || s.abandonedTick) continue; const g = groups.get(a.langId) || new Map(); groups.set(a.langId, g); const arr = g.get(s.id) || []; arr.push(a); g.set(s.id, arr); }
+      let living = 0; for (const l of world.langs.values()) if (l.speakers > 0) living++;
+      if (living >= 2 + world.population / 8) return; // a nyelvek száma a népességgel arányos: egy 800 fős világban sem lesz száz nyelv
       for (const [langId, g] of groups) {
         const sets = [...g.entries()].filter(([, arr]) => arr.length >= 3); if (sets.length < 2) continue;
         const parent = world.langs.get(langId); if (!parent) continue;
@@ -217,8 +222,8 @@
     dictionary(world, l) { const ear = world.creatorSettings && world.creatorSettings.divineEar; const out = []; const secret = new Set(); for (const a of world.agents.values()) if (a.langId === l.id) for (const c in a.vocab) if (a.vocab[c].s) secret.add(c); for (const c in l.words) { const w = l.words[c]; const k = this.known(world, l.id, w); const s = secret.has(c); out.push({ c, w, known: !!k || (ear && !s), secret: s, gloss: this.gloss(c) }); } out.sort((x, y) => x.gloss.localeCompare(y.gloss, 'hu')); return out; },
     describeLang(world, l) { return l.name ? `${l.name.toLowerCase()} nyelv` : l.parent ? 'új tájszólás' : l.speakers <= 1 && l.founderId != null ? 'idegen nyelv' : 'ősnyelv'; },
     // ---------------- mentés
-    toJSON(world) { return { langs: [...world.langs.values()], lexicon: world.creatorLexicon, settings: world.creatorSettings, chatLog: world.chatLog.slice(-200), speechLog: world.speechLog.slice(-80) }; },
-    fromJSON(world, j) { world.langs = new Map(); if (j) { for (const l of j.langs || []) world.langs.set(l.id, l); world.creatorLexicon = j.lexicon || {}; world.creatorSettings = j.settings || { divineEar: true }; world.chatLog = j.chatLog || []; world.speechLog = j.speechLog || []; } },
+    toJSON(world) { const used = new Set(); for (const a of world.agents.values()) used.add(a.langId); const langs = [...world.langs.values()].filter((l) => used.has(l.id) || (l.speakers || 0) > 0 || (world.tick - (l.diedTick || world.tick)) < T.TICKS_PER_YEAR * 2); return { langs, deadLangs: world.deadLangs || 0, lexicon: world.creatorLexicon, settings: world.creatorSettings, chatLog: world.chatLog.slice(-200), speechLog: world.speechLog.slice(-80) }; },
+    fromJSON(world, j) { world.langs = new Map(); if (j) { for (const l of j.langs || []) world.langs.set(l.id, l); world.deadLangs = j.deadLangs || 0; { const used = new Set(); for (const a of world.agents.values()) used.add(a.langId); const dead = [...world.langs.values()].filter((l) => !used.has(l.id)); if (dead.length > 40 && world.langs.size > dead.length) { for (const l of dead) world.langs.delete(l.id); world.deadLangs += dead.length; } } /* régi mentések ezrével hordozták a holt nyelveket */ world.creatorLexicon = j.lexicon || {}; world.creatorSettings = j.settings || { divineEar: true }; world.chatLog = j.chatLog || []; world.speechLog = j.speechLog || []; } },
   };
   function pickN(rng, pool, n) { const items = pool.slice(); const out = []; while (out.length < n && items.length) { const i = rng.int(0, items.length - 1); out.push(items[i]); items.splice(i, 1); } return out; }
   LW.Speech = Speech;

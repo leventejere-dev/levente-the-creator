@@ -33,7 +33,7 @@
       return r.text();
     },
     /** Peek at the meta of a cloud text without inflating everything (cheap when raw JSON; inflates when gzipped). */
-    async parseMeta(text) { const json = text.startsWith('GZ:') ? await LW.Store.inflate(text.slice(3)) : text; const m = /"meta":(\{[^{}]*\})/.exec(json); return { json, meta: m ? JSON.parse(m[1]) : null }; },
+    async parseMeta(text) { const json = text.startsWith('GZ:') ? await LW.Store.inflate(text.slice(3)) : text; const i = json.indexOf('"meta":'); let meta = null; if (i >= 0) { let d = 0, j = i + 7; for (; j < json.length; j++) { const ch = json[j]; if (ch === '{') d++; else if (ch === '}') { d--; if (!d) break; } } try { meta = JSON.parse(json.slice(i + 7, j + 1)); } catch (e) { meta = null; } } return { json, meta }; },
     /** Write the world text as the single file of an orphan commit; force-move the branch (old commits become garbage). */
     async save(text, message) {
       if (!this.canWrite || this.saving) return false; this.saving = true; this.status = 'saving';

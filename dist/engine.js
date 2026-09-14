@@ -1,4 +1,4 @@
-/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-14 11:41 */
+/* LEVENTE — THE CREATOR · engine bundle · built 2026-09-14 12:06 */
 
 /* ===== core/rng.js ===== */
 /* LEVENTE — THE CREATOR · core/rng.js
@@ -3440,6 +3440,9 @@
       const counts = new Map(); for (const l of world.langs.values()) { l.speakers = 0; l.secret = 0; counts.set(l.id, {}); }
       for (const a of world.agents.values()) { const l = world.langs.get(a.langId); if (!l) continue; l.speakers++; const cnt = counts.get(l.id); for (const c in a.vocab) { const v = a.vocab[c]; const m = cnt[c] || (cnt[c] = {}); m[v.w] = (m[v.w] || 0) + 1; if (v.s) l.secret++; } }
       for (const l of world.langs.values()) {
+        // holt nyelv: akinek két éve nincs élő beszélője, az a krónikában marad, a világban nem (ezrek gyűltek fel)
+        if (!l.speakers) { if (!l.diedTick) l.diedTick = world.tick; else if (world.tick - l.diedTick > T.TICKS_PER_YEAR * 2 && world.langs.size > 1) { world.langs.delete(l.id); world.deadLangs = (world.deadLangs || 0) + 1; if (l.name && (l.speakersMax || 0) >= 3) world.events.emit('LanguageDied', { tick: world.tick, name: l.name, langId: l.id }); } continue; }
+        l.diedTick = 0; l.speakersMax = Math.max(l.speakersMax || 0, l.speakers);
         const cnt = counts.get(l.id); const words = {}; for (const c in cnt) { let bw = null, bn = 0; for (const w in cnt[c]) if (cnt[c][w] > bn) { bn = cnt[c][w]; bw = w; } if (bw) words[c] = bw; }
         if (l.speakers > 0) l.words = words;
         if (!l.name && l.speakers >= 2 && Object.keys(l.words).length >= 10) { const base = l.words.we || l.words.person || l.words.speak || l.words[Object.keys(l.words)[0]]; l.name = base[0].toUpperCase() + base.slice(1); const st = this.homeOf(world, l); l.place = st ? st.name : null; world.events.emit('LanguageNamed', { tick: world.tick, name: l.name, langId: l.id, speakers: l.speakers, place: l.place, tile: st ? world.idx(st.x | 0, st.y | 0) : undefined }); }
@@ -3453,6 +3456,8 @@
     splitCheck(world) {
       const groups = new Map(); // langId → settlementId → agents
       for (const a of world.agents.values()) { const s = LW.Settlements.at(world, a.x, a.y); if (!s || s.abandonedTick) continue; const g = groups.get(a.langId) || new Map(); groups.set(a.langId, g); const arr = g.get(s.id) || []; arr.push(a); g.set(s.id, arr); }
+      let living = 0; for (const l of world.langs.values()) if (l.speakers > 0) living++;
+      if (living >= 2 + world.population / 8) return; // a nyelvek száma a népességgel arányos: egy 800 fős világban sem lesz száz nyelv
       for (const [langId, g] of groups) {
         const sets = [...g.entries()].filter(([, arr]) => arr.length >= 3); if (sets.length < 2) continue;
         const parent = world.langs.get(langId); if (!parent) continue;
@@ -3501,8 +3506,8 @@
     dictionary(world, l) { const ear = world.creatorSettings && world.creatorSettings.divineEar; const out = []; const secret = new Set(); for (const a of world.agents.values()) if (a.langId === l.id) for (const c in a.vocab) if (a.vocab[c].s) secret.add(c); for (const c in l.words) { const w = l.words[c]; const k = this.known(world, l.id, w); const s = secret.has(c); out.push({ c, w, known: !!k || (ear && !s), secret: s, gloss: this.gloss(c) }); } out.sort((x, y) => x.gloss.localeCompare(y.gloss, 'hu')); return out; },
     describeLang(world, l) { return l.name ? `${l.name.toLowerCase()} nyelv` : l.parent ? 'új tájszólás' : l.speakers <= 1 && l.founderId != null ? 'idegen nyelv' : 'ősnyelv'; },
     // ---------------- mentés
-    toJSON(world) { return { langs: [...world.langs.values()], lexicon: world.creatorLexicon, settings: world.creatorSettings, chatLog: world.chatLog.slice(-200), speechLog: world.speechLog.slice(-80) }; },
-    fromJSON(world, j) { world.langs = new Map(); if (j) { for (const l of j.langs || []) world.langs.set(l.id, l); world.creatorLexicon = j.lexicon || {}; world.creatorSettings = j.settings || { divineEar: true }; world.chatLog = j.chatLog || []; world.speechLog = j.speechLog || []; } },
+    toJSON(world) { const used = new Set(); for (const a of world.agents.values()) used.add(a.langId); const langs = [...world.langs.values()].filter((l) => used.has(l.id) || (l.speakers || 0) > 0 || (world.tick - (l.diedTick || world.tick)) < T.TICKS_PER_YEAR * 2); return { langs, deadLangs: world.deadLangs || 0, lexicon: world.creatorLexicon, settings: world.creatorSettings, chatLog: world.chatLog.slice(-200), speechLog: world.speechLog.slice(-80) }; },
+    fromJSON(world, j) { world.langs = new Map(); if (j) { for (const l of j.langs || []) world.langs.set(l.id, l); world.deadLangs = j.deadLangs || 0; { const used = new Set(); for (const a of world.agents.values()) used.add(a.langId); const dead = [...world.langs.values()].filter((l) => !used.has(l.id)); if (dead.length > 40 && world.langs.size > dead.length) { for (const l of dead) world.langs.delete(l.id); world.deadLangs += dead.length; } } /* régi mentések ezrével hordozták a holt nyelveket */ world.creatorLexicon = j.lexicon || {}; world.creatorSettings = j.settings || { divineEar: true }; world.chatLog = j.chatLog || []; world.speechLog = j.speechLog || []; } },
   };
   function pickN(rng, pool, n) { const items = pool.slice(); const out = []; while (out.length < n && items.length) { const i = rng.int(0, items.length - 1); out.push(items[i]); items.splice(i, 1); } return out; }
   LW.Speech = Speech;
@@ -3744,6 +3749,7 @@
         case 'CompanyFounded': return { text: `${n(ev.agentId)} vállalatot alapított: ${ev.name}.`, base: 0.7, firstKey: 'company', firstTitle: 'Az első vállalat' };
         case 'NewLand': return { text: `${ev.agentId != null ? n(ev.agentId) + ' hajósai' : 'Hajósok'} új földet találtak a tengeren túl ${ev.side === 'east' ? 'keleten' : 'délen'}: ${ev.name}. A világ nagyobb lett (${ev.w}×${ev.h}).`, base: 1.2, firstKey: 'newland', firstTitle: 'Új föld a tengeren túl' };
         case 'ExistentialQuestion': return { text: `${n(ev.agentId)} feltette a kérdést: „${ev.text}”`, base: 0.7, firstKey: 'question', firstTitle: 'Az első kérdés, amire nincs válasz' };
+        case 'LanguageDied': return { text: `Kihalt egy nyelv: ${ev.name}. Utolsó beszélője magával vitte.`, base: 0.6, firstKey: 'langdied', firstTitle: 'Az első kihalt nyelv' };
         case 'FutureTech': return { text: `Olyan tudás született, amelyre a Teremtőnek sincs szava: ${ev.name}.`, base: 0.9, firstKey: 'future', firstTitle: 'Az ismeretlen jövő kezdete' };
         case 'WorldSimulated': return { text: `A Világmag egy ${ev.n}. világot indított el: apró lények, akik egy hangot hallanak az égből.`, base: 1.2, firstKey: 'worldsim', firstTitle: 'A világ a világban' };
         case 'KnowledgeLost': return { text: `${n(ev.agentId)} halálával elveszett a tudás: ${T[ev.tech].name.toLowerCase()}.`, base: 0.75, firstKey: 'lost', firstTitle: 'Első elveszett tudás' };
@@ -4510,16 +4516,24 @@
     let rels = [...a.relationships].filter(([, r]) => keep(r));
     if (rels.length > 120) { rels.sort((x, y) => (y[1].familiarity + y[1].friendship + y[1].romance + y[1].resentment) - (x[1].familiarity + x[1].friendship + x[1].romance + x[1].resentment)); rels = rels.slice(0, 120); }
     const kept = new Set(rels.map(([id]) => id));
-    o.memory = { episodic: a.memory.episodic, emotional: a.memory.emotional, social: [...a.memory.social].filter(([id, s]) => kept.has(id) || (s.lastSeen >= 0 && tick - s.lastSeen < 96 * 30)).slice(0, 160) };
-    o.relationships = rels;
+    o.memory = { episodic: a.memory.episodic.map(compactMem), emotional: a.memory.emotional.map(compactMem), social: [...a.memory.social].filter(([id, s]) => kept.has(id) || (s.lastSeen >= 0 && tick - s.lastSeen < 96 * 30)).slice(0, 160).map(([id, s]) => [id, s.facts && s.facts.length ? s : { lastSeen: s.lastSeen, lastTile: s.lastTile, impression: s.impression }]) };
+    o.relationships = rels.map(([id, r]) => [id, compactRel(r)]);
+    o.knowledge.places = o.knowledge.places.map((p) => [p.k, p.i, p.q, p.t]); // tömbként: a mentés harmada
     if (a.pregnancy) o.pregnancy = { by: a.pregnancy.by, since: a.pregnancy.since, fatherGenes: a.pregnancy.fatherGenes };
     return o;
   }
+  // a nulla, hamis és üres mezők kimaradnak a mentésből; visszatöltéskor az alapértékek pótolják őket
+  const REL_ZERO = { trust: 0, attraction: 0, respect: 0, friendship: 0, fear: 0, resentment: 0, jealousy: 0, gratitude: 0, loyalty: 0, familiarity: 0, dependency: 0, romance: 0 };
+  function compactRel(r) { const o = {}; for (const k in r) { const v = r[k]; if (v === 0 || v === false || v == null) continue; o[k] = v; } return o; }
+  function compactMem(m) { const o = {}; for (const k in m) { const v = m[k]; if (v == null || v === false || (Array.isArray(v) && !v.length)) continue; o[k] = v; } return o; }
   function restoreAgent(o) {
     const a = { ...o };
-    a.knowledge = { techs: new Set(o.knowledge.techs), places: new Map(o.knowledge.places.map((p) => [LW.Agents.poiKey(p.k, p.i), p])), progress: o.knowledge.progress || {} };
-    a.memory = { episodic: o.memory.episodic || [], emotional: o.memory.emotional || [], social: new Map(o.memory.social || []) };
-    a.relationships = new Map(o.relationships || []);
+    const places = (o.knowledge.places || []).map((p) => (Array.isArray(p) ? { k: p[0], i: p[1], q: p[2], t: p[3] } : p));
+    a.knowledge = { techs: new Set(o.knowledge.techs), places: new Map(places.map((p) => [LW.Agents.poiKey(p.k, p.i), p])), progress: o.knowledge.progress || {} };
+    const fillMem = (m) => { if (m.tile === undefined) m.tile = null; if (m.divine === undefined) m.divine = false; if (m.distorted === undefined) m.distorted = false; return m; }; // a kulcsok sorrendje marad, hogy a mentés → betöltés → mentés azonos legyen
+    const fillRel = (r) => { for (const k in REL_ZERO) if (r[k] == null) r[k] = 0; if (!r.status) r.status = 'stranger'; return r; };
+    a.memory = { episodic: (o.memory.episodic || []).map(fillMem), emotional: (o.memory.emotional || []).map(fillMem), social: new Map((o.memory.social || []).map(([id, s]) => [id, s.facts ? s : { ...s, facts: [] }])) };
+    a.relationships = new Map((o.relationships || []).map(([id, r]) => [id, fillRel(r)]));
     a.plan = null; a.why = null; a.env = null; a.threat = null; if (a.engagedUntil == null) a.engagedUntil = 0; if (a.lastDecisionTick == null) a.lastDecisionTick = -1000;
     if (!a.palette) a.palette = LW.Genetics.palette(a.genes.appearance);
     if (!a.vocab) a.vocab = {}; if (a.beliefs && a.beliefs.trust == null) a.beliefs.trust = 0; if (!a.chatHistory) a.chatHistory = []; if (a.ill == null) a.ill = 0; if (a.beliefs && a.beliefs.simulation == null) a.beliefs.simulation = 0; if (!a.mind) a.mind = LW.Mind.fresh();
